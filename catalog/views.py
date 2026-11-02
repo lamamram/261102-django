@@ -39,3 +39,12 @@ def detail_formation(request: HttpRequest, pk: int) -> HttpResponse:
     """
     return render(request, "catalog/detail_formation.html" , {"formation": FORMATIONS[int(pk) - 1]})
 
+def page_introuvable(request, exception):
+    """
+    page rendue par le handler404 du projet
+    le handler 404 demande un 2ème paramètre exception dans la vue
+    """
+    return render(request, "catalog/404.html", status=404)
+
+def interne(request):
+    return render(request, "catalog/500.html", status=500)

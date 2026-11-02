@@ -27,3 +27,8 @@ urlpatterns = [
     # => catalog/urls.py
     path('', include('catalog.urls')),
 ]
+
+# gestion != d'urlpatterns
+# pour le voir ==> DEBUG = False
+handler404 = 'catalog.views.page_introuvable'
+handler500 = 'catalog.views.interne'

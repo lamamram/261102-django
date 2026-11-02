@@ -1,0 +1,11 @@
+{% extends "catalog/base.html" %}
+
+{% block titre %}Erreur interne — {{ block.super }}{% endblock %}
+
+{% block contenu %}
+<div class="erreur">
+    <h1>500 — erreur interne</h1>
+    <p>Une erreur est survenue côté serveur. L'équipe a été prévenue.</p>
+    <a class="btn" href="{% url 'catalog:accueil' %}">Retour à l'accueil</a>
+</div>
+{% endblock %}
