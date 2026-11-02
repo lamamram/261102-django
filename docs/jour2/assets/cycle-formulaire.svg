@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 360" role="img" aria-label="Cycle de vie d'un formulaire Django POST/redirect/GET">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#475569"/>
+    </marker>
+    <marker id="arr-err" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#d97706"/>
+    </marker>
+    <marker id="arr-ok" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#0f766e"/>
+    </marker>
+  </defs>
+  <rect width="1080" height="360" fill="#ffffff"/>
+  <text x="540" y="30" text-anchor="middle" font-family="system-ui, sans-serif" font-size="18" font-weight="600" fill="#1f2937">Cycle du formulaire — POST /clients/nouveau/ (pattern POST → redirect → GET)</text>
+
+  <!-- flèches -->
+  <g stroke="#475569" stroke-width="2" fill="none">
+    <line x1="195" y1="150" x2="243" y2="150" marker-end="url(#arr)"/>
+    <line x1="393" y1="150" x2="443" y2="150" marker-end="url(#arr)"/>
+  </g>
+  <line x1="603" y1="122" x2="683" y2="84" stroke="#0f766e" stroke-width="2" marker-end="url(#arr-ok)"/>
+  <line x1="603" y1="178" x2="683" y2="216" stroke="#d97706" stroke-width="2" marker-end="url(#arr-err)"/>
+  <!-- retours vers le navigateur -->
+  <path d="M910,52 C910,20 120,20 120,112" fill="none" stroke="#0f766e" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arr-ok)"/>
+  <path d="M910,248 C910,330 120,330 120,188" fill="none" stroke="#d97706" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arr-err)"/>
+
+  <!-- libellés des flèches -->
+  <g font-family="system-ui, sans-serif" font-size="11.5" fill="#6b7280">
+    <text x="219" y="138" text-anchor="middle">POST</text>
+    <text x="219" y="170" text-anchor="middle">+ csrf_token</text>
+    <text x="645" y="92" text-anchor="middle" fill="#0f766e">is_valid() → True</text>
+    <text x="645" y="206" text-anchor="middle" fill="#d97706">is_valid() → False</text>
+  </g>
+  <text x="540" y="18" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11.5" fill="#0f766e">redirect('catalog:clients') — 302, le re-cliquage ne duplique pas</text>
+  <text x="540" y="345" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11.5" fill="#d97706">gabarit re-livré, re-rempli, avec form.errors — l'état utilisateur survit</text>
+
+  <!-- Navigateur -->
+  <g>
+    <rect x="45" y="115" width="150" height="70" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text x="120" y="146" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#1f2937">Navigateur</text>
+    <text x="120" y="166" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11.5" fill="#6b7280">formulaire rempli</text>
+  </g>
+  <!-- Vue -->
+  <g>
+    <rect x="250" y="115" width="143" height="70" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="321" y="140" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#1f2937">Vue</text>
+    <text x="321" y="158" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="#6b7280">form = Form(request.POST)</text>
+  </g>
+  <!-- is_valid -->
+  <g>
+    <rect x="450" y="115" width="153" height="70" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="526" y="138" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="600" fill="#1f2937">forms.Form</text>
+    <text x="526" y="156" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="#6b7280">full_clean() · clean_&lt;champ&gt; · clean()</text>
+    <text x="526" y="172" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="#6b7280">errors · cleaned_data</text>
+  </g>
+  <!-- Base (valide) -->
+  <g>
+    <rect x="690" y="45" width="220" height="70" rx="10" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.5"/>
+    <text x="800" y="72" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#1f2937">Base de données</text>
+    <text x="800" y="92" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="#6b7280">Client.objects.create(**cleaned_data)</text>
+  </g>
+  <!-- Gabarit (invalide) -->
+  <g>
+    <rect x="690" y="185" width="220" height="70" rx="10" fill="#fff7ed" stroke="#d97706" stroke-width="1.5"/>
+    <text x="800" y="212" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#1f2937">Gabarit</text>
+    <text x="800" y="232" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10.5" fill="#6b7280">{% for e in field.errors %}…</text>
+  </g>
+
+  <!-- note CSRF -->
+  <text x="120" y="215" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="#b91c1c">token absent → 403 (CsrfViewMiddleware)</text>
+  <line x1="120" y1="225" x2="120" y2="188" stroke="#b91c1c" stroke-width="1.5" stroke-dasharray="3 3"/>
+</svg>

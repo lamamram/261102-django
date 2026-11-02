@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 320" role="img" aria-label="Architecture MVT de Django">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#475569"/>
+    </marker>
+    <marker id="arr-retour" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#4f46e5"/>
+    </marker>
+  </defs>
+  <rect width="1080" height="320" fill="#ffffff"/>
+  <text x="540" y="30" text-anchor="middle" font-family="system-ui, sans-serif" font-size="18" font-weight="600" fill="#1f2937">Architecture MVT — qu'est-ce que Django fait d'une requête ?</text>
+
+  <!-- flèches aller -->
+  <g stroke="#475569" stroke-width="2" fill="none">
+    <line x1="198" y1="150" x2="243" y2="150" marker-end="url(#arr)"/>
+    <line x1="403" y1="150" x2="453" y2="150" marker-end="url(#arr)"/>
+    <line x1="613" y1="134" x2="683" y2="84" marker-end="url(#arr)"/>
+    <line x1="613" y1="166" x2="683" y2="216" marker-end="url(#arr)"/>
+    <line x1="843" y1="84" x2="903" y2="136" marker-end="url(#arr)"/>
+    <line x1="843" y1="216" x2="903" y2="164" marker-end="url(#arr)"/>
+  </g>
+
+  <!-- retour -->
+  <path d="M985,192 C985,278 115,278 115,192" fill="none" stroke="#4f46e5" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arr-retour)"/>
+  <text x="540" y="300" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12.5" fill="#4f46e5">Réponse HTTP (HTML) renvoyée au navigateur</text>
+
+  <!-- libellés des flèches aller -->
+  <g font-family="system-ui, sans-serif" font-size="12" fill="#6b7280">
+    <text x="220" y="138" text-anchor="middle">requête</text>
+    <text x="428" y="138" text-anchor="middle">vue ciblée</text>
+    <text x="640" y="100" text-anchor="middle">données (ORM)</text>
+    <text x="638" y="208" text-anchor="middle">contexte</text>
+  </g>
+
+  <!-- Client -->
+  <g>
+    <rect x="45" y="115" width="150" height="70" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text x="120" y="146" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#1f2937">Client</text>
+    <text x="120" y="166" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11.5" fill="#6b7280">navigateur</text>
+  </g>
+  <!-- URLconf -->
+  <g>
+    <rect x="250" y="115" width="150" height="70" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="325" y="146" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#1f2937">URLconf</text>
+    <text x="325" y="166" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11.5" fill="#6b7280">routage</text>
+  </g>
+  <!-- Vue -->
+  <g>
+    <rect x="460" y="115" width="150" height="70" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="535" y="146" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#1f2937">Vue</text>
+    <text x="535" y="166" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11.5" fill="#6b7280">logique + contexte</text>
+  </g>
+  <!-- Modèle -->
+  <g>
+    <rect x="690" y="45" width="150" height="70" rx="10" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.5"/>
+    <text x="765" y="76" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#1f2937">Modèle</text>
+    <text x="765" y="96" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11.5" fill="#6b7280">ORM — jour 2</text>
+  </g>
+  <!-- Gabarit -->
+  <g>
+    <rect x="690" y="185" width="150" height="70" rx="10" fill="#fff7ed" stroke="#d97706" stroke-width="1.5"/>
+    <text x="765" y="216" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#1f2937">Gabarit</text>
+    <text x="765" y="236" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11.5" fill="#6b7280">Django Templates</text>
+  </g>
+  <!-- Réponse -->
+  <g>
+    <rect x="910" y="115" width="150" height="70" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text x="985" y="146" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#1f2937">Réponse</text>
+    <text x="985" y="166" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11.5" fill="#6b7280">HTTP</text>
+  </g>
+</svg>
