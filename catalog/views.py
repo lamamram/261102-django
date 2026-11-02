@@ -6,7 +6,7 @@ FORMATIONS = [
     {'code': 'PY-101', 'nom': 'Django : initiation',
      'prix': 1890.0, 'duree': 3, 'public': 'Développeurs', 'nouveaute': False},
     {'code': 'PY-102', 'nom': 'Django : approfondissement',
-     'prix': 2490.0, 'duree': 2, 'public': 'Développeurs', 'nouveaute': False},
+     'prix': 2490.0, 'duree': 1, 'public': '', 'nouveaute': False},
     {'code': 'DA-201', 'nom': 'Data analysis with Python',
      'prix': 2190.0, 'duree': 5, 'public': 'Analystes', 'nouveaute': True},
 ]

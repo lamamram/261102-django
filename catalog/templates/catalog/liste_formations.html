@@ -22,19 +22,20 @@
                 <td>{{ forloop.counter }}</td>
                 <td><code> {{ formation.code }} </code></td>
                 <td>
+                    {# catalog:xxxx  est lié à la variable app_name="catalog" de urls.py #}
                     <a class="lien-nom"
-                       href="{% url 'detail-formation' forloop.counter %}">
-                       {{ formation.nom }}
+                       href="{% url 'catalog:detail-formation' forloop.counter %}">
+                       {{ formation.nom|title }}
                     </a>
                     {% if formation.nouveaute %}
                         <span class="badge badge-nouveau">Nouveau</span>
                     {% endif %}
                 </td>
-                <td>{{ formation.public }}</td>
+                <td>{{ formation.public|default:"Tout publics" }}</td>
                 <td>
-                    {{ formation.duree }} jours
+                    {{ formation.duree }} jour{{ formation.duree|pluralize }}
                 </td>
-                <td class="prix-col"> {{ formation.prix }} </td>
+                <td class="prix-col"> {{ formation.prix|floatformat:2 }} €</td>
             </tr>
         {# empty sera affichée si la structure à itérer est vide #}
         {% empty %}

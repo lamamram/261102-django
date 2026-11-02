@@ -4,6 +4,9 @@ from django.urls import path, re_path
 # import views
 from . import views 
 
+# espace de nom des urls de cette app à appeler dans les templates et/ou les vues
+app_name = "catalog"
+
 urlpatterns = [
     # ces chemins sont la continuation de la partie du gesti/urls.py
     # un vue est un CALLABLE (fonction ou classe)
