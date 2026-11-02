@@ -362,7 +362,7 @@ Une **vue** est une fonction Python `(request, *args, **kwargs) → réponse HTT
 1. `accueil` → `HttpResponse` brut → ouvrir `http://127.0.0.1:8000/` ;
 2. ajouter `liste_formations` + son pattern → `http://127.0.0.1:8000/formations/` ;
 3. ajouter `detail_formation` + son pattern avec `<int:pk>` → `http://127.0.0.1:8000/formations/2/` ;
-4. taper `http://127.0.0.1:8000/formations/99/` → **la page 404 brute** de Django (pas la nôtre — c'est normal, les gabarits n'existent pas encore) ;
+4. taper `http://127.0.0.1:8000/formations/99/` → **la page 500 brute** de Django (pas la nôtre — c'est normal, les gabarits n'existent pas encore) ;
 5. tester le pattern regex (`/formations/12345/` → 404, car `[0-9]{1,4}`).
 
 **Checklist**

@@ -1,0 +1,45 @@
+<section class="catalogue">
+    <h1>Catalogue des formations</h1>
+    {# on utilise des FILTRES pour utiliser des transformation sur les variables du templates #}
+    <p class="chiffre">{{ formations|length }} formation{{ formations|length|pluralize }} au catalogue.</p>
+
+    <table class="tableau">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Code</th>
+                <th>Intitulé</th>
+                <th>Public</th>
+                <th>Durée</th>
+                <th class="prix-col">Tarif HT</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for formation in formations %}
+            <tr>
+                {# forloop est une variable locale au for pour manipuler les itérations #}
+                {# forloop.counter est le pendant de enumerate en python #}
+                <td>{{ forloop.counter }}</td>
+                <td><code> {{ formation.code }} </code></td>
+                <td>
+                    <a class="lien-nom"
+                       href="{% url 'detail-formation' forloop.counter %}">
+                       {{ formation.nom }}
+                    </a>
+                    {% if formation.nouveaute %}
+                        <span class="badge badge-nouveau">Nouveau</span>
+                    {% endif %}
+                </td>
+                <td>{{ formation.public }}</td>
+                <td>
+                    {{ formation.duree }} jours
+                </td>
+                <td class="prix-col"> {{ formation.prix }} </td>
+            </tr>
+        {# empty sera affichée si la structure à itérer est vide #}
+        {% empty %}
+            <tr><td colspan="6" class="vide">Aucune formation publiée pour le moment.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
