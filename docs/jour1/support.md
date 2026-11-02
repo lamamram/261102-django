@@ -254,6 +254,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # --- nos applications métier (ordre peu important, lisibilité oui) ---
     'catalog.apps.CatalogConfig',
+    # outils de développement
+    'django_extensions',
+    'debug_toolbar',
 ]
 ```
 

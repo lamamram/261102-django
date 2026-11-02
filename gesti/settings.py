@@ -11,21 +11,29 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+# pip install python-dotenv
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-h4y3@lby8n44ir^r_ia5_%jy+y&cp@7295wc#d8jvz&&b4q!5+'
+SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# ajouter des entrées ici en dehors d'un environnement local :127.0.0.1
+# i.e: runserver 0.0.0.0:<port> OU prod
+ALLOWED_HOSTS = [
+    "*"
+]
 
 
 # Application definition
@@ -37,6 +45,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # nos propres applicatons comme catalog
+    'catalog.apps.CatalogConfig',
+    # dépendances utilitaires
+    'django_extensions',
+    'debug_toolbar'
+
 ]
 
 MIDDLEWARE = [
