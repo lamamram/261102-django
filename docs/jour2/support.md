@@ -98,7 +98,8 @@ Le vocabulaire des relations, tel qu'on le verra écrit dans `models.py` :
 ### 5.3. `catalog/models.py` — le code de référence
 
 ```python
-?????
+from django.db import models
+???
 ```
 
 > ⚠️ **Piège n°9 — `blank` ≠ `null`** : `blank=True` concerne la **validation** (le champ peut être vide dans un formulaire) ; `null=True` concerne la **base** (colonne `NULL`). Pour un `CharField`, la règle Django est `blank=True` **sans** `null=True` (stocker `NULL` *et* `''` dans la même colonne, c'est deux façons de dire « vide »). `null=True` a son sens sur les champs optionnels « structuré » : `DateField`, `IntegerField`, `DecimalField`, `ForeignKey` — voir `Contrat.date_signature`.
@@ -137,28 +138,21 @@ Oublier `on_delete` sur une `ForeignKey` : erreur — depuis Django 2.0 c'est **
 2. `python manage.py makemigrations` → lire le fichier `catalog/migrations/0001_initial.py` **avec le binôme** (qui a créé quoi ?) ;
 3. `python manage.py migrate` ;
 4. `python manage.py sqlmigrate catalog 0001` → **lire le vrai SQL généré** (colonne `varchar(12)`, `UNIQUE`, `DECIMAL(10,2)`, FK…) ;
-5. Coller `catalog/seed.py`, l'exécuter ;
-6. `python manage.py shell` → `list(Formation.objects)`, `Session.objects.first().formation` ;
+5. Coller `catalog/seed.py`, l'exécuter: `python -m catalog.seed` ;
+6. `python manage.py shell_plus` → `list(Formation.objects.all())`, `Session.objects.first().formation` ;
 7. `git add -A && git commit -m "J2 : modèles Formation/Session/Client/Competence/Contrat + seed"`.
 
 **`catalog/seed.py` — peupler la base de démonstration** :
 
 ```python
-# 2 — Les 3 formations du jour 1, cette fois **en base**
-FORMATIONS = [
-    # code    nom                        public          dur   prix     nouv.  compétences
-    ('PY-101', 'Django : initiation',        'Développeurs', 3, 1890.00, False, ['Django', 'Templates']),
-    ('PY-102', 'Django : approfondissement', 'Développeurs', 2, 2490.00, False, ['Django', 'ORM']),
-    ('DA-201', 'Data analysis with Python',  'Analystes',    5, 2190.00, True,  ['ORM']),
-]
+"""Peupler la base SQLite de démonstration.
 
-# 3 — Sessions (la relation 1—N)
-SESS = [
-    ('PY-101-2612', 'PY-101', date(2026, 12, 1), date(2026, 12, 3), 'Paris',  12, 7,  'A'),
-    ('PY-102-2601', 'PY-102', date(2027, 1, 12), date(2027, 1, 13), 'Lyon',   8, 8,  'A'),  # COMPLET
-    ('DA-201-2611', 'DA-201', date(2026, 11, 9), date(2026, 11, 13), 'Paris', 10, 3,  'E'),
-]
+Usage (depuis la racine du projet, après `python manage.py migrate`) :
+    python -m catalog.seed
 
+Idempotent : peut être relancé sans dupliquer les données.
+"""
+???
 ```
 
 > 💡 **`get_or_create` / `update_or_create`** : le trio d'« upsert » de l'ORM — `get_or_create` (créer si absent), `update_or_create` (créer **et** mettre à jour), `bulk_create` (insérer une liste sans `SELECT` préalable). Les scripts de seed, de démo et de tests (J4) en vivent.
