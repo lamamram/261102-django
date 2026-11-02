@@ -182,6 +182,8 @@ python manage.py runserver
 | `python manage.py shell` | shell Python préchargé du projet (parfait pour expérimenter) |
 | `python manage.py test` | lanceur de tests (jour 4) |
 | `pip install django-extensions` | boîtes à outils très utile en dev (`show_urls`, `shell_plus`…) |
+| `pip install django-debug-toolbar` | interface de debug dans le navigateur (barre latérale avec requêtes SQL, temps de réponse, etc.) |
+
 
 > 💡 Optionnel mais apprécié : `pip install django-extensions` puis ajouter `"django_extensions"` dans `INSTALLED_APPS`. La commande `show_urls` (liste des URLs + vues) devient un réflexe de debug.
 
