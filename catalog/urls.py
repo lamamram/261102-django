@@ -11,7 +11,7 @@ urlpatterns = [
     # ces chemins sont la continuation de la partie du gesti/urls.py
     # un vue est un CALLABLE (fonction ou classe)
     path('', views.accueil),
-    path('formations/', views.liste_formations),
+    path('formations/', views.liste_formations, name="liste-formations"),
 
     # l'attribut name fait le lien entre l'url et son invocation dans un template et/ou dans une vue
     path('formations/<int:pk>', views.detail_formation, name="detail-formation"),
