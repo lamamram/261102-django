@@ -1,0 +1,31 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {# le contenu du block spécifié dans le template écrasera la valeur par défaut qui est ici GestiFormation #}
+    <title>{% block titre %}GestiFormation{% endblock titre %}</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+</head>
+<body>
+    <header class="entete">
+        <nav class="nav">
+            <a class="logo" href="">GestiFormation</a>
+            <ul>
+                <li><a href="{% url 'catalog:liste-formations' %}">Catalogue</a></li>
+                <li>???? — <a href="#">Déconnexion</a></li>
+                <li><a href="#">Connexion</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="contenu">
+        {% block contenu %}{% endblock contenu %}
+    </main>
+
+    <footer class="pied">
+        <p>{% now "d/m/Y" %} — GestiFormation, site de démonstration</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,172 @@
+:root {
+    --fond: #f8fafc;
+    --encre: #1f2937;
+    --encre-douce: #6b7280;
+    --primaire: #4f46e5;
+    --primaire-fonce: #3730a3;
+    --bordure: #e2e8f0;
+    --blanc: #ffffff;
+    --succes: #0f766e;
+    --alerte: #d97706;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--encre);
+    background: var(--fond);
+    line-height: 1.6;
+}
+
+/* ————— En-tête ————— */
+.entete {
+    background: var(--primaire);
+    color: var(--blanc);
+    padding: 0.75rem 1.5rem;
+}
+.nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+.logo {
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--blanc);
+    text-decoration: none;
+}
+.nav ul {
+    display: flex;
+    gap: 1.25rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.nav a { color: var(--blanc); text-decoration: none; opacity: 0.9; }
+.nav a:hover { opacity: 1; text-decoration: underline; }
+
+/* ————— Contenu ————— */
+.contenu {
+    max-width: 1100px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+}
+h1 { font-size: 1.75rem; margin-bottom: 0.5rem; }
+h2 { font-size: 1.25rem; margin-top: 2rem; }
+.chiffre { color: var(--encre-douce); margin-bottom: 1.5rem; }
+
+/* ————— Tableau ————— */
+.tableau {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--blanc);
+    border: 1px solid var(--bordure);
+    border-radius: 8px;
+    overflow: hidden;
+}
+.tableau th, .tableau td {
+    padding: 0.65rem 0.9rem;
+    text-align: left;
+    border-bottom: 1px solid var(--bordure);
+}
+.tableau th {
+    background: #eef2ff;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--encre-douce);
+}
+.tableau tr:last-child td { border-bottom: none; }
+.tableau tr:hover td { background: #f1f5f9; }
+.prix-col { font-variant-numeric: tabular-nums; text-align: right; }
+.vide { text-align: center; color: var(--encre-douce); padding: 2rem; }
+
+/* ————— Liens & badges ————— */
+.lien-nom { font-weight: 600; color: var(--primaire); text-decoration: none; }
+.lien-nom:hover { text-decoration: underline; }
+code {
+    background: #eef2ff;
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+.badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.15em 0.5em;
+    border-radius: 999px;
+    vertical-align: middle;
+    margin-left: 0.4rem;
+}
+.badge-nouveau { background: #d1fae5; color: var(--succes); }
+
+/* ————— Fiche détail ————— */
+.retour { margin-bottom: 1rem; }
+.retour a { color: var(--encre-douce); text-decoration: none; }
+.retour a:hover { color: var(--primaire); }
+.entete-formation { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.fiche {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    background: var(--blanc);
+    border: 1px solid var(--bordure);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin: 1.5rem 0;
+}
+.fiche dt {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--encre-douce);
+    margin-bottom: 0.2rem;
+}
+.fiche dd { margin: 0; font-size: 1rem; }
+.tarif { font-size: 1.3rem; font-weight: 700; color: var(--primaire); }
+
+/* ————— Compétences ————— */
+.competence {
+    display: inline-block;
+    background: #eef2ff;
+    color: var(--primaire-fonce);
+    padding: 0.25em 0.7em;
+    border-radius: 6px;
+    font-size: 0.88rem;
+    margin: 0.15rem 0.1rem;
+}
+
+/* ————— Bouton ————— */
+.btn {
+    display: inline-block;
+    background: var(--primaire);
+    color: var(--blanc);
+    padding: 0.7rem 1.6rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.15s;
+}
+.btn:hover { background: var(--primaire-fonce); }
+
+/* ————— Erreur 404 ————— */
+.erreur { text-align: center; padding: 4rem 1rem; }
+.erreur h1 { font-size: 3rem; color: var(--primaire); }
+.erreur a { margin-top: 1.5rem; }
+
+/* ————— Pied de page ————— */
+.pied {
+    text-align: center;
+    color: var(--encre-douce);
+    font-size: 0.85rem;
+    padding: 1.5rem;
+    border-top: 1px solid var(--bordure);
+    margin-top: 3rem;
+}

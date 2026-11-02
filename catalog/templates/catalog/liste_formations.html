@@ -1,3 +1,8 @@
+{% extends "catalog/base.html" %}
+
+{% block titre %}Catalogue - GestiFormation{% endblock titre %}
+
+{% block contenu %}
 <section class="catalogue">
     <h1>Catalogue des formations</h1>
     {# on utilise des FILTRES pour utiliser des transformation sur les variables du templates #}
@@ -44,3 +49,4 @@
         </tbody>
     </table>
 </section>
+{% endblock contenu %}
