@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     {# le contenu du block spécifié dans le template écrasera la valeur par défaut qui est ici GestiFormation #}
     <title>{% block titre %}GestiFormation{% endblock titre %}</title>
+    
+    {# 1. le chemin css/base.css est constant quel que soit l'environnement #}
+    {# 2. {% static %} sait comment trouver cette ressource #}
+    {# 3. {% load static %} utilise STATIC_URL pour fabriquer l'url absolu vers cette ressource quel que soit l'environnement #}
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
 </head>
 <body>
