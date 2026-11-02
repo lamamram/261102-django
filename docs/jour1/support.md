@@ -282,7 +282,37 @@ Une **URLconf** est une liste ordonnée de `(pattern, vue)` : Django parcourt la
 Trois styles de pattern, tous au programme Dawan (« simples et par expressions régulières ») :
 
 ```python
-???
+from django.contrib import admin
+from django.urls import path, re_path
+# ne fonctionne pas depuis la racine
+# import views
+from . import views 
+
+# espace de nom des urls de cette app à appeler dans les templates et/ou les vues
+app_name = "catalog"
+
+urlpatterns = [
+    # ces chemins sont la continuation de la partie du gesti/urls.py
+    # un vue est un CALLABLE (fonction ou classe)
+    path('', views.accueil, name='accueil'),
+    path('formations/', views.liste_formations, name="liste-formations"),
+
+    # l'attribut name fait le lien entre l'url et son invocation dans un template et/ou dans une vue
+    path('formations/<int:pk>', views.detail_formation, name="detail-formation"),
+    
+    
+    
+    # exemple de route matchée par une regex
+    
+    # django réutilise le mécnisme de nommage de groupe de capture du module 
+    # re en python (?P<name>) pour dynamiser l'identifiant
+    
+    # non-obstant, la valeur capturée est une str !!!
+
+    # re_path utilise re.match ==> capture au début de la cible
+    # ==> écrire des regex stricte : ^<regex>$
+    # re_path("^formations/(?P<pk>[0-9]{,2})$", views.detail_formation)
+]
 ```
 
 **Point clé — les convertisseurs :**
@@ -306,7 +336,24 @@ Trois styles de pattern, tous au programme Dawan (« simples et par expressions 
 ### 3.2. Les URLs du projet (racine)
 
 ```python
-????
+from django.contrib import admin
+from django.urls import path, include
+# pas d'import relatif ni absolu car le dossier racine n'est PAS un package
+# import catalog.urls 
+
+urlpatterns = [
+    # ce chemin permet de consulter les urls de 
+    # l'application admin déjà installé dans settings INSTALLED_APPS
+    path('admin/', admin.site.urls),
+    # TO-DO: générer la liste urls de l'application catalog
+    # => catalog/urls.py
+    path('', include('catalog.urls')),
+]
+
+# gestion != d'urlpatterns
+# pour le voir ==> DEBUG = False
+handler404 = 'catalog.views.page_introuvable'
+handler500 = 'catalog.views.interne'
 ```
 > 💡 `include()` : permet d'inclure les patterns d'une app EXTERNE dans le routeur du projet.
 > 💡 `include()` : on ne « monte » que la préfixe. Les patterns de `catalog/urls.py` vivent sous `''` ici — mais si on incluait sous `path('fr/', include('catalog.urls'))`, tout le catalogue basculerait sous `/fr/…` **sans toucher à une seule URL de l'app**. C'est l'une des plus belles propriétés du découpage apps/projets.
@@ -316,7 +363,56 @@ Trois styles de pattern, tous au programme Dawan (« simples et par expressions 
 Une **vue** est une fonction Python `(request, *args, **kwargs) → réponse HTTP`.
 
 ```python
-????
+from django.shortcuts import render
+from django.http import HttpRequest, HttpResponse
+
+# --- données fictives pour le jour 1 (elles seront remplacées par l'ORM le jour 2) ---
+FORMATIONS = [
+    {'code': 'PY-101', 'nom': 'Django : initiation',
+     'prix': 1890.0, 'duree': 3, 'public': 'Développeurs', 'nouveaute': False},
+    {'code': 'PY-102', 'nom': 'Django : approfondissement',
+     'prix': 2490.0, 'duree': 1, 'public': '', 'nouveaute': False},
+    {'code': 'DA-201', 'nom': 'Data analysis with Python',
+     'prix': 2190.0, 'duree': 5, 'public': 'Analystes', 'nouveaute': True},
+]
+
+# Create your views here.
+def accueil(request: HttpRequest) -> HttpResponse:
+    """
+    Page d'accueil - réponse brute
+    demande un objet request de type HttpRequest
+    et retourne un objet HttpResponse
+    """
+    return HttpResponse(
+        """<h1>GestiFormation</h1>
+    <p>Gestion d'un organisme de formation : catalogue, sessions, inscriptions.</p>
+    <a href="/formations/">Voir le catalogue</a>""",
+        content_type="text/html",
+        status=200)
+
+def liste_formations(request: HttpRequest) -> HttpResponse:
+    """
+    liste des formations
+    utilise render, qui injecte le contexte dans un fichier HTML "template"
+    les templates doivent être insérés dans <app>/templates/<app>/<xxxx>.html
+    """
+    return render(request, "catalog/liste_formations.html" , {"formations": FORMATIONS})
+
+def detail_formation(request: HttpRequest, pk: int) -> HttpResponse:
+    """
+    détail d'une formation indexée par un id, par défaut l'indice de la liste
+    """
+    return render(request, "catalog/detail_formation.html" , {"formation": FORMATIONS[int(pk) - 1]})
+
+def page_introuvable(request, exception):
+    """
+    page rendue par le handler404 du projet
+    le handler 404 demande un 2ème paramètre exception dans la vue
+    """
+    return render(request, "catalog/404.html", status=404)
+
+def interne(request):
+    return render(request, "catalog/500.html", status=500)
 ```
 
 **L'objet `request`** — ce qu'on y trouve (le stagiaire peut l'inspecter dans le shell ou dans une vue de debug) :
@@ -352,10 +448,6 @@ Une **vue** est une fonction Python `(request, *args, **kwargs) → réponse HTT
 ### 🛠️ Atelier 3 — Vues du catalogue (45 min)
 
 **Consignes** : faire marcher les 3 vues avec les données littérales ci-dessus. On ne construit **pas encore** les gabarits (bloc 4) — pour vérifier, utiliser `HttpResponse` brut sur la liste :
-
-```python
-?????
-```
 
 **Progression attendue** :
 
@@ -489,20 +581,26 @@ catalog/templates/catalog/
 #### 4.6.1 — `catalog/templates/catalog/base.html`
 
 ```html
+{% load static %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>GestiFormation</title>
-    <link rel="stylesheet" href="">
+    {# le contenu du block spécifié dans le template écrasera la valeur par défaut qui est ici GestiFormation #}
+    <title>{% block titre %}GestiFormation{% endblock titre %}</title>
+    
+    {# 1. le chemin css/base.css est constant quel que soit l'environnement #}
+    {# 2. {% static %} sait comment trouver cette ressource #}
+    {# 3. {% load static %} utilise STATIC_URL pour fabriquer l'url absolu vers cette ressource quel que soit l'environnement #}
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
 </head>
 <body>
     <header class="entete">
         <nav class="nav">
             <a class="logo" href="">GestiFormation</a>
             <ul>
-                <li><a href="">Catalogue</a></li>
+                <li><a href="{% url 'catalog:liste-formations' %}">Catalogue</a></li>
                 <li>???? — <a href="#">Déconnexion</a></li>
                 <li><a href="#">Connexion</a></li>
             </ul>
@@ -510,11 +608,11 @@ catalog/templates/catalog/
     </header>
 
     <main class="contenu">
-        
+        {% block contenu %}{% endblock contenu %}
     </main>
 
     <footer class="pied">
-        <p>??? — GestiFormation, site de démonstration</p>
+        <p>{% now "d/m/Y" %} — GestiFormation, site de démonstration</p>
     </footer>
 </body>
 </html>
@@ -527,9 +625,15 @@ catalog/templates/catalog/
 #### 4.6.2 — `catalog/templates/catalog/liste_formations.html`
 
 ```html
+{% extends "catalog/base.html" %}
+
+{% block titre %}Catalogue - GestiFormation{% endblock titre %}
+
+{% block contenu %}
 <section class="catalogue">
     <h1>Catalogue des formations</h1>
-    <p class="chiffre">xxx formations au catalogue.</p>
+    {# on utilise des FILTRES pour utiliser des transformation sur les variables du templates #}
+    <p class="chiffre">{{ formations|length }} formation{{ formations|length|pluralize }} au catalogue.</p>
 
     <table class="tableau">
         <thead>
@@ -543,25 +647,36 @@ catalog/templates/catalog/
             </tr>
         </thead>
         <tbody>
+        {% for formation in formations %}
             <tr>
-                <td>n</td>
-                <td><code></code></td>
+                {# forloop est une variable locale au for pour manipuler les itérations #}
+                {# forloop.counter est le pendant de enumerate en python #}
+                <td>{{ forloop.counter }}</td>
+                <td><code> {{ formation.code }} </code></td>
                 <td>
+                    {# catalog:xxxx  est lié à la variable app_name="catalog" de urls.py #}
                     <a class="lien-nom"
-                       href="">
+                       href="{% url 'catalog:detail-formation' forloop.counter %}">
+                       {{ formation.nom|title }}
                     </a>
-                    <span class="badge badge-nouveau">Nouveau</span>
+                    {% if formation.nouveaute %}
+                        <span class="badge badge-nouveau">Nouveau</span>
+                    {% endif %}
                 </td>
-                <td></td>
+                <td>{{ formation.public|default:"Tout publics" }}</td>
                 <td>
-                    x jours
+                    {{ formation.duree }} jour{{ formation.duree|pluralize }}
                 </td>
-                <td class="prix-col"></td>
+                <td class="prix-col"> {{ formation.prix|floatformat:2 }} €</td>
             </tr>
+        {# empty sera affichée si la structure à itérer est vide #}
+        {% empty %}
             <tr><td colspan="6" class="vide">Aucune formation publiée pour le moment.</td></tr>
+        {% endfor %}
         </tbody>
     </table>
 </section>
+{% endblock contenu %}
 ```
 
 > ⚠️ **Piège** : `forloop.counter0` (0-based) pour l'index dans l'URL, `forloop.counter` (1-based) pour l'affichage. Les mélanger décale toutes les URLs d'un cran.
@@ -573,20 +688,21 @@ catalog/templates/catalog/
 #### 4.6.3 — `catalog/templates/catalog/detail_formation.html`
 
 ```html
+{% extends "catalog/base.html" %}
+
+{% block titre %}{{ formation.nom }} - GestiFormation{% endblock titre %}
+
+{% block contenu %}
 <article class="formation">
-    <p class="retour"><a href="">&larr; Retour au catalogue</a></p>
+    <p class="retour"><a href="{% url 'catalog:liste-formations' %}">&larr; Retour au catalogue</a></p>
 
     <header class="entete-formation">
-        <h1>title</h1>
-        <span class="badge badge-nouveau">Nouveau</span>
+        <h1>{{ formation.nom|title }}</h1>
+        {% if formation.nouveaute %}<span class="badge badge-nouveau">Nouveau</span>{% endif %}
     </header>
 
-    <dl class="fiche">
-        <dt>Code</dt>       <dd><code>code</code></dd>
-        <dt>Public</dt>      <dd>code</dd>
-        <dt>Durée</dt>       <dd>n jours — 7 h/jour</dd>
-        <dt>Tarif</dt>       <dd class="tarif">tarif € HT</dd>
-    </dl>
+    {# include permet de réutiliser un sous élement de template appelé 'partial' #}
+    {% include "catalog/partial_formation.html" with formation=formation %}
 
     <section class="objectifs">
         <h2>Objectifs pédagogiques</h2>
@@ -600,7 +716,6 @@ catalog/templates/catalog/
     <section class="competences">
         <h2>Compétences visées</h2>
         <p>
-                <span class="competence">competence</span>
         </p>
     </section>
 
@@ -609,6 +724,7 @@ catalog/templates/catalog/
         <a class="btn" href="#">S'inscrire à cette formation</a>
     </footer>
 </article>
+{% endblock contenu %}
 ```
 
 > 💡 **À faire remarquer** : `formation.competences` n'existe pas encore dans les données littérales — Django affiche **rien** (pas d'erreur). Ajouter `'competences': ['ORM', 'MVT', 'Templates']` à l'une des formations pour voir la boucle fonctionner.
@@ -618,11 +734,18 @@ catalog/templates/catalog/
 #### 4.6.4 — `catalog/templates/catalog/404.html`
 
 ```html
+{% extends "catalog/base.html" %}
+
+{# block.super affiche la valeur du bloc sur le gabarit hérité #}
+{% block titre %}Page introuvable - {{ block.super }}{% endblock titre %}
+
+{% block contenu %}
 <div class="erreur">
     <h1>404 — page introuvable</h1>
     <p>La page demandée n'existe pas ou a été déplacée.</p>
-    <a class="btn" href="">Retour à l'accueil</a>
+    <a class="btn" href="{% url "catalog:accueil" %}">Retour à l'accueil</a>
 </div>
+{% endblock contenu %}
 ```
 
 > 💡 **À faire démontrer** : taper `http://127.0.0.1:8000/une-url-inexistante/` → **notre** page 404 (pas celle de Django), car `handler404` est déclaré dans `gesti/urls.py`.
@@ -632,11 +755,17 @@ catalog/templates/catalog/
 #### 4.6.5 — `catalog/templates/catalog/500.html`
 
 ```html
+{% extends "catalog/base.html" %}
+
+{% block titre %}Erreur interne — {{ block.super }}{% endblock %}
+
+{% block contenu %}
 <div class="erreur">
     <h1>500 — erreur interne</h1>
     <p>Une erreur est survenue côté serveur. L'équipe a été prévenue.</p>
-    <a class="btn" href="">Retour à l'accueil</a>
+    <a class="btn" href="{% url 'catalog:accueil' %}">Retour à l'accueil</a>
 </div>
+{% endblock %}
 ```
 
 > ⚠️ **Deux particularités à faire connaître** :
