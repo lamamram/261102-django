@@ -1,3 +1,8 @@
+{% extends "catalog/base.html" %}
+
+{% block titre %}{{ formation.nom }} - GestiFormation{% endblock titre %}
+
+{% block contenu %}
 <article class="formation">
     <p class="retour"><a href="{% url 'catalog:liste-formations' %}">&larr; Retour au catalogue</a></p>
 
@@ -33,3 +38,4 @@
         <a class="btn" href="#">S'inscrire à cette formation</a>
     </footer>
 </article>
+{% endblock contenu %}
