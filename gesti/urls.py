@@ -15,8 +15,15 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+# pas d'import relatif ni absolu car le dossier racine n'est PAS un package
+# import catalog.urls 
 
 urlpatterns = [
+    # ce chemin permet de consulter les urls de 
+    # l'application admin déjà installé dans settings INSTALLED_APPS
     path('admin/', admin.site.urls),
+    # TO-DO: générer la liste urls de l'application catalog
+    # => catalog/urls.py
+    path('', include('catalog.urls')),
 ]

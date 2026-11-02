@@ -308,7 +308,7 @@ Trois styles de pattern, tous au programme Dawan (« simples et par expressions 
 ```python
 ????
 ```
-
+> 💡 `include()` : permet d'inclure les patterns d'une app EXTERNE dans le routeur du projet.
 > 💡 `include()` : on ne « monte » que la préfixe. Les patterns de `catalog/urls.py` vivent sous `''` ici — mais si on incluait sous `path('fr/', include('catalog.urls'))`, tout le catalogue basculerait sous `/fr/…` **sans toucher à une seule URL de l'app**. C'est l'une des plus belles propriétés du découpage apps/projets.
 
 ### 3.3. Les vues fonctionnelles
