@@ -235,14 +235,14 @@ Trois choses à faire remarquer :
 
 Tout part de `Modèle.objects` — un **manager** qui fabrique des **QuerySets**. Deux propriétés à ancrer d'abord, car elles changent toute la façon de lire le code :
 
-1. **un QuerySet est paresseux** : `Formation.objects.filter(nouveaute=True)` **n'exécute aucune requête**. La SQL part quand on *force* l'évaluation — `list(…)`, `for … in`, `len(…)`, `print(…)`, `qs[0]`… ;
+1. **un QuerySet est paresseux** : `Formation.objects.filter(nouveaute=True)` **n'exécute aucune requête**. Le SQL part quand on *force* l'évaluation — `list(…)`, `for … in`, `len(…)`, `print(…)`, `qs[0]`… ;
 2. **un QuerySet est immuable** : chaque méthode renvoie **un nouveau QuerySet** ; `qs.filter(…)` ne modifie pas `qs`.
 
 ```python
 >>> qs = Formation.objects.all()              # rien part en base
 >>> qs = qs.filter(nouveaute=True)            # un *autre* QuerySet
 >>> qs = qs.order_by('-prix')                 # un *autre* QuerySet
->>> print(len(qs))                            # ICI, la SQL part (une seule, composée)
+>>> print(len(qs))                            # ICI, le SQL part (une seule, composée)
 ```
 
 **Le vocabulaire des lookups** (`__…`) — l'équivalent Python des `WHERE` :
@@ -310,7 +310,7 @@ C'est **la** ligne pédagogique de la journée : au J1, on n'avait pas d'identif
 
 ---
 
-### 5.6. Traverser les relations — et le N+1 qui vient avec
+### 5.6. Traverser les relations — et le Problème des N + 1 requêtes qui vient avec
 
 Une fois les objets créés, l'ORM les **navigue** : les relations déclarées dans `models.py` deviennent des attributs Python.
 
@@ -322,7 +322,7 @@ Une fois les objets créés, l'ORM les **navigue** : les relations déclarées d
 | inverse du M2M | `competence.formations.all()` | idem, l'autre côté |
 | **filtrer à travers** | `Session.objects.filter(formation__code='PY-101')` | `JOIN catalog_formation ON …` |
 
-**Le double-tilde `__` = « à travers la relation ».** Il enchaîne : `Client.objects.filter(contrats__montant_ht__gte=2000)` lit *« les clients qui ont au moins un contrat de ≥ 2 000 € »* — une phrase métier en une expression.
+**Le double-underscore `__` = « à travers la relation ».** Il enchaîne : `Client.objects.filter(contrats__montant_ht__gte=2000)` lit *« les clients qui ont au moins un contrat de ≥ 2 000 € »* — une phrase métier en une expression.
 
 **La fiche détail gagne ses « sessions à venir »** (livrable du jour) — le contexte change, le gabarit s'étend d'un bloc :
 
@@ -338,7 +338,7 @@ Une fois les objets créés, l'ORM les **navigue** : les relations déclarées d
     {% for session in sessions %}
         <p>
             <code>{{ session.numero }}</code> —
-            du {{ session.date_debut|date:"d/m/Y" }} au {{ session.date_fin|date:"d/m/Y" }}
+            du {{ session.date_debut|??? }} au {{ session.date_fin|??? }}
             à {{ session.ville }}
             ({{ session.capacite }} places)
         </p>
@@ -350,7 +350,7 @@ Une fois les objets créés, l'ORM les **navigue** : les relations déclarées d
 
 > 💡 **`date_debut` est un `date` du stdlib** — le filtre `|date:"d/m/Y"` du jour 1 s'applique tel quel. Les types Python des champs (`DateField` → `datetime.date`, `DecimalField` → `decimal.Decimal`) sont ceux qui s'affichent dans le gabarit : `{{ session.prix|floatformat:2 }}` continue de marcher.
 
-**Le N+1 — le premier vrai coût de la base.** Ce bloc d'un gabarit « sessions d'une formation » :
+**Le Problème des N + 1 requêtes — le premier vrai coût de la base.** Ce bloc d'un gabarit « sessions d'une formation » :
 
 ```python
 for session in formation.sessions.all():   # 1 requête
@@ -377,13 +377,13 @@ N sessions → **1 + N requêtes**. Le navigateur ne voit rien, mais chaque ité
 
 > ⚠️ **Piège n°16 — confondre les deux** : `select_related('competences')` sur une `Formation` ne marche pas — le M2M n'a **pas** de colonne à joindre, c'est la table intermédiaire. Symétriquement, `prefetch_related('formation')` sur `Session` « passe » mais génère 2 requêtes là où 1 suffirait. La règle à retenir : **`select_related` = FK, `prefetch_related` = la liste (inverse ou M2M)**.
 
-> 💡 **Mesurer avant d'optimiser.** En dev, le bas de la page de debug de Django affiche les requêtes exécutées — c'est là qu'on « voit » le N+1 (30 lignes de `SELECT * FROM catalog_session …` identiques). En shell : `from django.db import connection; print(len(connection.queries))` avant / après le bloc suspect.
+> 💡 **Mesurer avant d'optimiser.** En dev, le bas de la page de debug de Django affiche les requêtes exécutées — c'est là qu'on « voit » le Problème des N + 1 requêtes (30 lignes de `SELECT * FROM catalog_session …` identiques). En shell : `from django.db import connection; print(len(connection.queries))` avant / après le bloc suspect.
 
 ---
 
 ### 5.7. F objects et `annotate` — la logique calculée **dans** la base
 
-`Session.places_dispo` est calculé en Python. Correct, mais : la valeur est recalculée **N fois côté Python, après le chargement des lignes**, et on ne peut **ni filtrer, ni trier** dessus. Le **F object** (`django.db.models.F`) est une **promesse de valeur** : *« utilise la valeur de cette colonne au moment où la SQL est construite »*.
+`Session.places_dispo` est calculé en Python. Mais la valeur est recalculée **N fois côté Python, après le chargement des lignes**, et on ne peut **ni filtrer, ni trier** dessus. Le **F object** (`django.db.models.F`) est une **promesse de valeur** : *« utilise la valeur de cette colonne au moment où le SQL est construite »*.
 
 | Situation | Sans F | Avec F |
 |---|---|---|
@@ -421,11 +421,11 @@ Session.objects.filter(pk=session.pk).update(nb_inscrits=F('nb_inscrits') + 1)
 
 > ⚠️ **Piège n°17 — l'attribut annoté n'existe que sur le QuerySet qui l'a ajouté** : `Session.objects.filter(places__gt=0)` **sans** l'`annotate` → `FieldError: Cannot resolve keyword 'places'` ; et `Session.objects.first().places` → `AttributeError`. L'annotation est une propriété du **QuerySet**, pas de la table.
 
-> ⚠️ **Piège n°18 — les `@property` ne vont pas dans la SQL** : `filter(places_dispo__gt=0)` échoue — l'ORM ne connaît que des **champs** et des **annotations**, jamais du code Python. Si un calcul doit être filtrable/triable, il devient une annotation (ou une colonne, si c'est permanent).
+> ⚠️ **Piège n°18 — les `@property` ne vont pas dans le SQL** : `filter(places_dispo__gt=0)` échoue — l'ORM ne connaît que des **champs** et des **annotations**, jamais du code Python. Si un calcul doit être filtrable/triable, il devient une annotation (ou une colonne, si c'est permanent).
 
 ### 🛠️ Atelier 5·b — Requêtes, relations, F objects (45 min)
 
-**Consignes** : dans `python manage.py shell`, répondre aux 8 questions **avant de recharger la page** (le binaire doit pouvoir les reformuler).
+**Consignes** : dans `python manage.py shell_plus --ipython`, répondre aux 8 questions **avant de recharger la page** (le binaire doit pouvoir les reformuler).
 
 ```python
 from datetime import date
@@ -450,7 +450,7 @@ f = Formation.objects.get(code='PY-101')
 # Q6 — « COMPLET » en SQL (comparaison de deux colonnes — impossible sans F)
 ????
 
-# Q7 — Le N+1 : combien de requêtes pour les villes, avec et sans select_related ?
+# Q7 — Le Problème des N + 1 requêtes : combien de requêtes pour les villes, avec et sans select_related ?
 ????
 
 # Q8 — L'incrément atomique (à relire demain pour les inscriptions)
@@ -824,7 +824,7 @@ Deux nouveautés à faire nommer :
 | changer le **modèle**, jamais la base à la main | la migration est l'historique ; le modèle, le contrat |
 | `python manage.py sqlmigrate <app> 0001` après chaque `makemigrations` | lire le SQL réel — la base n'est pas une boîte noire |
 | `filter()` / `exclude()` / `get_object_or_404` avant `first()` + `if` | les exceptions sont la contracte du code |
-| `select_related` pour une FK, `prefetch_related` pour une liste | tuer le N+1 avant qu'il ne coûte |
+| `select_related` pour une FK, `prefetch_related` pour une liste | tuer le Problème des N + 1 requêtes avant qu'il ne coûte |
 | toute écriture dérivée d'une valeur lue → **`F`** | `update(nb_inscrits=F('nb_inscrits') + 1)` est atomique |
 | `is_valid()` **avant** `cleaned_data` ; `create(**cleaned_data)` | seule la donnée validée entre en base |
 | `{% csrf_token %}` sur **chaque** `POST` ; jamais sur un `GET` | 403 silencieux sinon |
