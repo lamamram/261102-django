@@ -152,4 +152,5 @@ INTERNAL_IPS = [
 ### configuration du shell
 SHELL_PLUS_PRE_IMPORTS = [
     ('django.forms.models', ('model_to_dict',)),
+    ('django.db', ('connection',))
 ]

@@ -18,7 +18,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gesti.settings')
 django.setup()
 
 # à importer après avoir utiliser django !!!
-from catalog.models import Client, Competence, Contrat, Formation, Session
+from catalog.models import Client, Competence, Contrat, Formation, Intervention
 
 COMPETENCES = ['Django', 'ORM', 'Templates', 'Formulaires']
 
@@ -30,7 +30,7 @@ FORMATIONS = [
 ]
 
 # numéro, code formation, début, fin, ville, capacité, inscrits, statut
-SESSIONS = [
+INTERVENTIONS = [
     ('PY-101-2612', 'PY-101', date(2026, 12, 1), date(2026, 12, 3),  'Paris', 12, 7, 'A'),
     ('PY-102-2601', 'PY-102', date(2027, 1, 12), date(2027, 1, 13),  'Lyon',   8, 8, 'A'),  # complet
     ('DA-201-2611', 'DA-201', date(2026, 11, 9), date(2026, 11, 13), 'Paris', 10, 3, 'E'),
@@ -59,12 +59,47 @@ def seed_formations():
         # avec les ids liés au noms de compétence de la source donnée
         #    --------------------------------------- WHERE  nom IN ("django", "ORM")
         formation.competences.set(Competence.objects.filter(nom__in=comps))
-    
+
+def seed_interventions():
+    for numero, code, d_debut, d_fin, ville, capacite, inscrits, statut in INTERVENTIONS:
+        Intervention.objects.update_or_create(
+            numero=numero,
+            defaults={
+                'formation': Formation.objects.get(code=code),
+                'date_debut': d_debut, 'date_fin': d_fin, 'ville': ville,
+                'capacite': capacite, 'nb_inscrits': inscrits, 'statut': statut,
+            },
+        )
+
+def seed_clients_contrats():
+    client, _ = Client.objects.get_or_create(
+        email='m.dupont@acme.fr',
+        defaults={'prenom': 'Marie', 'nom': 'Dupont', 'societe': 'Acme'},
+    )
+    Contrat.objects.get_or_create(
+        numero='CT-2026-011',
+        defaults={
+            'titre': 'Contrat PY-102 — Acme',
+            'client': client,
+            'montant_ht': 2490.00,
+            'date_signature': date(2026, 10, 15),
+        },
+    )
+
 # transforme le script en transaction (tout ou rien)
 @transaction.atomic
 def run():
     seed_competences()
     seed_formations()
+    seed_interventions()
+    seed_clients_contrats()
+    print(
+        f'Seed OK — {Competence.objects.count()} compétences, '
+        f'{Formation.objects.count()} formations, '
+        f'{Intervention.objects.count()} interventions, '
+        f'{Client.objects.count()} client(s), '
+        f'{Contrat.objects.count()} contrat(s).'
+    )
 
 if __name__ == "__main__":
     run()

@@ -58,8 +58,8 @@ class Formation(models.Model):
         return f'{self.code} - {self.nom}'
 
 
-class Session(models.Model):
-    """Une session : une formation planifiée à des dates, dans une ville, avec une capacité."""
+class Intervention(models.Model):
+    """Une intervention : une formation planifiée à des dates, dans une ville, avec une capacité."""
 
     STATUS = [
         ("A", "à venir"),
@@ -78,21 +78,21 @@ class Session(models.Model):
     statut = models.CharField('statut', max_length=1, default="A", choices=STATUS)
 
 
-    ### relation One to Many (une session est liée à UNE formation mais une formation est liée à PLUSIEURS session)
+    ### relation One to Many (une intervention est liée à UNE formation mais une formation est liée à PLUSIEURS intervention)
     formation = models.ForeignKey(
         Formation,
         verbose_name='formation',
         null=True,
         # on_delete = SET_NULL: si l'objet reférencée (formation) est supprimée ==> on mais NULL 
-        # dans le champs formation est mis à null ET l'objet session est préservée
-        # on_delete = CASCADE: l'inverse, si formation supprimée ==> sessions supprimées
+        # dans le champs formation est mis à null ET l'objet intervention est préservée
+        # on_delete = CASCADE: l'inverse, si formation supprimée ==> interventions supprimées
 
         on_delete=models.SET_NULL,
-        related_name="sessions"
+        related_name="interventions"
     )
 
     class Meta:
-        verbose_name = 'session'
+        verbose_name = 'intervention'
         ordering = ['date_debut']
 
     def __str__(self):
