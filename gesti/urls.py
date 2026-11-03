@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 # pas d'import relatif ni absolu car le dossier racine n'est PAS un package
 # import catalog.urls 
+from debug_toolbar.toolbar import debug_toolbar_urls
 
 urlpatterns = [
     # ce chemin permet de consulter les urls de 
@@ -26,7 +27,7 @@ urlpatterns = [
     # TO-DO: générer la liste urls de l'application catalog
     # => catalog/urls.py
     path('', include('catalog.urls')),
-]
+] + debug_toolbar_urls()
 
 # gestion != d'urlpatterns
 # pour le voir ==> DEBUG = False

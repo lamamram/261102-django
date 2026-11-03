@@ -32,7 +32,7 @@ DEBUG = True
 # ajouter des entrées ici en dehors d'un environnement local :127.0.0.1
 # i.e: runserver 0.0.0.0:<port> OU prod
 ALLOWED_HOSTS = [
-    "*"
+    # "*"
 ]
 
 
@@ -61,6 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'gesti.urls'
@@ -136,3 +137,14 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+#### utilisation de la barre de debug
+#pip install django-debug-toolbar
+# INSTALLED_APPS =>
+# MIDDLEWARES =>
+# project/urls.py urlpatterns[] + debug_toolbar_urls() 
+# INTERNAL_IPS =>  comme restriction supplémentaire
+INTERNAL_IPS = [
+    "127.0.0.1",
+]

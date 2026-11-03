@@ -80,12 +80,12 @@ class Session(models.Model):
     ### relation One to Many (une session est liée à UNE formation mais une formation est liée à PLUSIEURS session)
     formation = models.ForeignKey(
         Formation,
-        verbose_name='formation'
+        verbose_name='formation',
         # on_delete = SET_NULL: si l'objet reférencée (formation) est supprimée ==> on mais NULL 
         # dans le champs formation est mis à null ET l'objet session est préservée
         # on_delete = CASCADE: l'inverse, si formation supprimée ==> sessions supprimées
 
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         related_name="sessions"
     )
 
