@@ -522,6 +522,7 @@ str(qs.query) # voir le SQL généré par ce QuerySet
 reset_queries() # réinitialise le compteur de requêtes SQL
 ```
 
+#### les lookups
 
 **Le vocabulaire des lookups** (`__…`) — l'équivalent Python des `WHERE` :
 
