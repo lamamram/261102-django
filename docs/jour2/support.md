@@ -915,7 +915,7 @@ form = NouveauClientForm()        form = NouveauClientForm(request.POST)
 (gabarit vierge)                  form.is_valid()
      │                                │
      ▼                                ├─ False → le formulaire est rendu **re-rempli**
-form_client.html                   │            avec form.errors
+form.html                   │            avec form.errors
      │                              └─ True  →  Client.objects.create(**form.cleaned_data)
      ▼                                        → redirect('catalog:clients')  (302)
 navigateur
@@ -938,7 +938,7 @@ def nouveau_client(request):
             return redirect('catalog:clients')
     else:
         form = NouveauClientForm()          # formulaire vierge
-    return render(request, 'catalog/form_client.html', {'form': form})
+    return render(request, 'catalog/form.html', {'form': form})
 ```
 
 Trois choses à pointer du doigt dans ces 10 lignes :
@@ -962,7 +962,7 @@ path('clients/nouveau/',      views.nouveau_client,  name='nouveau-client'),
 
 > ⚠️ Rappel J1 (piège n°2) : `clients/<int:pk>/` placé **avant** `clients/nouveau/` avalerait « nouveau » comme pk — le plus spécifique d'abord.
 
-**`catalog/templates/catalog/form_client.html`** — le formulaire est **rendu par Django** : on ne réécrit pas les `<input>` :
+**`catalog/templates/catalog/form.html`** — le formulaire est **rendu par Django** : on ne réécrit pas les `<input>` :
 
 ```html
 <section class="formulaire">
@@ -1110,7 +1110,7 @@ Deux nouveautés à faire nommer :
         ├── base.html           # nav + lien « Clients »
         ├── liste_formations.html   # 1 ligne changée : forloop.counter0 → formation.pk
         ├── detail_formation.html   # + bloc « Interventions à venir »
-        ├── form_client.html    # ← NOUVEAU
+        ├── form.html    # ← NOUVEAU
         ├── liste_clients.html  # ← NOUVEAU
         ├── 404.html            # inchangés
         └── 500.html
