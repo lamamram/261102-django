@@ -30,7 +30,7 @@
                 <td>
                     {# catalog:xxxx  est lié à la variable app_name="catalog" de urls.py #}
                     <a class="lien-nom"
-                       href="{% url 'catalog:detail-formation' formation.id %}">
+                       href="{% url 'catalog:detail-formation' formation.pk %}">
                        {{ formation.nom|title }}
                     </a>
                     {% if formation.nouveaute %}

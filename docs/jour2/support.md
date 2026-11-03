@@ -552,7 +552,27 @@ C'est le moment de **rebrancher** les vues. Comparer à gauche (J1) / à droite 
 
 ```python
 # catalog/views.py — extrait J2
-???
+def liste_formations(request: HttpRequest) -> HttpResponse:
+    """
+    liste des formations
+    utilise render, qui injecte le contexte dans un fichier HTML "template"
+    les templates doivent être insérés dans <app>/templates/<app>/<xxxx>.html
+    """
+    formations = Formation.objects.all()
+    return render(request, "catalog/liste_formations.html" , {"formations": formations})
+
+def detail_formation(request: HttpRequest, pk: int) -> HttpResponse:
+    """
+    détail d'une formation indexée par un id, par défaut l'indice de la liste
+    """
+    # prefetch_related: 1 requête supplémentaire par relation (M2M ou FK inverse), jointure faite en Python
+    formation = get_object_or_404(
+        Formation.objects.prefetch_related("competences"),
+        pk=pk,
+    )
+    competences = formation.competences.all()
+
+    return render(request, "catalog/detail_formation.html" , {"formation": formation, "competences": competences})
 ```
 
 ```python
@@ -571,7 +591,7 @@ def detail_formation(request, pk):
 
 ```diff
 - href="{% url 'catalog:detail-formation' forloop.counter0 %}"
-???
++ href={% url 'catalog:detail-formation' formation.pk %}
 ```
 
 C'est **la** ligne pédagogique de la journée : au J1, on n'avait pas d'identifiant stable (une liste en mémoire) ; on a « triché » avec l'index de boucle. Avec l'ORM, chaque formation a un `pk` — l'URL pointe sur **l'objet**, pas sur sa position. Tout le reste du gabarit (blocs, filtres, boucle `{% empty %}`) est **inchangé**.
