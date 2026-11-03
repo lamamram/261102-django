@@ -22,9 +22,9 @@
 
 ### Livrable de la journée
 
-- 5 modèles : `Competence`, `Formation`, `Session`, `Client`, `Contrat` (héritage) ;
+- 5 modèles : `Competence`, `Formation`, `Intervention`, `Client`, `Contrat` (héritage) ;
 - migrations appliquées + base SQLite peuplée via un script de seed ;
-- pages catalogue et détail branchées sur l'ORM (la fiche détail gagne ses **sessions à venir**) ;
+- pages catalogue et détail branchées sur l'ORM (la fiche détail gagne ses **interventions à venir**) ;
 - formulaire « Nouveau client » validé côté serveur + page liste des clients avec recherche ;
 - les 3 pages du jour 1 toujours accessibles, avec **les mêmes URLs**.
 
@@ -86,14 +86,14 @@ Le vocabulaire des relations, tel qu'on le verra écrit dans `models.py` :
 
 | Relation | Entre | Déclarée par | Suppression de la source |
 |---|---|---|---|
-| **1 — N** | `Formation` → `Session` | `ForeignKey` dans `Session` | `CASCADE` : les sessions suivent la formation |
+| **1 — N** | `Formation` → `Intervention` | `ForeignKey` dans `Intervention` | `CASCADE` : les interventions suivent la formation |
 | **1 — N** | `Client` → `Contrat` | `ForeignKey` dans `Contrat` | `PROTECT` : on ne supprime pas un client qui a des contrats |
 | **N — M** | `Formation` ↔ `Competence` | `ManyToManyField` dans `Formation` | table intermédiaire `formation_competences` |
 | **héritage** | `Document` (abstrait) → `Contrat` | `Meta: abstract = True` | aucune table pour `Document` |
 
-À noter : la relation **Client ↔ Session** n'est **pas** encore modélisée. On la laissera volontairement en blanc : le jour 3, elle deviendra le modèle `Inscription` (avec date, statut, montant) — c'est la démonstration que **ajouter une entité métier, c'est ajouter un modèle**, pas refaire le site.
+À noter : la relation **Client ↔ Intervention** n'est **pas** encore modélisée. On la laissera volontairement en blanc : le jour 3, elle deviendra le modèle `Inscription` (avec date, statut, montant) — c'est la démonstration que **ajouter une entité métier, c'est ajouter un modèle**, pas refaire le site.
 
-> 💡 **Choix pédagogique** : `Session.nb_inscrits` est un **compteur stocké** (et non le `COUNT` d'une table d'inscriptions) car celle-ci n'existe pas encore. C'est exactement le bon support pour les **F objects** : `F('capacite') - F('nb_inscrits')`. Le jour 3, le compteur sera maintenu par les vues d'inscription.
+> 💡 **Choix pédagogique** : `Intervention.nb_inscrits` est un **compteur stocké** (et non le `COUNT` d'une table d'inscriptions) car celle-ci n'existe pas encore. C'est exactement le bon support pour les **F objects** : `F('capacite') - F('nb_inscrits')`. Le jour 3, le compteur sera maintenu par les vues d'inscription.
 
 ### 5.3. `catalog/models.py` — le code de référence
 
@@ -158,8 +158,8 @@ class Formation(models.Model):
         return f'{self.code} - {self.nom}'
 
 
-class Session(models.Model):
-    """Une session : une formation planifiée à des dates, dans une ville, avec une capacité."""
+class Intervention(models.Model):
+    """Une intervention : une formation planifiée à des dates, dans une ville, avec une capacité."""
 
     STATUS = [
         ("A", "à venir"),
@@ -178,21 +178,21 @@ class Session(models.Model):
     statut = models.CharField('statut', max_length=1, default="A", choices=STATUS)
 
 
-    ### relation One to Many (une session est liée à UNE formation mais une formation est liée à PLUSIEURS session)
+    ### relation One to Many (une intervention est liée à UNE formation mais une formation est liée à PLUSIEURS intervention)
     formation = models.ForeignKey(
         Formation,
         verbose_name='formation',
         null=True,
         # on_delete = SET_NULL: si l'objet reférencée (formation) est supprimée ==> on mais NULL 
-        # dans le champs formation est mis à null ET l'objet session est préservée
-        # on_delete = CASCADE: l'inverse, si formation supprimée ==> sessions supprimées
+        # dans le champs formation est mis à null ET l'objet intervention est préservée
+        # on_delete = CASCADE: l'inverse, si formation supprimée ==> interventions supprimées
 
         on_delete=models.SET_NULL,
-        related_name="sessions"
+        related_name="interventions"
     )
 
     class Meta:
-        verbose_name = 'session'
+        verbose_name = 'intervention'
         ordering = ['date_debut']
 
     def __str__(self):
@@ -265,10 +265,10 @@ class Contrat(Document):
 
 | `on_delete` | Signification | Usage dans GestiFormation |
 |---|---|---|
-| `CASCADE` | supprime les objets liés | `Session.formation` : pas de formation → pas de session |
+| `CASCADE` | supprime les objets liés | `Intervention.formation` : pas de formation → pas de intervention |
 | `PROTECT` | **empêche** la suppression | `Contrat.client` : un client qui a signé un contrat ne se supprime pas |
 | `RESTRICT` | idem, mais via la contrainte SQL | variante de `PROTECT` |
-| `SET_NULL` | met la FK à `NULL` (exige `null=True`) | ex. `Session.formateur` quand le formateur part |
+| `SET_NULL` | met la FK à `NULL` (exige `null=True`) | ex. `Intervention.formateur` quand le formateur part |
 
 Oublier `on_delete` sur une `ForeignKey` : erreur — depuis Django 2.0 c'est **obligatoire** (avant, défaut silencieux `CASCADE`). C'est le genre de choix qu'on explique en meeting, pas dans un ticket.
 
@@ -283,7 +283,7 @@ Oublier `on_delete` sur une `ForeignKey` : erreur — depuis Django 2.0 c'est **
 | `default=…` | valeur par défaut **à l'insertion** | `default='Paris'` |
 | `auto_now_add=True` | horodaté à la création, non éditable | `date_creation` |
 | `choices=STATUTS` | liste fermée + `get_<champ>_display()` | admin J3, gabarits |
-| `related_name='sessions'` | navigation inverse : `formation.sessions.all()` | §5.6 |
+| `related_name='interventions'` | navigation inverse : `formation.interventions.all()` | §5.6 |
 | `Meta.ordering` | tri par défaut de **tout** QuerySet sans `order_by` | `Formation.objects.all()` déjà trié par `code` |
 | `__str__` | affichage de l'objet (admin, `repr`) | partout |
 
@@ -296,8 +296,8 @@ Oublier `on_delete` sur une `ForeignKey` : erreur — depuis Django 2.0 c'est **
 3. `python manage.py migrate` ;
 4. `python manage.py sqlmigrate catalog 0001` → **lire le vrai SQL généré** (colonne `varchar(12)`, `UNIQUE`, `DECIMAL(10,2)`, FK…) ;
 5. Coller `catalog/seed.py`, l'exécuter: `python -m catalog.seed` ;
-6. `python manage.py shell_plus` → `list(Formation.objects.all())`, `Session.objects.first().formation` ;
-7. `git add -A && git commit -m "J2 : modèles Formation/Session/Client/Competence/Contrat + seed"`.
+6. `python manage.py shell_plus` → `list(Formation.objects.all())`, `Intervention.objects.first().formation` ;
+7. `git add -A && git commit -m "J2 : modèles Formation/Intervention/Client/Competence/Contrat + seed"`.
 
 **`catalog/seed.py` — peupler la base de démonstration** :
 
@@ -309,7 +309,112 @@ Usage (depuis la racine du projet, après `python manage.py migrate`) :
 
 Idempotent : peut être relancé sans dupliquer les données.
 """
-???
+"""Peupler la base SQLite de démonstration.
+
+Usage (depuis la racine du projet, après `python manage.py migrate`) :
+    python -m catalog.seed
+
+Idempotent : peut être relancé sans dupliquer les données.
+"""
+from datetime import date
+import os
+from django.db import transaction
+
+# django.core.exceptions.ImproperlyConfigured: 
+# Requested setting INSTALLED_APPS, but settings are not configured. 
+# You must either define the environment variable 
+# DJANGO_SETTINGS_MODULE or call settings.configure() before accessing settings.
+import django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gesti.settings')
+django.setup()
+
+# à importer après avoir utiliser django !!!
+from catalog.models import Client, Competence, Contrat, Formation, Intervention
+
+COMPETENCES = ['Django', 'ORM', 'Templates', 'Formulaires']
+
+# code, nom, public, durée (j), prix HT, nouveauté, compétences
+FORMATIONS = [
+    ('PY-101', 'Django : initiation',        'Développeurs', 3, 1890.00, False, ['Django', 'Templates']),
+    ('PY-102', 'Django : approfondissement', 'Développeurs', 2, 2490.00, False, ['Django', 'ORM']),
+    ('DA-201', 'Data analysis with Python',  'Analystes',    5, 2190.00, True,  ['ORM']),
+]
+
+# numéro, code formation, début, fin, ville, capacité, inscrits, statut
+INTERVENTIONS = [
+    ('PY-101-2612', 'PY-101', date(2026, 12, 1), date(2026, 12, 3),  'Paris', 12, 7, 'A'),
+    ('PY-102-2601', 'PY-102', date(2027, 1, 12), date(2027, 1, 13),  'Lyon',   8, 8, 'A'),  # complet
+    ('DA-201-2611', 'DA-201', date(2026, 11, 9), date(2026, 11, 13), 'Paris', 10, 3, 'E'),
+]
+
+
+def seed_competences():
+    for nom in COMPETENCES:
+        # create ==> INSERT ==> non idempotent
+        # get ==> SELECT mais lève une exc si n'existe pas => non idempotent
+        # get_or_create ==> retourne ou créer => idempotent 
+        Competence.objects.get_or_create(nom=nom)
+
+def seed_formations():
+    for code, nom, public, duree, prix, nouveaute, comps in FORMATIONS:
+        formation, _ = Formation.objects.update_or_create(
+            # WHERE
+            code=code,
+            # SET
+            defaults={
+                'nom': nom, 'public': public, 'duree': duree,
+                'prix': prix, 'nouveaute': nouveaute,
+            },
+        )
+        # j'alimente la table de correspondance entre formation <-> competences
+        # avec les ids liés au noms de compétence de la source donnée
+        #    --------------------------------------- WHERE  nom IN ("django", "ORM")
+        formation.competences.set(Competence.objects.filter(nom__in=comps))
+
+def seed_interventions():
+    for numero, code, d_debut, d_fin, ville, capacite, inscrits, statut in INTERVENTIONS:
+        Intervention.objects.update_or_create(
+            numero=numero,
+            defaults={
+                'formation': Formation.objects.get(code=code),
+                'date_debut': d_debut, 'date_fin': d_fin, 'ville': ville,
+                'capacite': capacite, 'nb_inscrits': inscrits, 'statut': statut,
+            },
+        )
+
+def seed_clients_contrats():
+    client, _ = Client.objects.get_or_create(
+        email='m.dupont@acme.fr',
+        defaults={'prenom': 'Marie', 'nom': 'Dupont', 'societe': 'Acme'},
+    )
+    Contrat.objects.get_or_create(
+        numero='CT-2026-011',
+        defaults={
+            'titre': 'Contrat PY-102 — Acme',
+            'client': client,
+            'montant_ht': 2490.00,
+            'date_signature': date(2026, 10, 15),
+        },
+    )
+
+# transforme le script en transaction (tout ou rien)
+@transaction.atomic
+def run():
+    seed_competences()
+    seed_formations()
+    seed_interventions()
+    seed_clients_contrats()
+    print(
+        f'Seed OK — {Competence.objects.count()} compétences, '
+        f'{Formation.objects.count()} formations, '
+        f'{Intervention.objects.count()} interventions, '
+        f'{Client.objects.count()} client(s), '
+        f'{Contrat.objects.count()} contrat(s).'
+    )
+
+if __name__ == "__main__":
+    run()
+
 ```
 
 > 💡 **`get_or_create` / `update_or_create`** : le trio d'« upsert » de l'ORM — `get_or_create` (créer si absent), `update_or_create` (créer **et** mettre à jour), `bulk_create` (insérer une liste sans `SELECT` préalable). Les scripts de seed, de démo et de tests (J4) en vivent.
@@ -357,7 +462,7 @@ class Migration(migrations.Migration):
             options={'verbose_name': 'formation', 'ordering': ['code']},
         ),
         migrations.CreateModel(
-            name='Session',
+            name='Intervention',
             fields=[
                 …
                 ('formation', models.ForeignKey(on_delete=models.CASCADE,
@@ -374,7 +479,7 @@ class Migration(migrations.Migration):
 
 Trois choses à faire remarquer :
 
-1. **l'ordre compte** : `CreateModel(Session)` après `CreateModel(Formation)` — Django a résolu la dépendance FK ;
+1. **l'ordre compte** : `CreateModel(Intervention)` après `CreateModel(Formation)` — Django a résolu la dépendance FK ;
 2. **le M2M est un `AddField`** posé *après* les deux tables (il a besoin de la table intermédiaire) ;
 3. `verbose_name` et `ordering` sont **dans la migration** (`options=…`) — ce n'est pas du décor.
 
@@ -423,15 +528,15 @@ Formation.objects.order_by('duree').first()                # 1er élément ou No
 Formation.objects.get(code='PY-101')                        # exactement un — sinon :
 #   → DoesNotExist (0 résultat)  ou  MultipleObjectsReturned (>1)
 
-Session.objects.filter(statut='A').update(ville='Bordeaux')  # UPDATE en masse — PAS d'instance en mémoire
-Session.objects.filter(statut='C').delete()                  # DELETE en masse
+Intervention.objects.filter(statut='A').update(ville='Bordeaux')  # UPDATE en masse — PAS d'instance en mémoire
+Intervention.objects.filter(statut='C').delete()                  # DELETE en masse
 ```
 
 > ⚠️ **Piège n°14 — `.first()` vs `.get()`** : `.first()` renvoie `None` (pas d'exception) quand c'est vide ; `.get()` **lève**. Pour « trouver un client par son e-mail » dans une vue, on choisit `.get()` + gestion `DoesNotExist` — ou `get_object_or_404` (cf. §5.5.1), pas `if obj is None`. L'exception, c'est la contracte du code.
 
 > ⚠️ **Piège n°15 — `values()` / `values_list()`** : ils renverraient des **dicts / tuples**, pas des instances. C'est le bon outil pour une API JSON légère ou un agrégat — mais dans un gabarit, `{{ formation.nom }}` casserait, car il n'y a plus d'objet. En J2, on les réserve aux besoins explicites.
 
-> 💡 **`exclude()` = `NOT`** : `Session.objects.exclude(statut='C')` ≡ `filter(statut__in=['A', 'E'])`. Préférer `exclude` quand la liste blanche est longue ou instable.
+> 💡 **`exclude()` = `NOT`** : `Intervention.objects.exclude(statut='C')` ≡ `filter(statut__in=['A', 'E'])`. Préférer `exclude` quand la liste blanche est longue ou instable.
 
 ### 5.5.1 — Revoir les pages du jour 1 avec l'ORM
 
@@ -473,15 +578,15 @@ Une fois les objets créés, l'ORM les **navigue** : les relations déclarées d
 
 | Navigation | Code | SQL cachée |
 |---|---|---|
-| côté N → côté 1 (via la FK) | `session.formation` | lecture de la colonne `formation_id` + accès à l'objet |
-| côté 1 → côté N (`related_name`) | `formation.sessions.all()` | `SELECT … WHERE formation_id = 3` |
+| côté N → côté 1 (via la FK) | `intervention.formation` | lecture de la colonne `formation_id` + accès à l'objet |
+| côté 1 → côté N (`related_name`) | `formation.interventions.all()` | `SELECT … WHERE formation_id = 3` |
 | `ManyToManyField` | `formation.competences.all()` | `JOIN formation_competences` |
 | inverse du M2M | `competence.formations.all()` | idem, l'autre côté |
-| **filtrer à travers** | `Session.objects.filter(formation__code='PY-101')` | `JOIN catalog_formation ON …` |
+| **filtrer à travers** | `Intervention.objects.filter(formation__code='PY-101')` | `JOIN catalog_formation ON …` |
 
 **Le double-underscore `__` = « à travers la relation ».** Il enchaîne : `Client.objects.filter(contrats__montant_ht__gte=2000)` lit *« les clients qui ont au moins un contrat de ≥ 2 000 € »* — une phrase métier en une expression.
 
-**La fiche détail gagne ses « sessions à venir »** (livrable du jour) — le contexte change, le gabarit s'étend d'un bloc :
+**La fiche détail gagne ses « interventions à venir »** (livrable du jour) — le contexte change, le gabarit s'étend d'un bloc :
 
 ```python
 # catalog/views.py — extrait J2
@@ -490,38 +595,38 @@ Une fois les objets créés, l'ORM les **navigue** : les relations déclarées d
 
 ```html
 {# catalog/detail_formation.html — section ajoutée avant le footer d'action #}
-<section class="sessions">
-    <h2>Sessions à venir</h2>
-    {% for session in sessions %}
+<section class="interventions">
+    <h2>Interventions à venir</h2>
+    {% for intervention in interventions %}
         <p>
-            <code>{{ session.numero }}</code> —
-            du {{ session.date_debut|??? }} au {{ session.date_fin|??? }}
-            à {{ session.ville }}
-            ({{ session.capacite }} places)
+            <code>{{ intervention.numero }}</code> —
+            du {{ intervention.date_debut|??? }} au {{ intervention.date_fin|??? }}
+            à {{ intervention.ville }}
+            ({{ intervention.capacite }} places)
         </p>
     {% empty %}
-        <p class="vide">Aucune session planifiée pour cette formation.</p>
+        <p class="vide">Aucune intervention planifiée pour cette formation.</p>
     {% endfor %}
 </section>
 ```
 
-> 💡 **`date_debut` est un `date` du stdlib** — le filtre `|date:"d/m/Y"` du jour 1 s'applique tel quel. Les types Python des champs (`DateField` → `datetime.date`, `DecimalField` → `decimal.Decimal`) sont ceux qui s'affichent dans le gabarit : `{{ session.prix|floatformat:2 }}` continue de marcher.
+> 💡 **`date_debut` est un `date` du stdlib** — le filtre `|date:"d/m/Y"` du jour 1 s'applique tel quel. Les types Python des champs (`DateField` → `datetime.date`, `DecimalField` → `decimal.Decimal`) sont ceux qui s'affichent dans le gabarit : `{{ intervention.prix|floatformat:2 }}` continue de marcher.
 
-**Le Problème des N + 1 requêtes — le premier vrai coût de la base.** Ce bloc d'un gabarit « sessions d'une formation » :
-
-```python
-for session in formation.sessions.all():   # 1 requête
-    print(session.ville)                    # 0 requête supplémentaire
-```
-
-Par contre, si le gabarit fait `{{ session.formation.nom }}` **dans la boucle** :
+**Le Problème des N + 1 requêtes — le premier vrai coût de la base.** Ce bloc d'un gabarit « interventions d'une formation » :
 
 ```python
-for session in Session.objects.all():      # 1 requête : les sessions
-    print(session.formation.nom)           # + 1 requête par itération !
+for intervention in formation.interventions.all():   # 1 requête
+    print(intervention.ville)                    # 0 requête supplémentaire
 ```
 
-N sessions → **1 + N requêtes**. Le navigateur ne voit rien, mais chaque itération fait un aller-retour base. C'est le défaut n°1 des applications Django qui « ralentissent sans raison ».
+Par contre, si le gabarit fait `{{ intervention.formation.nom }}` **dans la boucle** :
+
+```python
+for intervention in Intervention.objects.all():      # 1 requête : les interventions
+    print(intervention.formation.nom)           # + 1 requête par itération !
+```
+
+N interventions → **1 + N requêtes**. Le navigateur ne voit rien, mais chaque itération fait un aller-retour base. C'est le défaut n°1 des applications Django qui « ralentissent sans raison ».
 
 **Les deux correctifs** :
 
@@ -529,18 +634,18 @@ N sessions → **1 + N requêtes**. Le navigateur ne voit rien, mais chaque ité
 |---|---|---|
 | Pour | `ForeignKey` (côté N → 1) | `related_name` (1 → N), `ManyToManyField` |
 | Mécanisme | **1** SQL avec `JOIN` | **2** SQL, assemblage en Python (en mémoire) |
-| Exemple GestiFormation | `Session.objects.select_related('formation')` | `Formation.objects.prefetch_related('competences', 'sessions')` |
+| Exemple GestiFormation | `Intervention.objects.select_related('formation')` | `Formation.objects.prefetch_related('competences', 'interventions')` |
 | Limite | une seule table à la fois (enchaînable : `select_related('formation', …)`) | aucun JOIN — c'est pour ça que ça marche sur le M2M |
 
-> ⚠️ **Piège n°16 — confondre les deux** : `select_related('competences')` sur une `Formation` ne marche pas — le M2M n'a **pas** de colonne à joindre, c'est la table intermédiaire. Symétriquement, `prefetch_related('formation')` sur `Session` « passe » mais génère 2 requêtes là où 1 suffirait. La règle à retenir : **`select_related` = FK, `prefetch_related` = la liste (inverse ou M2M)**.
+> ⚠️ **Piège n°16 — confondre les deux** : `select_related('competences')` sur une `Formation` ne marche pas — le M2M n'a **pas** de colonne à joindre, c'est la table intermédiaire. Symétriquement, `prefetch_related('formation')` sur `Intervention` « passe » mais génère 2 requêtes là où 1 suffirait. La règle à retenir : **`select_related` = FK, `prefetch_related` = la liste (inverse ou M2M)**.
 
-> 💡 **Mesurer avant d'optimiser.** En dev, le bas de la page de debug de Django affiche les requêtes exécutées — c'est là qu'on « voit » le Problème des N + 1 requêtes (30 lignes de `SELECT * FROM catalog_session …` identiques). En shell : `from django.db import connection; print(len(connection.queries))` avant / après le bloc suspect.
+> 💡 **Mesurer avant d'optimiser.** En dev, le bas de la page de debug de Django affiche les requêtes exécutées — c'est là qu'on « voit » le Problème des N + 1 requêtes (30 lignes de `SELECT * FROM catalog_intervention …` identiques). En shell : `from django.db import connection; print(len(connection.queries))` avant / après le bloc suspect.
 
 ---
 
 ### 5.7. F objects et `annotate` — la logique calculée **dans** la base
 
-`Session.places_dispo` est calculé en Python. Mais la valeur est recalculée **N fois côté Python, après le chargement des lignes**, et on ne peut **ni filtrer, ni trier** dessus. Le **F object** (`django.db.models.F`) est une **promesse de valeur** : *« utilise la valeur de cette colonne au moment où le SQL est construite »*.
+`Intervention.places_dispo` est calculé en Python. Mais la valeur est recalculée **N fois côté Python, après le chargement des lignes**, et on ne peut **ni filtrer, ni trier** dessus. Le **F object** (`django.db.models.F`) est une **promesse de valeur** : *« utilise la valeur de cette colonne au moment où le SQL est construite »*.
 
 | Situation | Sans F | Avec F |
 |---|---|---|
@@ -548,7 +653,7 @@ N sessions → **1 + N requêtes**. Le navigateur ne voit rien, mais chaque ité
 | un champ **calculé** (filtrable, triable) | propriété Python, hors SQL | `.annotate(places=F('capacite') - F('nb_inscrits'))` |
 | **incrémenter** sans race condition | `update(nb_inscrits=s.nb_inscrits + 1)` — lit puis écrit, deux instants | `update(nb_inscrits=F('nb_inscrits') + 1)` — **atome SQL** |
 
-**L'exemple de la journée** — « sessions ouvertes, les plus pleines d'abord » :
+**L'exemple de la journée** — « interventions ouvertes, les plus pleines d'abord » :
 
 ```python
 from django.db.models import F
@@ -560,23 +665,23 @@ Ce que la base reçoit, en une passe :
 
 ```sql
 SELECT …, (capacite - nb_inscrits) AS places
-FROM catalog_session
-JOIN catalog_formation ON (catalog_session.formation_id = catalog_formation.id)
+FROM catalog_intervention
+JOIN catalog_formation ON (catalog_intervention.formation_id = catalog_formation.id)
 WHERE statut = 'A' AND (capacite - nb_inscrits) > 0
 ORDER BY places;
 ```
 
-L'attribut annoté existe **sur les instances de ce QuerySet** : `session.places` s'affiche dans le gabarit, et `session.filter(…)` / `.order_by('places')` restent possibles — car `places` est une **vraie colonne calculée**, pas un `@property`.
+L'attribut annoté existe **sur les instances de ce QuerySet** : `intervention.places` s'affiche dans le gabarit, et `intervention.filter(…)` / `.order_by('places')` restent possibles — car `places` est une **vraie colonne calculée**, pas un `@property`.
 
 Le F traverse aussi les relations (`F('formation__code')`) et s'écrit dans `values()`, `extra()`, les agrégats. Les agrégats eux-mêmes (`Count`, `Sum`, `Avg`, `Max`) arrivent le jour 4 avec les tests — le jour 3, la ligne d'inscription fera exactement :
 
 ```python
-Session.objects.filter(pk=session.pk).update(nb_inscrits=F('nb_inscrits') + 1)
+Intervention.objects.filter(pk=intervention.pk).update(nb_inscrits=F('nb_inscrits') + 1)
 ```
 
-> 💡 **Pourquoi cette ligne plutôt que `session.nb_inscrits += 1 ; session.save()`** : la seconde version **lit** la valeur (en mémoire), **l'incrémente en Python**, **réécrit**. Deux stagiaires (ou deux nœuds) qui inscrivent en même temps écrasent l'un l'autre — c'est une *race condition*. La version F est **une seule instruction SQL**, que la base exécute de façon atomique. C'est le premier « réflexe pro » du cours : **toute mise à jour dérivée d'une valeur lue passe par F**.
+> 💡 **Pourquoi cette ligne plutôt que `intervention.nb_inscrits += 1 ; intervention.save()`** : la seconde version **lit** la valeur (en mémoire), **l'incrémente en Python**, **réécrit**. Deux stagiaires (ou deux nœuds) qui inscrivent en même temps écrasent l'un l'autre — c'est une *race condition*. La version F est **une seule instruction SQL**, que la base exécute de façon atomique. C'est le premier « réflexe pro » du cours : **toute mise à jour dérivée d'une valeur lue passe par F**.
 
-> ⚠️ **Piège n°17 — l'attribut annoté n'existe que sur le QuerySet qui l'a ajouté** : `Session.objects.filter(places__gt=0)` **sans** l'`annotate` → `FieldError: Cannot resolve keyword 'places'` ; et `Session.objects.first().places` → `AttributeError`. L'annotation est une propriété du **QuerySet**, pas de la table.
+> ⚠️ **Piège n°17 — l'attribut annoté n'existe que sur le QuerySet qui l'a ajouté** : `Intervention.objects.filter(places__gt=0)` **sans** l'`annotate` → `FieldError: Cannot resolve keyword 'places'` ; et `Intervention.objects.first().places` → `AttributeError`. L'annotation est une propriété du **QuerySet**, pas de la table.
 
 > ⚠️ **Piège n°18 — les `@property` ne vont pas dans le SQL** : `filter(places_dispo__gt=0)` échoue — l'ORM ne connaît que des **champs** et des **annotations**, jamais du code Python. Si un calcul doit être filtrable/triable, il devient une annotation (ou une colonne, si c'est permanent).
 
@@ -591,17 +696,17 @@ from django.db.models import F
 # Q1 — Les 3 formations, tri par code (Meta.ordering fait le travail)
 ????
 
-# Q2 — La formation PY-101 et ses sessions à venir (relation directe)
+# Q2 — La formation PY-101 et ses interventions à venir (relation directe)
 f = Formation.objects.get(code='PY-101')
 ????
 
-# Q3 — Les sessions de la session PY-102 (inverse + lookup)
+# Q3 — Les interventions de la intervention PY-102 (inverse + lookup)
 ????
 
 # Q4 — Clients qui ont un contrat de ≥ 2000 € (traversée)
 ????
 
-# Q5 — Sessions ouvertes, les plus pleines d'abord (F + annotate)
+# Q5 — Interventions ouvertes, les plus pleines d'abord (F + annotate)
 ????
 
 # Q6 — « COMPLET » en SQL (comparaison de deux colonnes — impossible sans F)
@@ -617,11 +722,11 @@ f = Formation.objects.get(code='PY-101')
 **Checklist de fin d'atelier**
 
 - [ ] les 8 questions répondues, le binôme capable de les **reformuler** sans regard ;
-- [ ] `select_related` sur `Session` → **1** requête en base (vérifiée avec `connection.queries`) ;
+- [ ] `select_related` sur `Intervention` → **1** requête en base (vérifiée avec `connection.queries`) ;
 - [ ] la vue `detail_formation` passe sur l'ORM **sans changer l'URL** ;
-- [ ] le bloc « Sessions à venir » est affiché sur `http://127.0.0.1:8000/formations/1/` ;
+- [ ] le bloc « Interventions à venir » est affiché sur `http://127.0.0.1:8000/formations/1/` ;
 - [ ] le stagiaire sait dire pourquoi `.filter(places__gt=0)` exige l'`annotate` ;
-- [ ] `git add -A && git commit -m "J2 : vues ORM + sessions à venir + F objects"` fait.
+- [ ] `git add -A && git commit -m "J2 : vues ORM + interventions à venir + F objects"` fait.
 
 ---
 
@@ -805,7 +910,7 @@ Trois choses à pointer du doigt dans ces 10 lignes :
 2. **`create(**form.cleaned_data)`** — les 5 champs du formulaire sont exactement les 5 colonnes du modèle `Client` : c'est **la** ligne qui justifiera, le jour 3, d'automatiser ce couplage avec un **ModelForm** ;
 3. **`return redirect(…)`** — on ne **ré-affiche pas** un `POST` réussi (re-cliquer sur « Envoyer » ne doit pas créer un doublon) ; on renvoie un **302** vers la liste : le *pattern POST/redirect/GET*.
 
-**CSRF — le token à ne jamais oublier.** Un formulaire `method="post"` **doit** contenir `{% csrf_token %}` ; le middleware `CsrfViewMiddleware` vérifie que la requête vient **d'une page que le navigateur a lui-même reçue** (le token est signé + lié à la session). Sans token → **`403 Forbidden`**, pas d'erreur Python.
+**CSRF — le token à ne jamais oublier.** Un formulaire `method="post"` **doit** contenir `{% csrf_token %}` ; le middleware `CsrfViewMiddleware` vérifie que la requête vient **d'une page que le navigateur a lui-même reçue** (le token est signé + lié à la intervention). Sans token → **`403 Forbidden`**, pas d'erreur Python.
 
 > ⚠️ **Piège n°20 — le formulaire POST sans `{% csrf_token %}`** : la page s'affiche (le `GET` passe), l'envoi **échoue en 403** sans traceback. Message à ancrer : « 403 sur un formulaire = le token manque » (ou le domaine hors `ALLOWED_HOSTS`, cas plus rare). À l'inverse, un formulaire **`GET`** (recherche) n'en a **pas besoin** — il ne modifie rien.
 
@@ -960,14 +1065,14 @@ Deux nouveautés à faire nommer :
     ├── migrations/
     │   ├── __init__.py
     │   └── 0001_initial.py     # ← NOUVEAU — commité, c'est la mémoire du schéma
-    ├── views.py                # ORM : liste, détail (+ sessions à venir), clients, nouveau_client
+    ├── views.py                # ORM : liste, détail (+ interventions à venir), clients, nouveau_client
     ├── urls.py                 # + /clients/, /clients/nouveau/
     ├── admin.py                # vide — demain
     ├── static/css/base.css     # + .formulaire, .champ-erreur, .recherche
     └── templates/catalog/
         ├── base.html           # nav + lien « Clients »
         ├── liste_formations.html   # 1 ligne changée : forloop.counter0 → formation.pk
-        ├── detail_formation.html   # + bloc « Sessions à venir »
+        ├── detail_formation.html   # + bloc « Interventions à venir »
         ├── form_client.html    # ← NOUVEAU
         ├── liste_clients.html  # ← NOUVEAU
         ├── 404.html            # inchangés
@@ -1030,6 +1135,6 @@ python manage.py shell -c "from catalog.models import S; print(S.objects.filter(
 
 # Git
 git add -A && git commit -m "J2 : modèles + migrations + seed"
-git add -A && git commit -m "J2 : vues ORM + sessions à venir"
+git add -A && git commit -m "J2 : vues ORM + interventions à venir"
 git add -A && git commit -m "J2 : formulaire Nouveau client + liste/recherche"
 ```
