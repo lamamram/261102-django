@@ -31,10 +31,10 @@
       <text x="54" y="142">competences  (M2M)</text>
     </g>
 
-    <!-- Session -->
+    <!-- Intervention -->
     <rect x="350" y="60" width="230" height="130" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
     <path d="M350,68 a8,8 0 0 1 8,-8 h214 a8,8 0 0 1 8,8 v18 h-230 z" fill="#4f46e5"/>
-    <text x="465" y="78" text-anchor="middle" font-size="13" font-weight="600" fill="#ffffff">Session</text>
+    <text x="465" y="78" text-anchor="middle" font-size="13" font-weight="600" fill="#ffffff">Intervention</text>
     <g font-size="11" fill="#475569">
       <text x="364" y="106">formation  (FK, CASCADE)</text>
       <text x="364" y="124">numero · statut A / E / C</text>
@@ -62,10 +62,10 @@
     <text x="465" y="308" text-anchor="middle" font-size="13" font-weight="600" fill="#ffffff">Inscription  — nouveau J3</text>
     <g font-size="11" fill="#475569">
       <text x="364" y="336">client  (FK, PROTECT)</text>
-      <text x="364" y="354">session  (FK, PROTECT)</text>
+      <text x="364" y="354">intervention  (FK, PROTECT)</text>
       <text x="364" y="372">statut  P · C · X</text>
       <text x="364" y="390">montant_ht · date_inscription</text>
-      <text x="364" y="414" fill="#0f766e">UNIQUE (client, session)</text>
+      <text x="364" y="414" fill="#0f766e">UNIQUE (client, intervention)</text>
       <text x="364" y="430" fill="#0f766e">   si statut ≠ annulée</text>
       <text x="364" y="448" fill="#0f766e">perm. annuler_inscription</text>
     </g>

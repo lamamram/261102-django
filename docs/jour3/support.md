@@ -17,14 +17,14 @@
 - introduire un nouveau modèle métier (`Inscription`) et en protéger les règles (capacité, doublon) dans une **couche de services** transactionnelle ;
 - configurer l'**administration** : `ModelAdmin`, `list_display`, filtres, recherche, **inlines**, **actions**, champs en lecture seule ;
 - expliquer ce que l'admin **contourne** (vues, formulaires) et comment garder les règles métier à un seul endroit ;
-- mettre en place l'**authentification** : connexion, déconnexion, création de compte, sessions, mots de passe hachés ;
+- mettre en place l'**authentification** : connexion, déconnexion, création de compte, interventions, mots de passe hachés ;
 - protéger les vues (`@login_required`, `@permission_required`) et les gabarits (`user`, `perms`) ;
 - distinguer **permission** (portée sur une table) et **propriété** (portée sur une ligne) et empêcher l'accès aux données d'autrui ;
 - construire des **groupes** (Formateurs, Gestionnaires) et une permission personnalisée.
 
 ### Livrable de la journée
 
-- `Inscription` (modèle + migration + service) et formulaire d'inscription d'un client à une session ;
+- `Inscription` (modèle + migration + service) et formulaire d'inscription d'un client à une intervention ;
 - CRUD des clients par `ModelForm`, avec messages de confirmation et suppression protégée ;
 - administration complète des 6 modèles (inlines, actions, filtres, recherche) ;
 - comptes : connexion, déconnexion, création de compte, page **Mon espace** ;
@@ -50,7 +50,7 @@
 
 ![Schéma des données GestiFormation — jour 3](assets/schema-donnees-j3.svg)
 
-Trois ajouts au schéma du jour 2 : le modèle **`Inscription`** (la relation Client ↔ Session volontairement laissée en blanc hier), le lien **`Client.utilisateur`** (un compte peut être rattaché à un client) et les tables **`auth`** fournies par Django (`User`, `Group`, `Permission`).
+Trois ajouts au schéma du jour 2 : le modèle **`Inscription`** (la relation Client ↔ Intervention volontairement laissée en blanc hier), le lien **`Client.utilisateur`** (un compte peut être rattaché à un client) et les tables **`auth`** fournies par Django (`User`, `Group`, `Permission`).
 
 ---
 
@@ -134,7 +134,7 @@ Trois points à faire nommer :
 
 > ⚠️ **Piège n°23 — oublier `instance=` côté `POST`** : l'affichage est pré-rempli (`ClientForm(instance=client)`), l'envoi crée un doublon (`ClientForm(request.POST)`). Les deux branches du `if` doivent recevoir l'instance.
 
-**Les messages** — le pont entre la vue qui redirige et la page qui s'affiche ensuite. `django.contrib.messages` est déjà installé (middleware + context processor du `settings.py` généré au jour 1). Les messages vivent **dans la session** jusqu'à leur affichage.
+**Les messages** — le pont entre la vue qui redirige et la page qui s'affiche ensuite. `django.contrib.messages` est déjà installé (middleware + context processor du `settings.py` généré au jour 1). Les messages vivent **dans la intervention** jusqu'à leur affichage.
 
 ```html
 {# catalog/base.html — ajout, juste avant {% block contenu %} #}
@@ -287,7 +287,7 @@ path('clients/<int:pk>/modifier/', ???, name='modifier-client'),
 
 ### 7.6. `Inscription` — le modèle manquant
 
-Le jour 2 avait laissé **Client ↔ Session** en blanc, avec un compteur stocké `Session.nb_inscrits`. Voici la relation, enfin modélisée.
+Le jour 2 avait laissé **Client ↔ Intervention** en blanc, avec un compteur stocké `Intervention.nb_inscrits`. Voici la relation, enfin modélisée.
 
 ```python
 # catalog/models.py — ajout J3
@@ -302,7 +302,7 @@ Quatre choix à justifier :
 | Choix | Pourquoi |
 |---|---|
 | table de liaison **explicite** plutôt qu'un `ManyToManyField` | l'inscription a ses propres données (statut, montant, date) |
-| `on_delete=PROTECT` des deux côtés | on ne perd pas l'historique ; supprimer une `Formation` qui a des inscriptions est **bloqué en cascade** (`Formation → Session → Inscription`) |
+| `on_delete=PROTECT` des deux côtés | on ne perd pas l'historique ; supprimer une `Formation` qui a des inscriptions est **bloqué en cascade** (`Formation → Intervention → Inscription`) |
 | `montant_ht` **copié** depuis la formation | le prix d'aujourd'hui ne doit pas réécrire la facture d'hier |
 | `UniqueConstraint` **conditionnelle** | un client peut se réinscrire après une annulation, jamais deux inscriptions actives |
 
@@ -323,7 +323,7 @@ python manage.py migrate
 ????
 ```
 
-C'est le **`F` du jour 2** (§5.7) dans son rôle final. Le filtre `nb_inscrits__lt=F('capacite')` **dans l'`UPDATE`** est la clé : deux requêtes simultanées sur la dernière place s'exécutent l'une après l'autre dans la base ; la seconde trouve `nb_inscrits == capacite`, met à jour **0 ligne**, et lève `SessionComplete`. Avec `if session.places_dispo > 0: …; session.save()`, les deux passeraient.
+C'est le **`F` du jour 2** (§5.7) dans son rôle final. Le filtre `nb_inscrits__lt=F('capacite')` **dans l'`UPDATE`** est la clé : deux requêtes simultanées sur la dernière place s'exécutent l'une après l'autre dans la base ; la seconde trouve `nb_inscrits == capacite`, met à jour **0 ligne**, et lève `InterventionComplete`. Avec `if intervention.places_dispo > 0: …; intervention.save()`, les deux passeraient.
 
 `@transaction.atomic` garantit le *tout ou rien* : si `Inscription.objects.create` échoue (la contrainte d'unicité, par exemple), l'incrément du compteur est **annulé** avec lui.
 
@@ -336,9 +336,9 @@ C'est le **`F` du jour 2** (§5.7) dans son rôle final. Le filtre `nb_inscrits_
 ????
 ```
 
-Deux idées : le **`queryset` d'un champ de choix se restreint dans `__init__`** (seules les sessions ouvertes et non complètes sont proposées — l'annotation `places` du jour 2, réutilisée) ; et **`label_from_instance`** contrôle le texte de chaque option (sans lui, `<select>` affiche `str(session)` = le numéro seul).
+Deux idées : le **`queryset` d'un champ de choix se restreint dans `__init__`** (seules les interventions ouvertes et non complètes sont proposées — l'annotation `places` du jour 2, réutilisée) ; et **`label_from_instance`** contrôle le texte de chaque option (sans lui, `<select>` affiche `str(intervention)` = le numéro seul).
 
-> 💡 **Le formulaire filtre, le service garantit.** La liste déroulante a été construite il y a 30 secondes ; entre-temps la session a pu se remplir. Le formulaire est un **confort** ; la vraie décision se prend dans `inscrire()`, au moment de l'écriture.
+> 💡 **Le formulaire filtre, le service garantit.** La liste déroulante a été construite il y a 30 secondes ; entre-temps la intervention a pu se remplir. Le formulaire est un **confort** ; la vraie décision se prend dans `inscrire()`, au moment de l'écriture.
 
 ```python
 # catalog/views.py — ajout J3
@@ -360,13 +360,13 @@ Deux idées : le **`queryset` d'un champ de choix se restreint dans `__init__`**
 <section class="inscriptions">
     <h1>Inscriptions</h1>
     <table class="tableau">
-        <thead><tr><th>Client</th><th>Formation</th><th>Session</th><th>Statut</th><th>Montant HT</th></tr></thead>
+        <thead><tr><th>Client</th><th>Formation</th><th>Intervention</th><th>Statut</th><th>Montant HT</th></tr></thead>
         <tbody>
         {% for i in inscriptions %}
             <tr>
                 <td>{{ i.client }}</td>
-                <td>{{ i.session.formation.nom }}</td>
-                <td>{{ i.session.numero }} — {{ i.session.date_debut|date:"d/m/Y" }}</td>
+                <td>{{ i.intervention.formation.nom }}</td>
+                <td>{{ i.intervention.numero }} — {{ i.intervention.date_debut|date:"d/m/Y" }}</td>
                 <td>{{ i.get_statut_display }}</td>
                 <td>{{ i.montant_ht|floatformat:2 }} €</td>
             </tr>
@@ -380,7 +380,7 @@ Deux idées : le **`queryset` d'un champ de choix se restreint dans `__init__`**
 {% endblock %}
 ```
 
-> 💡 `select_related('client', 'session__formation')` : la double-soulignement traverse **deux** FK dans le même `JOIN` (jour 2, §5.6). Sans lui, la boucle de ce gabarit ferait 3 requêtes par ligne.
+> 💡 `select_related('client', 'intervention__formation')` : la double-soulignement traverse **deux** FK dans le même `JOIN` (jour 2, §5.6). Sans lui, la boucle de ce gabarit ferait 3 requêtes par ligne.
 
 ### 🛠️ Atelier 7·b — Inscrire un client (40 min)
 
@@ -390,22 +390,22 @@ Deux idées : le **`queryset` d'un champ de choix se restreint dans `__init__`**
 
 | # | Action | Résultat attendu |
 |---|---|---|
-| 1 | `/inscriptions/nouvelle/` | la liste ne propose **pas** la session complète `PY-102-2601` |
-| 2 | inscrire Marie Dupont à `PY-101-2612` (7/12) | inscription créée, session à **8/12** (vérifier en shell) |
+| 1 | `/inscriptions/nouvelle/` | la liste ne propose **pas** la intervention complète `PY-102-2601` |
+| 2 | inscrire Marie Dupont à `PY-101-2612` (7/12) | inscription créée, intervention à **8/12** (vérifier en shell) |
 | 3 | recommencer la même inscription | erreur « déjà inscrit », compteur **inchangé** |
-| 4 | en shell : `inscrire(client, Session.objects.get(numero='PY-102-2601'))` | `SessionComplete` — la session est pleine |
+| 4 | en shell : `inscrire(client, Intervention.objects.get(numero='PY-102-2601'))` | `InterventionComplete` — la intervention est pleine |
 | 5 | en shell : `annuler(inscription)` puis réinscrire | compteur 8 → 7 → 8, réinscription **autorisée** |
 
 ```python
 # shell — cas 2 et 4
->>> from catalog.models import Client, Session
+>>> from catalog.models import Client, Intervention
 >>> from catalog.services import inscrire
 >>> c = Client.objects.get(email='m.dupont@acme.fr')
->>> Session.objects.get(numero='PY-101-2612').nb_inscrits
+>>> Intervention.objects.get(numero='PY-101-2612').nb_inscrits
 7
->>> inscrire(c, Session.objects.get(numero='PY-101-2612'))
+>>> inscrire(c, Intervention.objects.get(numero='PY-101-2612'))
 <Inscription: Marie Dupont → PY-101-2612>
->>> Session.objects.get(numero='PY-101-2612').nb_inscrits
+>>> Intervention.objects.get(numero='PY-101-2612').nb_inscrits
 8
 ```
 
@@ -419,15 +419,15 @@ Deux idées : le **`queryset` d'un champ de choix se restreint dans `__init__`**
 **Correctif du seed** : `update_or_create` réécrivait `nb_inscrits` à chaque relance, donc effaçait les inscriptions prises depuis. Django 5.0 apporte `create_defaults` : valeurs utilisées **uniquement à la création**.
 
 ```python
-# catalog/seed.py — seed_sessions() corrigée
-def seed_sessions():
-    for numero, code, d_debut, d_fin, ville, capacite, inscrits, statut in SESSIONS:
+# catalog/seed.py — seed_interventions() corrigée
+def seed_interventions():
+    for numero, code, d_debut, d_fin, ville, capacite, inscrits, statut in INTERVENTIONS:
         commun = {
             'formation': Formation.objects.get(code=code),
             'date_debut': d_debut, 'date_fin': d_fin, 'ville': ville,
             'capacite': capacite, 'statut': statut,
         }
-        Session.objects.update_or_create(
+        Intervention.objects.update_or_create(
             numero=numero,
             defaults=commun,                                     # mises à jour à chaque relance
             create_defaults={**commun, 'nb_inscrits': inscrits}, # le compteur, une seule fois
@@ -472,7 +472,7 @@ Une classe `ModelAdmin` associée à un modèle par `@admin.register(...)`. Les 
 | `fieldsets` | regroupement des champs du formulaire | « Offre », « Compétences » |
 | `filter_horizontal` | widget à deux colonnes pour un M2M | `competences` |
 | `autocomplete_fields` | liste de choix interrogeable (FK) | `client`, `formation` |
-| `inlines` | modèles liés édités **dans la page parent** | sessions d'une formation |
+| `inlines` | modèles liés édités **dans la page parent** | interventions d'une formation |
 | `actions` | traitements sur la sélection de la liste | « Clôturer », « Confirmer » |
 
 ### 8.3. `catalog/admin.py` — le code de référence
@@ -481,7 +481,7 @@ Une classe `ModelAdmin` associée à un modèle par `@admin.register(...)`. Les 
 from django.contrib import admin, messages
 from django.db.models import Count, F
 
-from .models import Client, Competence, Contrat, Formation, Inscription, Session
+from .models import Client, Competence, Contrat, Formation, Inscription, Intervention
 from .services import annuler
 
 admin.site.site_header = 'GestiFormation — administration'
@@ -491,8 +491,8 @@ admin.site.index_title = "Pilotage de l'organisme"
 
 # ---------- inlines : les objets liés, dans la page du parent ----------
 
-class SessionInline(admin.TabularInline):
-    model = Session
+class InterventionInline(admin.TabularInline):
+    model = Intervention
     extra = 0
     fields = ('numero', 'date_debut', 'date_fin', 'ville', 'capacite', 'statut')
     show_change_link = True
@@ -522,12 +522,12 @@ class CompetenceAdmin(admin.ModelAdmin):
 
 @admin.register(Formation)
 class FormationAdmin(admin.ModelAdmin):
-    list_display = ('code', 'nom', 'duree', 'prix', 'nouveaute', 'nb_sessions')
+    list_display = ('code', 'nom', 'duree', 'prix', 'nouveaute', 'nb_interventions')
     list_editable = ('nouveaute',)
     list_filter = ('nouveaute', 'duree', 'competences')
     search_fields = ('code', 'nom')            # requis par autocomplete_fields ailleurs
     filter_horizontal = ('competences',)
-    inlines = [SessionInline]
+    inlines = [InterventionInline]
     actions = ['marquer_nouveaute']
     fieldsets = (
         (None, {'fields': ('code', 'nom', 'public')}),
@@ -537,11 +537,11 @@ class FormationAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         # distinct=True : le filtre « competences » ajoute un JOIN qui dupliquerait le comptage
-        return super().get_queryset(request).annotate(_nb_sessions=Count('sessions', distinct=True))
+        return super().get_queryset(request).annotate(_nb_interventions=Count('interventions', distinct=True))
 
-    @admin.display(description='sessions', ordering='_nb_sessions')
-    def nb_sessions(self, obj):
-        return obj._nb_sessions
+    @admin.display(description='interventions', ordering='_nb_interventions')
+    def nb_interventions(self, obj):
+        return obj._nb_interventions
 
     @admin.action(description='Marquer comme nouveauté', permissions=['change'])
     def marquer_nouveaute(self, request, queryset):
@@ -549,8 +549,8 @@ class FormationAdmin(admin.ModelAdmin):
         self.message_user(request, f'{n} formation(s) marquée(s) comme nouveauté.', messages.SUCCESS)
 
 
-@admin.register(Session)
-class SessionAdmin(admin.ModelAdmin):
+@admin.register(Intervention)
+class InterventionAdmin(admin.ModelAdmin):
     list_display = ('numero', 'formation', 'date_debut', 'ville', 'statut',
                     'nb_inscrits', 'capacite', 'places')
     list_filter = ('statut', 'ville')
@@ -568,41 +568,41 @@ class SessionAdmin(admin.ModelAdmin):
     def places(self, obj):
         return obj._places
 
-    @admin.action(description='Clôturer les sessions sélectionnées', permissions=['change'])
+    @admin.action(description='Clôturer les interventions sélectionnées', permissions=['change'])
     def cloturer(self, request, queryset):
         n = queryset.update(statut='C')
-        self.message_user(request, f'{n} session(s) clôturée(s).', messages.SUCCESS)
+        self.message_user(request, f'{n} intervention(s) clôturée(s).', messages.SUCCESS)
 
 
 # ---------- clients, contrats, inscriptions ----------
 
-@admin.register(Client)
-class ClientAdmin(admin.ModelAdmin):
-    list_display = ('nom', 'prenom', 'societe', 'email', 'utilisateur', 'date_creation')
-    list_select_related = ('utilisateur',)
-    search_fields = ('nom', 'prenom', 'societe', 'email')
-    autocomplete_fields = ('utilisateur',)
-    inlines = [ContratInline]
+# @admin.register(Client)
+# class ClientAdmin(admin.ModelAdmin):
+#     list_display = ('nom', 'prenom', 'societe', 'email', 'utilisateur', 'date_creation')
+#     list_select_related = ('utilisateur',)
+#     search_fields = ('nom', 'prenom', 'societe', 'email')
+#     autocomplete_fields = ('utilisateur',)
+#     inlines = [ContratInline]
 
 
-@admin.register(Contrat)
-class ContratAdmin(admin.ModelAdmin):
-    list_display = ('numero', 'titre', 'client', 'montant_ht', 'date_signature')
-    list_select_related = ('client',)
-    list_filter = ('date_signature',)
-    search_fields = ('numero', 'titre', 'client__nom', 'client__email')
-    autocomplete_fields = ('client',)
-    date_hierarchy = 'date_signature'
+# @admin.register(Contrat)
+# class ContratAdmin(admin.ModelAdmin):
+#     list_display = ('numero', 'titre', 'client', 'montant_ht', 'date_signature')
+#     list_select_related = ('client',)
+#     list_filter = ('date_signature',)
+#     search_fields = ('numero', 'titre', 'client__nom', 'client__email')
+#     autocomplete_fields = ('client',)
+#     date_hierarchy = 'date_signature'
 
 
 @admin.register(Inscription)
 class InscriptionAdmin(admin.ModelAdmin):
-    list_display = ('client', 'session', 'statut', 'montant_ht', 'date_inscription')
-    list_filter = ('statut', 'session__formation')
-    list_select_related = ('client', 'session')
-    search_fields = ('client__nom', 'client__email', 'session__numero')
+    list_display = ('client', 'intervention', 'statut', 'montant_ht', 'date_inscription')
+    list_filter = ('statut', 'intervention__formation')
+    list_select_related = ('client', 'intervention')
+    search_fields = ('client__nom', 'client__email', 'intervention__numero')
     # tout est en lecture seule : l'état ne change que par les actions, qui respectent les règles
-    readonly_fields = ('client', 'session', 'statut', 'montant_ht', 'date_inscription')
+    readonly_fields = ('client', 'intervention', 'statut', 'montant_ht', 'date_inscription')
     actions = ['confirmer', 'annuler_selection']
 
     def has_add_permission(self, request):
@@ -627,9 +627,9 @@ class InscriptionAdmin(admin.ModelAdmin):
 
 Ce qu'il faut **lire en détail** avec les stagiaires :
 
-1. **`get_queryset` + `annotate`** : `places` et `nb_sessions` sont calculées **par la base** (F, `Count` — jour 2), donc triables dans la liste via `ordering=` ; un appel `obj.sessions.count()` par ligne ferait un N+1 ;
-2. **`list_select_related`** : sans lui, afficher `session.formation` dans la liste coûte une requête par ligne (jour 2, §5.6) ;
-3. **`Count('sessions', distinct=True)`** : on filtre la liste sur `competences` (un `JOIN` M2M) ; sans `distinct`, une formation à 3 compétences compterait ses sessions 3 fois ;
+1. **`get_queryset` + `annotate`** : `places` et `nb_interventions` sont calculées **par la base** (F, `Count` — jour 2), donc triables dans la liste via `ordering=` ; un appel `obj.interventions.count()` par ligne ferait un N+1 ;
+2. **`list_select_related`** : sans lui, afficher `intervention.formation` dans la liste coûte une requête par ligne (jour 2, §5.6) ;
+3. **`Count('interventions', distinct=True)`** : on filtre la liste sur `competences` (un `JOIN` M2M) ; sans `distinct`, une formation à 3 compétences compterait ses interventions 3 fois ;
 4. **les `@admin.action(permissions=[...])`** : l'action n'apparaît que si l'utilisateur a la permission (`change` → `has_change_permission`, `annuler` → notre `has_annuler_permission`, branchée sur la permission personnalisée du modèle) ;
 5. **`autocomplete_fields`** : exige que le modèle cible ait un `ModelAdmin` avec `search_fields` — c'est pourquoi `FormationAdmin` et `ClientAdmin` en déclarent.
 
@@ -637,7 +637,7 @@ Ce qu'il faut **lire en détail** avec les stagiaires :
 
 C'est le point le plus important du bloc.
 
-> ⚠️ **Piège n°26 — l'admin contourne vos vues, vos formulaires et vos services.** Un `ModelAdmin` écrit **directement** le modèle. Une `Inscription` créée dans l'admin n'incrémente pas `Session.nb_inscrits` ; un statut passé à « Annulée » dans le formulaire ne libère pas la place ; une suppression laisse le compteur faux. Toute la discipline de B7·b serait contournée en trois clics.
+> ⚠️ **Piège n°26 — l'admin contourne vos vues, vos formulaires et vos services.** Un `ModelAdmin` écrit **directement** le modèle. Une `Inscription` créée dans l'admin n'incrémente pas `Intervention.nb_inscrits` ; un statut passé à « Annulée » dans le formulaire ne libère pas la place ; une suppression laisse le compteur faux. Toute la discipline de B7·b serait contournée en trois clics.
 
 Trois réponses possibles, de la plus simple à la plus lourde :
 
@@ -647,13 +647,13 @@ Trois réponses possibles, de la plus simple à la plus lourde :
 | faire appeler le service par l'admin | surcharger `save_model` pour router vers `inscrire` | possible, plus fragile |
 | faire respecter la règle par le modèle | `save()` surchargé ou signaux | à discuter en réunion d'architecture |
 
-L'admin sert au **suivi** (filtrer, rechercher, confirmer, annuler) ; la **création** d'une inscription reste l'affaire de `/inscriptions/nouvelle/` (et, en B9, du bouton « S'inscrire »). Même logique pour `Session.nb_inscrits` : `readonly_fields`, car il appartient aux services.
+L'admin sert au **suivi** (filtrer, rechercher, confirmer, annuler) ; la **création** d'une inscription reste l'affaire de `/inscriptions/nouvelle/` (et, en B9, du bouton « S'inscrire »). Même logique pour `Intervention.nb_inscrits` : `readonly_fields`, car il appartient aux services.
 
 > 💡 **Principe à retenir** : les règles métier vivent **à un seul endroit** (`services.py`) ; vues, admin, scripts et tests (jour 4) **l'appellent**. Une règle écrite dans une vue n'existe pas pour l'admin.
 
 > ⚠️ **Piège n°27 — les `@property` et méthodes dans `list_display`** : `list_display = ('nom', 'places_dispo')` « marche » mais exécute le calcul **par ligne**, sans tri possible. Dès qu'une colonne dérive d'une relation ou d'un calcul, on **annote** dans `get_queryset` (comme `places`).
 
-L'**intégrité** se voit aussi dans l'admin : supprimer une `Formation` qui a des sessions avec inscriptions affiche la page « *suppression impossible : objets protégés* » — le `PROTECT` du jour 2, sans une ligne de code.
+L'**intégrité** se voit aussi dans l'admin : supprimer une `Formation` qui a des interventions avec inscriptions affiche la page « *suppression impossible : objets protégés* » — le `PROTECT` du jour 2, sans une ligne de code.
 
 ### 🛠️ Atelier 8 — Administrer GestiFormation (60 min)
 
@@ -662,13 +662,13 @@ L'**intégrité** se voit aussi dans l'admin : supprimer une `Formation` qui a d
 | # | Action | Résultat attendu |
 |---|---|---|
 | 1 | `createsuperuser`, ouvrir `/admin/` | le tableau de bord liste les modèles du catalogue (6 + comptes/groupes), libellés en français |
-| 2 | ouvrir une `Formation` | ses **sessions** sont éditables dans la même page (inline) |
-| 3 | liste des `Session` : filtrer `statut = À venir`, trier par « places libres » | tri géré **par la base** |
+| 2 | ouvrir une `Formation` | ses **interventions** sont éditables dans la même page (inline) |
+| 3 | liste des `Intervention` : filtrer `statut = À venir`, trier par « places libres » | tri géré **par la base** |
 | 4 | sélectionner 2 formations → action « Marquer comme nouveauté » | message vert, case `nouveaute` cochée |
 | 5 | `Client` Marie Dupont → inline `Contrat` | le contrat du seed est visible |
 | 6 | tenter de supprimer Marie Dupont | page « objets protégés » |
 | 7 | `Inscription` : bouton « Ajouter » | **absent** |
-| 8 | sélectionner l'inscription créée en 7·b → « Annuler » | statut `X`, `nb_inscrits` décrémenté (vérifier dans `Session`) |
+| 8 | sélectionner l'inscription créée en 7·b → « Annuler » | statut `X`, `nb_inscrits` décrémenté (vérifier dans `Intervention`) |
 | 9 | relancer l'action sur la même ligne | « 0 inscription(s) annulée(s) » — pas de double décrément |
 
 **Checklist** :
@@ -924,11 +924,11 @@ from django.contrib.auth.models import Group, Permission
 
 GROUPES = {
     'Formateurs': [
-        'view_formation', 'view_session', 'view_client', 'view_inscription',
+        'view_formation', 'view_intervention', 'view_client', 'view_inscription',
     ],
     'Gestionnaires': [
         'view_formation', 'add_formation', 'change_formation',
-        'view_session', 'add_session', 'change_session',
+        'view_intervention', 'add_intervention', 'change_intervention',
         'view_client', 'add_client', 'change_client',
         'view_contrat', 'add_contrat', 'change_contrat',
         'view_inscription', 'add_inscription', 'change_inscription',
@@ -1001,7 +1001,7 @@ def mon_espace(request):
     inscriptions = (
         Inscription.objects
         .filter(client__utilisateur=request.user)        # ← la propriété est dans la requête
-        .select_related('session__formation')
+        .select_related('intervention__formation')
     )
     return render(request, 'catalog/mon_espace.html', {
         'client': client, 'inscriptions': inscriptions,
@@ -1011,18 +1011,18 @@ def mon_espace(request):
 @login_required
 @require_POST
 def sinscrire(request, pk):
-    session = get_object_or_404(Session.objects.select_related('formation'), pk=pk, statut='A')
+    intervention = get_object_or_404(Intervention.objects.select_related('formation'), pk=pk, statut='A')
     client = Client.objects.filter(utilisateur=request.user).first()
     if client is None:
         messages.error(request, "Aucun profil client n'est associé à votre compte.")
     else:
         try:
-            inscrire(client, session)
-        except (DejaInscrit, SessionComplete) as erreur:
+            inscrire(client, intervention)
+        except (DejaInscrit, InterventionComplete) as erreur:
             messages.error(request, str(erreur))
         else:
-            messages.success(request, f'Inscription à {session.formation.nom} enregistrée.')
-    return redirect('catalog:detail-formation', pk=session.formation_id)
+            messages.success(request, f'Inscription à {intervention.formation.nom} enregistrée.')
+    return redirect('catalog:detail-formation', pk=intervention.formation_id)
 
 
 @login_required
@@ -1039,7 +1039,7 @@ def annuler_ma_inscription(request, pk):
 # catalog/urls.py — ajouts
 path('creer-compte/',                     views.creer_compte,            name='creer-compte'),
 path('mon-espace/',                       views.mon_espace,              name='mon-espace'),
-path('sessions/<int:pk>/s-inscrire/',     views.sinscrire,               name='sinscrire'),
+path('interventions/<int:pk>/s-inscrire/',     views.sinscrire,               name='sinscrire'),
 path('mon-espace/inscriptions/<int:pk>/annuler/',
                                           views.annuler_ma_inscription,  name='annuler-ma-inscription'),
 ```
@@ -1063,13 +1063,13 @@ Les deux gabarits :
 
     <h2>Mes inscriptions</h2>
     <table class="tableau">
-        <thead><tr><th>Formation</th><th>Session</th><th>Début</th><th>Statut</th><th></th></tr></thead>
+        <thead><tr><th>Formation</th><th>Intervention</th><th>Début</th><th>Statut</th><th></th></tr></thead>
         <tbody>
         {% for i in inscriptions %}
             <tr>
-                <td>{{ i.session.formation.nom }}</td>
-                <td>{{ i.session.numero }}</td>
-                <td>{{ i.session.date_debut|date:"d/m/Y" }}</td>
+                <td>{{ i.intervention.formation.nom }}</td>
+                <td>{{ i.intervention.numero }}</td>
+                <td>{{ i.intervention.date_debut|date:"d/m/Y" }}</td>
                 <td>{{ i.get_statut_display }}</td>
                 <td>
                     {% if i.statut != 'X' %}
@@ -1088,25 +1088,25 @@ Les deux gabarits :
 {% endblock %}
 ```
 
-Le bouton « S'inscrire » s'ajoute à la fiche détail, dans la boucle des sessions (J2, §5.6) :
+Le bouton « S'inscrire » s'ajoute à la fiche détail, dans la boucle des interventions (J2, §5.6) :
 
 ```html
-{# catalog/templates/catalog/detail_formation.html — dans {% for session in sessions %} #}
+{# catalog/templates/catalog/detail_formation.html — dans {% for intervention in interventions %} #}
 {% if user.is_authenticated %}
-    <form method="post" action="{% url 'catalog:sinscrire' session.pk %}" class="inline">
+    <form method="post" action="{% url 'catalog:sinscrire' intervention.pk %}" class="inline">
         {% csrf_token %}
-        <button type="submit" class="btn" {% if session.places_dispo == 0 %}disabled{% endif %}>S'inscrire</button>
+        <button type="submit" class="btn" {% if intervention.places_dispo == 0 %}disabled{% endif %}>S'inscrire</button>
     </form>
 {% else %}
     <a href="{% url 'login' %}?next={{ request.path|urlencode }}">Se connecter pour s'inscrire</a>
 {% endif %}
 ```
 
-> 💡 **`disabled` est du confort, pas de la sécurité** : un `POST` forgé sur une session complète est refusé par `inscrire()` (`SessionComplete`). L'interface masque, **le service décide** — le même principe qu'en B7·b.
+> 💡 **`disabled` est du confort, pas de la sécurité** : un `POST` forgé sur une intervention complète est refusé par `inscrire()` (`InterventionComplete`). L'interface masque, **le service décide** — le même principe qu'en B7·b.
 
 ### 🛠️ Atelier 9 — Qui a le droit de quoi ? (90 min)
 
-**Consignes** : ajouter les réglages, les URLs, les vues, les gabarits, `Client.utilisateur` (migration 0003), le seed des rôles ; poser les gardes de §9.5 ; **tester chaque rôle dans son propre navigateur** (ou une fenêtre privée) — jamais en changeant de compte dans la même session.
+**Consignes** : ajouter les réglages, les URLs, les vues, les gabarits, `Client.utilisateur` (migration 0003), le seed des rôles ; poser les gardes de §9.5 ; **tester chaque rôle dans son propre navigateur** (ou une fenêtre privée) — jamais en changeant de compte dans la même intervention.
 
 | # | Rôle / action | Résultat attendu |
 |---|---|---|
@@ -1114,12 +1114,12 @@ Le bouton « S'inscrire » s'ajoute à la fiche détail, dans la boucle des sess
 | 2 | se connecter | retour sur `/clients/` (le `next`) — puis 403 si le compte n'a pas `view_client` |
 | 3 | `alice` : `/clients/` | **403** avec la page personnalisée |
 | 4 | `alice` : fiche d'une formation | bouton « S'inscrire » visible ; inscription à `PY-101-2612` : message vert, **Mon espace** la liste |
-| 5 | `alice` : se réinscrire à la même session | message rouge « déjà inscrit », compteur **inchangé** |
-| 6 | `alice` : session `PY-102-2601` (complète) | bouton `disabled` ; `POST` forgé (`curl`, devtools) → message « complète » |
+| 5 | `alice` : se réinscrire à la même intervention | message rouge « déjà inscrit », compteur **inchangé** |
+| 6 | `alice` : intervention `PY-102-2601` (complète) | bouton `disabled` ; `POST` forgé (`curl`, devtools) → message « complète » |
 | 7 | `alice` : annuler son inscription | statut « Annulée », compteur décrémenté |
 | 8 | `alice` : `POST` sur l'annulation d'une inscription **d'un autre** | **404** |
 | 9 | `alice` : déconnexion par un lien (`GET /comptes/logout/`) | **405** — le bouton POST fonctionne |
-| 10 | `francois` (formateur) : `/admin/` | voit Formations, Sessions, Clients, Inscriptions ; **aucun** bouton Ajouter / Supprimer |
+| 10 | `francois` (formateur) : `/admin/` | voit Formations, Interventions, Clients, Inscriptions ; **aucun** bouton Ajouter / Supprimer |
 | 11 | `francois` : `/clients/nouveau/` | **403** |
 | 12 | `gaelle` (gestionnaire) : `/clients/nouveau/` puis l'action « Annuler » de l'admin | autorisés ; **pas** de suppression de client |
 | 13 | superutilisateur | tout, dont la suppression et la gestion des groupes |
@@ -1134,7 +1134,7 @@ Le bouton « S'inscrire » s'ajoute à la fiche détail, dans la boucle des sess
 - [ ] `python manage.py check` passe ;
 - [ ] `git add -A && git commit -m "J3 : authentification, rôles, mon espace"` fait.
 
-> 💡 **Critère de réussite de la journée** (à énoncer devant le binôme) : « Je sais dire, pour une requête `POST /sessions/3/s-inscrire/`, **qui** est l'utilisateur (middleware), **ce qui est vérifié** (connexion, méthode, propriété, capacité), **où** (décorateur, requête, service) et **ce qui se passe en base** si la session est pleine — rien. »
+> 💡 **Critère de réussite de la journée** (à énoncer devant le binôme) : « Je sais dire, pour une requête `POST /interventions/3/s-inscrire/`, **qui** est l'utilisateur (middleware), **ce qui est vérifié** (connexion, méthode, propriété, capacité), **où** (décorateur, requête, service) et **ce qui se passe en base** si la intervention est pleine — rien. »
 
 ---
 
