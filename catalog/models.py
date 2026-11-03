@@ -81,11 +81,12 @@ class Session(models.Model):
     formation = models.ForeignKey(
         Formation,
         verbose_name='formation',
+        null=True,
         # on_delete = SET_NULL: si l'objet reférencée (formation) est supprimée ==> on mais NULL 
         # dans le champs formation est mis à null ET l'objet session est préservée
         # on_delete = CASCADE: l'inverse, si formation supprimée ==> sessions supprimées
 
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         related_name="sessions"
     )
 
