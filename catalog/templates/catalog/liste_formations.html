@@ -24,12 +24,13 @@
             <tr>
                 {# forloop est une variable locale au for pour manipuler les itérations #}
                 {# forloop.counter est le pendant de enumerate en python #}
-                <td>{{ forloop.counter }}</td>
+                {# <td>{{ forloop.counter }}</td> #}
+                <td>{{ formation.id }}</td>
                 <td><code> {{ formation.code }} </code></td>
                 <td>
                     {# catalog:xxxx  est lié à la variable app_name="catalog" de urls.py #}
                     <a class="lien-nom"
-                       href="{% url 'catalog:detail-formation' forloop.counter %}">
+                       href="{% url 'catalog:detail-formation' formation.id %}">
                        {{ formation.nom|title }}
                     </a>
                     {% if formation.nouveaute %}

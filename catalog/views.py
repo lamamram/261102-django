@@ -1,15 +1,6 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.http import HttpRequest, HttpResponse
-
-# --- données fictives pour le jour 1 (elles seront remplacées par l'ORM le jour 2) ---
-FORMATIONS = [
-    {'code': 'PY-101', 'nom': 'Django : initiation',
-     'prix': 1890.0, 'duree': 3, 'public': 'Développeurs', 'nouveaute': False},
-    {'code': 'PY-102', 'nom': 'Django : approfondissement',
-     'prix': 2490.0, 'duree': 1, 'public': '', 'nouveaute': False},
-    {'code': 'DA-201', 'nom': 'Data analysis with Python',
-     'prix': 2190.0, 'duree': 5, 'public': 'Analystes', 'nouveaute': True},
-]
+from .models import Formation
 
 # Create your views here.
 def accueil(request: HttpRequest) -> HttpResponse:
@@ -31,13 +22,20 @@ def liste_formations(request: HttpRequest) -> HttpResponse:
     utilise render, qui injecte le contexte dans un fichier HTML "template"
     les templates doivent être insérés dans <app>/templates/<app>/<xxxx>.html
     """
-    return render(request, "catalog/liste_formations.html" , {"formations": FORMATIONS})
+    formations = Formation.objects.all()
+    return render(request, "catalog/liste_formations.html" , {"formations": formations})
 
 def detail_formation(request: HttpRequest, pk: int) -> HttpResponse:
     """
     détail d'une formation indexée par un id, par défaut l'indice de la liste
     """
-    return render(request, "catalog/detail_formation.html" , {"formation": FORMATIONS[int(pk) - 1]})
+    formation = Formation.objects.filter(id=pk).first()
+    # # demander directement les objets competences sinon formation.competences ne fonctionne pas dans le template
+    competences = formation.competences.all()
+    # formation = get_object_or_404(Formation, pk=pk)
+
+
+    return render(request, "catalog/detail_formation.html" , {"formation": formation, "competences": competences})
 
 def page_introuvable(request, exception):
     """

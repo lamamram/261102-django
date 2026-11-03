@@ -26,6 +26,10 @@
     <section class="competences">
         <h2>Compétences visées</h2>
         <p>
+            {% for competence in formation.competences %}
+            {# competence est converti en str via son __str__ #}
+            <span class="competence">{{ competence }}</span> |
+            {% endfor %}
         </p>
     </section>
 
