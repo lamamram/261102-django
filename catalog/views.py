@@ -29,11 +29,12 @@ def detail_formation(request: HttpRequest, pk: int) -> HttpResponse:
     """
     détail d'une formation indexée par un id, par défaut l'indice de la liste
     """
-    formation = Formation.objects.filter(id=pk).first()
-    # # demander directement les objets competences sinon formation.competences ne fonctionne pas dans le template
+    # prefetch_related: 1 requête supplémentaire par relation (M2M ou FK inverse), jointure faite en Python
+    formation = get_object_or_404(
+        Formation.objects.prefetch_related("competences"),
+        pk=pk,
+    )
     competences = formation.competences.all()
-    # formation = get_object_or_404(Formation, pk=pk)
-
 
     return render(request, "catalog/detail_formation.html" , {"formation": formation, "competences": competences})
 
