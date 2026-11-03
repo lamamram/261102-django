@@ -102,3 +102,56 @@ class Session(models.Model):
     @property
     def places_dispo(self):
         return max(self.capacite - self.nb_inscrits, 0)
+
+
+class Client(models.Model):
+    """Un client (société ou stagiaire) — créé par le formulaire du bloc 6."""
+
+    prenom = models.CharField('prénom', max_length=60)
+    nom = models.CharField('nom', max_length=60)
+    societe = models.CharField('société', max_length=100, blank=True)
+    email = models.EmailField('e-mail', unique=True)
+    telephone = models.CharField('téléphone', max_length=20, blank=True)
+    date_creation = models.DateTimeField('créé le', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'client'
+        ordering = ['nom', 'prenom']
+
+    def __str__(self):
+        return f'{self.prenom} {self.nom}'
+
+class Document(models.Model):
+    """Base **abstraite** : les documents administratifs partagent le même squelette."""
+
+    titre = models.CharField('titre', max_length=160)
+    numero = models.CharField('numéro', max_length=32, unique=True)
+    date_creation = models.DateTimeField('créé le', auto_now_add=True)
+    commentaire = models.TextField('commentaire', blank=True)
+
+    class Meta:
+        # ce modèle ne génèrera jamais une table !!!!! ni n'instanciera aucun objet
+        abstract = True
+        verbose_name = 'document'
+        ordering = ['-date_creation']
+
+    def __str__(self):
+        return self.titre
+
+class Contrat(Document):
+    """Contrat de formation signé avec un client — hérite de Document (§5.8)."""
+
+    client = models.ForeignKey(
+        Client,
+        # PROTECT est la contrepartie python de RESTRICT
+        on_delete=models.PROTECT,          # un client avec des contrats ne se supprime pas
+        related_name='contrats',
+        verbose_name='client',
+    )
+    montant_ht = models.DecimalField('montant HT (€)', max_digits=12, decimal_places=2)
+    date_signature = models.DateField('signé le', null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'contrat'
+        # à coupler avec des outils comme |pluralize
+        verbose_name_plural = 'contrats'
