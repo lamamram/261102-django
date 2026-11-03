@@ -507,6 +507,14 @@ Tout part de `Modèle.objects` — un **manager** qui fabrique des **QuerySets**
 >>> print(len(qs))                            # ICI, le SQL part (une seule, composée)
 ```
 
+#### expérimenter avec shell_plus
+
+* utiliser la console **ipython**: `pip install ipython`
+* dans `settings.py`, précharger les outils pertinents => **SHELL_PLUS_PRE_IMPORTS**
+* Le shell Django amélioré (`python manage.py shell_plus`) charge automatiquement tous les modèles. On peut tester les QuerySets directement :
+
+
+
 **Le vocabulaire des lookups** (`__…`) — l'équivalent Python des `WHERE` :
 
 | Lookup | SQL | Exemple |
