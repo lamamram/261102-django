@@ -43,5 +43,23 @@ def seed_competences():
         # get_or_create ==> retourne ou créer => idempotent 
         Competence.objects.get_or_create(nom=nom)
 
+def seed_formations():
+    for code, nom, public, duree, prix, nouveaute, comps in FORMATIONS:
+        formation, _ = Formation.objects.update_or_create(
+            # WHERE
+            code=code,
+            # SET
+            defaults={
+                'nom': nom, 'public': public, 'duree': duree,
+                'prix': prix, 'nouveaute': nouveaute,
+            },
+        )
+        # j'alimente la table de correspondance entre formation <-> competences
+        # avec les ids liés au noms de compétence de la source donnée
+        #    --------------------------------------- WHERE  nom IN ("django", "ORM")
+        formation.competences.set(Competence.objects.filter(nom__in=comps))
+    
+
+
 if __name__ == "__main__":
     seed_competences()

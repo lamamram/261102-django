@@ -20,7 +20,8 @@ class Formation(models.Model):
     nom = models.CharField('intitulé', max_length=120)
     
     # blank vs null: null=False par défaut en base, 
-    # blank=True permet d'avoir un champs de formulaire (python) lié à ce modèle vide
+    # blank=True permet d'avoir un champs de formulaire (python) vide avec un placeholder lié à ce modèle
+    # le placeholder par défaut est ""
     # ==> lié à des mécanisme de valeur par défaut 'tout public'
     public = models.CharField('public visé', max_length=60, blank=True)
     duree  = models.PositiveSmallIntegerField('durée (jours)')

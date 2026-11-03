@@ -148,3 +148,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
+
+### configuration du shell
+SHELL_PLUS_PRE_IMPORTS = [
+    ('django.forms.models', ('model_to_dict',)),
+]
