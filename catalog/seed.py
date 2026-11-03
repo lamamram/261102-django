@@ -7,6 +7,7 @@ Idempotent : peut être relancé sans dupliquer les données.
 """
 from datetime import date
 import os
+from django.db import transaction
 
 # django.core.exceptions.ImproperlyConfigured: 
 # Requested setting INSTALLED_APPS, but settings are not configured. 
@@ -59,7 +60,11 @@ def seed_formations():
         #    --------------------------------------- WHERE  nom IN ("django", "ORM")
         formation.competences.set(Competence.objects.filter(nom__in=comps))
     
-
+# transforme le script en transaction (tout ou rien)
+@transaction.atomic
+def run():
+    seed_competences()
+    seed_formations()
 
 if __name__ == "__main__":
-    seed_competences()
+    run()
