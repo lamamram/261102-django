@@ -513,6 +513,14 @@ Tout part de `Modèle.objects` — un **manager** qui fabrique des **QuerySets**
 * dans `settings.py`, précharger les outils pertinents => **SHELL_PLUS_PRE_IMPORTS**
 * Le shell Django amélioré (`python manage.py shell_plus`) charge automatiquement tous les modèles. On peut tester les QuerySets directement :
 
+```python
+len(connexion.queries) # nb de requêtes SQL exécutées jusqu'ici
+qs = ...
+len(connexion.queries)
+
+str(qs.query) # voir le SQL généré par ce QuerySet
+reset_queries() # réinitialise le compteur de requêtes SQL
+```
 
 
 **Le vocabulaire des lookups** (`__…`) — l'équivalent Python des `WHERE` :
@@ -715,7 +723,7 @@ Intervention.objects.filter(pk=intervention.pk).update(nb_inscrits=F('nb_inscrit
 
 ### 🛠️ Atelier 5·b — Requêtes, relations, F objects (45 min)
 
-**Consignes** : dans `python manage.py shell_plus --ipython`, répondre aux 8 questions **avant de recharger la page** (le binaire doit pouvoir les reformuler).
+**Consignes** : dans `python manage.py shell_plus`, répondre aux 8 questions **avant de recharger la page** (le binaire doit pouvoir les reformuler).
 
 ```python
 from datetime import date
