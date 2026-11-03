@@ -95,3 +95,9 @@ class Session(models.Model):
 
     def __str__(self):
         return self.numero
+
+    ## décorateur property permet d'utiliser un attribut self.places_dispo
+    ## qui est calculé à la volée quand on l'utilise
+    @property
+    def places_dispo(self):
+        return max(self.capacite - self.nb_inscrits, 0)
