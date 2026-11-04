@@ -1,6 +1,7 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpRequest, HttpResponse
-from .models import Formation, Intervention
+from .models import Formation, Intervention, Client
+from .forms import NouveauClientForm
 
 # Create your views here.
 def accueil(request: HttpRequest) -> HttpResponse:
@@ -53,3 +54,18 @@ def page_introuvable(request, exception):
 
 def interne(request):
     return render(request, "catalog/500.html", status=500)
+
+
+def nouveau_client(request):
+    # en POST j'arrive ici car j'ai soumis le formulaire
+    if request.method == 'POST':
+        form = NouveauClientForm(request.POST)
+        # is_valid => exécute tous les nettoyages/validations
+        # génère le clean_data, exécute clean_<champs>() et à la fin clean()
+        if form.is_valid():
+            Client.objects.create(**form.cleaned_data)
+            return redirect('catalog:clients')
+    else:
+        # En GET j'arrive depuis un lien et je vois le formulaire vierge 
+        form = NouveauClientForm()
+    return render(request, 'catalog/form.html', {'form': form})

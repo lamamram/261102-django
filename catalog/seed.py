@@ -43,6 +43,7 @@ def seed_competences():
         # get ==> SELECT mais lève une exc si n'existe pas => non idempotent
         # get_or_create ==> retourne ou créer => idempotent 
         Competence.objects.get_or_create(nom=nom)
+        # Competence.objects.get_or_create(**{"nom": nom})
 
 def seed_formations():
     for code, nom, public, duree, prix, nouveaute, comps in FORMATIONS:
