@@ -1,0 +1,15 @@
+{% extends "catalog/base.html" %}
+
+{% block titre %}Confirmer la suppression — {{ block.super }}{% endblock %}
+
+{% block contenu %}
+<section class="formulaire">
+    <h1>Supprimer « {{ objet }} » ?</h1>
+    <p>Cette action est définitive.</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Oui, supprimer</button>
+        <a class="btn" href="{% url retour %}">Annuler</a>
+    </form>
+</section>
+{% endblock %}

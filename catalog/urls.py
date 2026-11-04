@@ -17,7 +17,8 @@ urlpatterns = [
     path('formations/<int:pk>', views.detail_formation, name="detail-formation"),
     path('clients/', views.liste_clients, name="clients"),
     path('clients/nouveau/', views.nouveau_client, name="nouveau-client"),
-
+    path('clients/<int:pk>/modifier/',     views.modifier_client,   name='modifier-client'),
+    path('clients/<int:pk>/supprimer', views.supprimer_client, name="supprimer-client")
     
     
     # exemple de route matchée par une regex

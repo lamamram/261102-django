@@ -1,8 +1,9 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpRequest, HttpResponse
 from .models import Formation, Intervention, Client
+from django.contrib import messages # messages Flash
 from .forms import NouveauClientForm, ClientForm
-from django.db.models import Q
+from django.db.models import Q, ProtectedError
 
 # Create your views here.
 def accueil(request: HttpRequest) -> HttpResponse:
@@ -108,4 +109,34 @@ def liste_clients(request: HttpRequest):
         clients = Client.objects.all()
     return render(request, 'catalog/liste_clients.html', {
         "clients": clients
+    })
+
+def modifier_client(request, pk):
+    client = get_object_or_404(Client, pk=pk)
+    if request.method == 'POST':
+        form = ClientForm(request.POST, instance=client)       # ← la seule différence
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Client « {client} » modifié.')
+            return redirect('catalog:clients')
+    else:
+        form = ClientForm(instance=client)                     # pré-rempli
+    return render(request, 'catalog/form.html', {
+        'form': form, 'titre': f'Modifier {client}', 'retour': 'catalog:clients',
+    })
+
+def supprimer_client(request, pk: int):
+    client = get_object_or_404(Client, pk=pk)
+    if request.method == 'POST':
+        # si le modèle utilise une relation avec contrainte RESTRICT ou PROTECTED en python
+        try:
+            client.delete()
+        except ProtectedError:
+            messages.error(request, 'Suppression impossible : ce client a des contrats ou des inscriptions.')
+        # else adossé à try/except garantit que le try s'est exécuté jusqu'ou bout ==> pas d'erreur
+        else:
+            messages.success(request, f'Client « {client} » supprimé.')
+        return redirect('catalog:clients')
+    return render(request, 'catalog/confirmer_suppression.html', {
+        'objet': client, 'retour': 'catalog:clients',
     })
