@@ -96,7 +96,33 @@ Le **ModelForm** supprime les trois : il **génère** les champs depuis le modè
 
 ```python
 # catalog/forms.py
-?????
+class ClientForm(forms.ModelForm):
+    """
+    remplace NouveauClientForm et aussi la MAJ
+    """
+
+    class Meta:
+        model = Client
+        # champs à afficher (liste blanche)
+        fields = ['prenom', 'nom', 'societe', 'email', 'telephone']
+        widgets = {
+            'prenom': forms.TextInput(attrs={'placeholder': 'Entrez votre prénom ici...'}) 
+        }
+        error_messages = {
+            'email': {'unique': 'Un client existe déjà avec cet e-mail.'}
+        }
+
+    def clean_email(self):
+        """
+        le check a été au niveau du modèle Mais on peut normaliser !
+        """
+        return self.cleaned_data.get('email', '').lower()
+
+    def clean_telephone(self):
+        valeur = self.cleaned_data.get('telephone', '')
+        if valeur and not re.fullmatch(r"[\d\s+]{8,20}", valeur):
+            raise ValidationError("Format invalide - chiffres, espace et + attendu.")
+        return valeur
 ```
 
 Ce qui a **disparu** par rapport à J2 : les 5 déclarations de champs, `clean_email` qui interrogeait la base, le `clean()` de démonstration. Ce qui **reste** : les règles qui n'existent pas dans le modèle (`clean_telephone`) — un `ModelForm` s'enrichit, il ne se limite pas à ce que le modèle sait dire.
@@ -116,14 +142,63 @@ Trois vues, un gabarit. On garde la structure du J2 (`GET` affiche, `POST` valid
 
 ```python
 # catalog/views.py — extrait J3 (les gardes d'accès arrivent en B9)
-?????
+def nouveau_client(request):
+    if request.method == 'POST':
+        form = ClientForm(request.POST)
+        if form.is_valid():
+            # ici forme CONTIENT un objet Modèle !!! qui peut utiliser save() --> create et/ ou  update
+            client = form.save()
+            return redirect('catalog:clients')
+    else:
+        form = ClientForm()
+
+    # à partir de deux vues qui pourraient utiliser le template GENERIQUE form.html 
+    # on a besoin de variabiliser d'autres éléments
+    return render(request, 'catalog/form.html', {
+        'form': form,
+        'titre': 'Nouveau client',
+        'retour': 'catalog:clients'
+    })
+
+def modifier_client(request, pk):
+    client = get_object_or_404(Client, pk=pk)
+    if request.method == 'POST':
+        form = ClientForm(request.POST, instance=client)       # ← la seule différence
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Client « {client} » modifié.')
+            return redirect('catalog:clients')
+    else:
+        form = ClientForm(instance=client)                     # pré-rempli
+    return render(request, 'catalog/form.html', {
+        'form': form, 'titre': f'Modifier {client}', 'retour': 'catalog:clients',
+    })
+
+def supprimer_client(request, pk: int):
+    client = get_object_or_404(Client, pk=pk)
+    if request.method == 'POST':
+        # si le modèle utilise une relation avec contrainte RESTRICT ou PROTECTED en python
+        try:
+            client.delete()
+        except ProtectedError:
+            messages.error(request, 'Suppression impossible : ce client a des contrats ou des inscriptions.')
+        # else adossé à try/except garantit que le try s'est exécuté jusqu'ou bout ==> pas d'erreur
+        else:
+            messages.success(request, f'Client « {client} » supprimé.')
+        return redirect('catalog:clients')
+    return render(request, 'catalog/confirmer_suppression.html', {
+        'objet': client, 'retour': 'catalog:clients',
+    })
 ```
 
 `liste_clients` (J2) est inchangée. Les URLs, **le plus spécifique d'abord** (rappel piège n°2) :
 
 ```python
 # catalog/urls.py — ajouts J3
-?????
+path('clients/', views.liste_clients, name="clients"),
+path('clients/nouveau/', views.nouveau_client, name="nouveau-client"),
+path('clients/<int:pk>/modifier/',     views.modifier_client,   name='modifier-client'),
+path('clients/<int:pk>/supprimer', views.supprimer_client, name="supprimer-client")
 ```
 
 Trois points à faire nommer :
@@ -138,9 +213,14 @@ Trois points à faire nommer :
 
 ```html
 {# catalog/base.html — ajout, juste avant {% block contenu %} #}
+{# messages continer des messages flash quand ils ont été déclenchés #}
+{% if messages %}
 <ul class="messages">
-    <li class=""></li>
+    {% for message in messages %}
+        <li class="{{ message.tags }}">{{ message }}</li>
+    {% endfor %}
 </ul>
+{% endif %}
 ```
 
 **Le gabarit de formulaire devient générique.** C'est le troisième formulaire de l'application : on factorise (`form_client.html` du jour 2 est remplacé).
@@ -202,8 +282,8 @@ Dans `liste_clients.html`, une colonne d'actions par ligne :
 
 ```html
 <td>
-    <a href="">Modifier</a> ·
-    <a href="">Supprimer</a>
+    <a href="{% url 'catalog:modifier-client' c.pk %}">Modifier</a> ·
+    <a href="{% url 'catalog:supprimer-client' c.pk %}">Supprimer</a>
 </td>
 ```
 
