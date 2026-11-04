@@ -739,29 +739,33 @@ from datetime import date
 from django.db.models import F
 
 # Q1 — Les 3 formations, tri par code (Meta.ordering fait le travail)
-????
+Formation.objects.all()
 
 # Q2 — La formation PY-101 et ses interventions à venir (relation directe)
+# .get ==> filter(sur une clé unique).first()
 f = Formation.objects.get(code='PY-101')
-????
+f.interventions.filter(statut='A')
 
-# Q3 — Les interventions de la intervention PY-102 (inverse + lookup)
-????
+# Q3 — Les interventions de la formation PY-102 (inverse + lookup)
+Intervention.objects.filter(formation__code='PY-102')
 
 # Q4 — Clients qui ont un contrat de ≥ 2000 € (traversée)
-????
+Client.objects.filter(contrats__montant_ht__gte=2000)
 
 # Q5 — Interventions ouvertes, les plus pleines d'abord (F + annotate)
 ????
 
 # Q6 — « COMPLET » en SQL (comparaison de deux colonnes — impossible sans F)
-????
+Intervention.objects.filter(capacite__lte=F('nb_inscrits'))
 
 # Q7 — Le Problème des N + 1 requêtes : combien de requêtes pour les villes, avec et sans select_related ?
-????
+from django.db import connection
+for s in Intervention.objects.all(): s.formation.nom
+len(connection.queries)
 
 # Q8 — L'incrément atomique (à relire demain pour les inscriptions)
-????
+Intervention.objects.get(numero='PY-101-2612').update(nb_inscrits=F('nb_inscrits') + 1)
+
 ```
 
 **Checklist de fin d'atelier**
