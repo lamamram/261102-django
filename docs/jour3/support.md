@@ -812,13 +812,16 @@ Django fournit les vues d'authentification (`LoginView`, `LogoutView`, changemen
 
 ```python
 # gesti/urls.py — ajouts J3
+from django.contrib.auth.views import LoginView
+
 urlpatterns = [
     path('admin/',   admin.site.urls),
-    path('comptes/', ????),   # login, logout, password_change…
+    path('comptes/login/', LoginView.as_view(template_name='catalog/login.html'), name='login'), # page de connexion
+    path('comptes/', include('django.contrib.auth.urls')),   # login, logout, password_change…
     path('',         include('catalog.urls')),
 ]
 
-handler403 = '????'
+handler403 = 'catalog.views.acces_refuse'
 ```
 
 Les URLs obtenues portent des noms **sans espace de noms** : `login`, `logout`, `password_change`, `password_reset`…
