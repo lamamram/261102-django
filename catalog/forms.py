@@ -44,4 +44,6 @@ class NouveauClientForm(forms.Form):
 
             # add_error permet de cibler le champs en erreur dans le cas de validation cross-champs
             self.add_error('societe', 'Marie Dupont est connue avec une société — la rappeler.')
+            # ou créer une erreur globale
+            # self.add_error(None, 'Marie Dupont est connue avec une société — la rappeler.')
         return data
