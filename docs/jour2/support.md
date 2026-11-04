@@ -1077,9 +1077,21 @@ Rendu dans le navigateur (extraits) — c'est **ce que Django génère** à part
 
 ```python
 # catalog/views.py — extrait J2
-from django.db import models as db_models
+from django.db.models import Q
 
-????
+def liste_clients(request):
+    q = request.GET.get('q', '').strip()
+    clients = Client.objects.order_by('nom', 'prenom')
+    if q:
+        clients = clients.filter(
+            Q(prenom__icontains=q) |
+            Q(nom__icontains=q) |
+            Q(societe__icontains=q) |
+            Q(email__icontains=q)
+        )
+    return render(request, 'catalog/liste_clients.html', {
+        'clients': clients, 'q': q,
+    })
 ```
 
 Deux nouveautés à faire nommer :
