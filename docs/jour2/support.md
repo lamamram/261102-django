@@ -627,7 +627,13 @@ Une fois les objets créés, l'ORM les **navigue** : les relations déclarées d
 
 ```python
 # catalog/views.py — extrait J2
-???
+interventions = formation.interventions.filter(statut="A").order_by('date_debut')
+
+return render(request, "catalog/detail_formation.html" , {
+    "formation": formation, 
+    "competences": competences,
+    "interventions": interventions
+})
 ```
 
 ```html
@@ -637,9 +643,9 @@ Une fois les objets créés, l'ORM les **navigue** : les relations déclarées d
     {% for intervention in interventions %}
         <p>
             <code>{{ intervention.numero }}</code> —
-            du {{ intervention.date_debut|??? }} au {{ intervention.date_fin|??? }}
+            du {{ intervention.date_debut|date:"d/m/Y" }} au {{ intervention.date_fin|date:"d/m/Y" }}
             à {{ intervention.ville }}
-            ({{ intervention.capacite }} places)
+            ({{ intervention.places_dispo }} places restantes)
         </p>
     {% empty %}
         <p class="vide">Aucune intervention planifiée pour cette formation.</p>
@@ -695,7 +701,9 @@ N interventions → **1 + N requêtes**. Le navigateur ne voit rien, mais chaque
 ```python
 from django.db.models import F
 
-???
+# ne pas prendre places_dispo sinon conflit avec la @property
+# la requête avec F sera plus performante que de calculer places_dispo en Python avec un volume de données importants
+Intervention.objects.annotate(places=(F('capacite') - F('nb_inscrits'))).filter(statut='A').filter(places__gt=0).order_by('places')
 ```
 
 Ce que la base reçoit, en une passe :

@@ -28,9 +28,23 @@
         <p>
             {% for competence in competences %}
             {# competence est converti en str via son __str__ #}
-            <span class="competence">{{ competence }}</span> |
+            <span class="competence">{{ competence }}</span> {% if not forloop.last %} | {% endif %}
             {% endfor %}
         </p>
+    </section>
+
+    <section class="interventions">
+    <h2>Interventions à venir</h2>
+    {% for intervention in interventions %}
+        <p>
+            <code>{{ intervention.numero }}</code> —
+            du {{ intervention.date_debut|date:"d/m/Y" }} au {{ intervention.date_fin|date:"d/m/Y" }}
+            à {{ intervention.ville }}
+            ({{ intervention.places_dispo }} places restantes)
+        </p>
+    {% empty %}
+        <p class="vide">Aucune intervention planifiée pour cette formation.</p>
+    {% endfor %}
     </section>
 
     <footer class="action">

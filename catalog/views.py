@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpRequest, HttpResponse
-from .models import Formation
+from .models import Formation, Intervention
 
 # Create your views here.
 def accueil(request: HttpRequest) -> HttpResponse:
@@ -36,10 +36,12 @@ def detail_formation(request: HttpRequest, pk: int) -> HttpResponse:
     )
     # formation = Formation.objects.prefetch_related('competences').filter(pk=pk).first()
     competences = formation.competences.all()
+    interventions = formation.interventions.filter(statut="A").order_by('date_debut')
 
     return render(request, "catalog/detail_formation.html" , {
         "formation": formation, 
-        "competences": competences
+        "competences": competences,
+        "interventions": interventions
     })
 
 def page_introuvable(request, exception):
