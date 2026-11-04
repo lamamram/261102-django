@@ -47,3 +47,34 @@ class NouveauClientForm(forms.Form):
             # ou créer une erreur globale
             # self.add_error(None, 'Marie Dupont est connue avec une société — la rappeler.')
         return data
+
+class ClientForm(forms.ModelForm):
+    """
+    remplace NouveauClientForm et aussi la MAJ
+    """
+
+    class Meta:
+        model = Client
+        # champs à afficher (liste blanche)
+        fields = ['prenom', 'nom', 'societe', 'email', 'telephone']
+        widgets = {
+            'prenom': forms.TextInput(attrs={'placeholder': 'Entrez votre prénom ici...'}) 
+        }
+        error_messages = {
+            'email': {'unique': 'Un client existe déjà avec cet e-mail.'}
+        }
+
+    def clean_email(self):
+        """
+        le check a été au niveau du modèle Mais on peut normaliser !
+        """
+        return self.cleaned_data.get('email', '').lower()
+
+    def clean_telephone(self):
+        valeur = self.cleaned_data.get('telephone', '')
+        if valeur and not re.fullmatch(r"[\d\s+]{8,20}", valeur):
+            raise ValidationError("Format invalide - chiffres, espace et + attendu.")
+        return valeur
+
+
+
