@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpRequest, HttpResponse
 from .models import Formation, Intervention, Client
 from .forms import NouveauClientForm
+from django.db.models import Q
 
 # Create your views here.
 def accueil(request: HttpRequest) -> HttpResponse:
@@ -70,8 +71,19 @@ def nouveau_client(request):
         form = NouveauClientForm()
     return render(request, 'catalog/form.html', {'form': form})
 
-def liste_clients(request):
-    clients = Client.objects.all()
+def liste_clients(request: HttpRequest):
+    # q vient d'un queryPAram adossée à l'url en GET: domain/xxxx?q=blabla%20blibli
+    q = request.GET.get('q', '').strip()
+    if q:
+        clients = Client.objects.filter(
+            # Q permet d'utiliser les opérateur logiques dans filter: |, &, ~
+            Q(prenom__icontains=q) |
+            Q(nom__icontains=q) |
+            Q(societe__icontains=q) |
+            Q(email__icontains=q)
+        )
+    else:
+        clients = Client.objects.all()
     return render(request, 'catalog/liste_clients.html', {
         "clients": clients
     })
