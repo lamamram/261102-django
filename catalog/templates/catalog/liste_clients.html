@@ -13,7 +13,7 @@
     {# ⚠️ pas de {% csrf_token %} : c'est un GET #}
     
     <table class="tableau">
-        <thead><tr><th>Nom</th><th>Société</th><th>E-mail</th><th>Tél.</th></tr></thead>
+        <thead><tr><th>Nom</th><th>Société</th><th>E-mail</th><th>Tél.</th><th>Actions</th></tr></thead>
         <tbody>
         {% for c in clients %}
             <tr>
@@ -21,6 +21,10 @@
                 <td>{{ c.societe|default:"—" }}</td>
                 <td>{{ c.email }}</td>
                 <td>{{ c.telephone|default:"—" }}</td>
+                <td>
+                    <a href="{% url 'catalog:modifier-client' c.pk %}">Modifier</a> ·
+                    <a href="{% url 'catalog:supprimer-client' c.pk %}">Supprimer</a>
+                </td>
             </tr>
         {% empty %}
             <tr><td colspan="4" class="vide">

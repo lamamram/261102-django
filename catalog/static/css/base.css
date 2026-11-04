@@ -170,3 +170,11 @@ code {
     border-top: 1px solid var(--bordure);
     margin-top: 3rem;
 }
+
+.messages { list-style: none; padding: 0; margin: 1rem 0; }
+.messages li { padding: .6rem 1rem; border-radius: 6px; margin-bottom: .5rem; }
+.messages .success { background: #ecfdf5; color: #065f46; }
+.messages .error   { background: #fef2f2; color: #991b1b; }
+.btn-danger { background: #b91c1c; }
+form.inline { display: inline; }
+.lien { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-decoration: underline; cursor: pointer; }
