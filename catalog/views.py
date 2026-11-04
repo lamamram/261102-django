@@ -69,3 +69,9 @@ def nouveau_client(request):
         # En GET j'arrive depuis un lien et je vois le formulaire vierge 
         form = NouveauClientForm()
     return render(request, 'catalog/form.html', {'form': form})
+
+def liste_clients(request):
+    clients = Client.objects.all()
+    return render(request, 'catalog/liste_clients.html', {
+        "clients": clients
+    })

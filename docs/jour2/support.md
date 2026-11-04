@@ -1022,21 +1022,40 @@ path('clients/nouveau/',      views.nouveau_client,  name='nouveau-client'),
 **`catalog/templates/catalog/form.html`** — le formulaire est **rendu par Django** : on ne réécrit pas les `<input>` :
 
 ```html
+{% extends "catalog/base.html" %}
+
+{% block titre %}Nouveau Formulaire - {{ block.super }}{% endblock titre %}
+
+{% block contenu %}
 <section class="formulaire">
-    <p class="retour"><a href="">&larr; Retour aux clients</a></p>
+    <p class="retour"><a href="{% url "catalog:clients" %}">&larr; Retour aux clients</a></p>
     <h1>Nouveau client</h1>
 
     <form method="post" class="form">
-        <ul class="erreurs"><li>error</li>{% endfor %}</ul>
+        {# tout formulaire en POST DOIT utiliser un jeton CSRF #}
+        {% csrf_token %}
+        
+        {# erreurs non liées à aucun widget ==> dans clean() avec self.add_error(None, ...) #}
+        {% if form.non_field_errors %}
+        <ul class="erreurs">
+            {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+            {% endfor %}</ul>
+        {% endif %}
 
-        <div class="champ  champ-erreur">
-            <small class="aide"></small>
-            <span class="erreur">error</span>
+        {% for field in form %}
+        <div class="champ {{ field.name }} {% if field.errors %}champ-erreur{% endif %}">
+            {{ field.label_tag }}
+            {{ field }}
+            {% if field.help_text %}<small class="aide">{{ field.help_text }}</small>{% endif %}
+            {% for error in field.errors %}<span class="erreur">{{ error }}</span>{% endfor %}
         </div>
+        {% endfor %}
 
         <button type="submit" class="btn">Enregistrer le client</button>
     </form>
 </section>
+{% endblock contenu %}
 ```
 
 Rendu dans le navigateur (extraits) — c'est **ce que Django génère** à partir de la classe :

@@ -1,0 +1,39 @@
+{% extends "catalog/base.html" %}
+
+{% block titre %}Clients — {{ block.super }}{% endblock %}
+
+{% block contenu %}
+<section class="clients">
+    <h1>Clients</h1>
+    
+    {% comment "TODO" %}
+    <form method="get" class="recherche">
+        <input type="search" name="q" value="{{ q }}" placeholder="Nom, société, e-mail…">
+        <button type="submit" class="btn">Rechercher</button>
+    </form>
+    {# ⚠️ pas de {% csrf_token %} : c'est un GET #}
+    {% endcomment %}
+    
+    <table class="tableau">
+        <thead><tr><th>Nom</th><th>Société</th><th>E-mail</th><th>Tél.</th></tr></thead>
+        <tbody>
+        {% for c in clients %}
+            <tr>
+                <td>{{ c.nom }} {{ c.prenom }}</td>
+                <td>{{ c.societe|default:"—" }}</td>
+                <td>{{ c.email }}</td>
+                <td>{{ c.telephone|default:"—" }}</td>
+            </tr>
+        {% comment "TODO" %}
+        {% empty %}
+            <tr><td colspan="4" class="vide">
+                {% if q %}Aucun client pour « {{ q }}».{% else %}Aucun client — créez le premier.{% endif %}
+            </td></tr>
+        {% endcomment %}
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <p><a class="btn" href="{% url 'catalog:nouveau-client' %}">+ Nouveau client</a></p>
+</section>
+{% endblock %}

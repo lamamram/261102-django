@@ -7,7 +7,7 @@ class NouveauClientForm(forms.Form):
 
     prenom = forms.CharField(label="Prénom", max_length=60,
                              widget=forms.TextInput(attrs={'placeholder': 'Entrez votre prénom ici...'}))
-    nom = forms.CharField(label="Prénom", max_length=60)
+    nom = forms.CharField(label="Nom", max_length=60)
     societe   = forms.CharField(label='Société', max_length=100, required=False)
     email     = forms.EmailField(label='E-mail') # pas nécessairement unique !!!
     telephone = forms.CharField(label='Téléphone', max_length=20, required=False)
@@ -25,12 +25,14 @@ class NouveauClientForm(forms.Form):
         valeur = self.cleaned_data.get('telephone', '')
         if valeur and not re.fullmatch(r"[\d\s+]{8,20}", valeur):
             raise ValidationError("Format invalide - chiffres, espace et + attendu.")
+        # CE RETURN EST IMPORTANT !!!
         return valeur
 
     def clean_email(self) -> str:
         valeur = self.cleaned_data.get('email')
         if valeur and Client.objects.filter(email__iexact=valeur).exists():
             raise ValidationError("Un client existe déjà avec cet e-mail.")
+        return valeur
 
     # -------------- validation globale: nettoyage cross - champs -----------------------
 

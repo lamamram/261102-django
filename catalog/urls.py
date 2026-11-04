@@ -15,7 +15,9 @@ urlpatterns = [
 
     # l'attribut name fait le lien entre l'url et son invocation dans un template et/ou dans une vue
     path('formations/<int:pk>', views.detail_formation, name="detail-formation"),
+    path('clients/', views.liste_clients, name="clients"),
     path('clients/nouveau/', views.nouveau_client, name="nouveau-client"),
+
     
     
     # exemple de route matchée par une regex
