@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpRequest, HttpResponse
 from .models import Formation, Intervention, Client
-from .forms import NouveauClientForm
+from .forms import NouveauClientForm, ClientForm
 from django.db.models import Q
 
 # Create your views here.
@@ -56,8 +56,7 @@ def page_introuvable(request, exception):
 def interne(request):
     return render(request, "catalog/500.html", status=500)
 
-
-def nouveau_client(request):
+def deprecated_nouveau_client(request):
     # en POST j'arrive ici car j'ai soumis le formulaire
     if request.method == 'POST':
         form = NouveauClientForm(request.POST)
@@ -68,8 +67,31 @@ def nouveau_client(request):
             return redirect('catalog:clients')
     else:
         # En GET j'arrive depuis un lien et je vois le formulaire vierge 
-        form = NouveauClientForm()
-    return render(request, 'catalog/form.html', {'form': form})
+        # form = NouveauClientForm()
+        form = ClientForm()
+
+    return render(request, 'catalog/form.html', {
+        'form': form
+    })
+
+
+def nouveau_client(request):
+    if request.method == 'POST':
+        form = ClientForm(request.POST)
+        if form.is_valid():
+            # ici forme CONTIENT un objet Modèle !!! qui peut utiliser save() --> create et/ ou  update
+            client = form.save()
+            return redirect('catalog:clients')
+    else:
+        form = ClientForm()
+
+    # à partir de deux vues qui pourraient utiliser le template GENERIQUE form.html 
+    # on a besoin de variabiliser d'autres éléments
+    return render(request, 'catalog/form.html', {
+        'form': form,
+        'titre': 'Nouveau client',
+        'retour': 'catalog:clients'
+    })
 
 def liste_clients(request: HttpRequest):
     # q vient d'un queryPAram adossée à l'url en GET: domain/xxxx?q=blabla%20blibli

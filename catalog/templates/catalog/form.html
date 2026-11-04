@@ -1,11 +1,11 @@
 {% extends "catalog/base.html" %}
 
-{% block titre %}Nouveau Formulaire - {{ block.super }}{% endblock titre %}
+{% block titre %}{{ titre }} - {{ block.super }}{% endblock titre %}
 
 {% block contenu %}
 <section class="formulaire">
-    <p class="retour"><a href="{% url "catalog:clients" %}">&larr; Retour aux clients</a></p>
-    <h1>Nouveau client</h1>
+    <p class="retour"><a href="{% url retour %}">&larr; Retour</a></p>
+    <h1>{{ titre }}</h1>
 
     <form method="post" class="form">
         {# tout formulaire en POST DOIT utiliser un jeton CSRF #}
@@ -28,7 +28,7 @@
         </div>
         {% endfor %}
 
-        <button type="submit" class="btn">Enregistrer le client</button>
+        <button type="submit" class="btn">Enregistrer</button>
     </form>
 </section>
 {% endblock contenu %}
