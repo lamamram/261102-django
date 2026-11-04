@@ -78,7 +78,7 @@ class Intervention(models.Model):
     statut = models.CharField('statut', max_length=1, default="A", choices=STATUS)
 
 
-    ### relation One to Many (une intervention est liée à UNE formation mais une formation est liée à PLUSIEURS intervention)
+    ### relation Many to One (une intervention est liée à UNE formation mais une formation est liée à PLUSIEURS intervention)
     formation = models.ForeignKey(
         Formation,
         verbose_name='formation',

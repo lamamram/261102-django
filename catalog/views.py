@@ -34,9 +34,13 @@ def detail_formation(request: HttpRequest, pk: int) -> HttpResponse:
         Formation.objects.prefetch_related("competences"),
         pk=pk,
     )
+    # formation = Formation.objects.prefetch_related('competences').filter(pk=pk).first()
     competences = formation.competences.all()
 
-    return render(request, "catalog/detail_formation.html" , {"formation": formation, "competences": competences})
+    return render(request, "catalog/detail_formation.html" , {
+        "formation": formation, 
+        "competences": competences
+    })
 
 def page_introuvable(request, exception):
     """
