@@ -1,9 +1,10 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpRequest, HttpResponse
-from .models import Formation, Intervention, Client
+from .models import Formation, Intervention, Client, Inscription
 from django.contrib import messages # messages Flash
 from django.contrib.messages.views import SuccessMessageMixin
-from .forms import NouveauClientForm, ClientForm
+from .forms import NouveauClientForm, ClientForm, InscriptionForm
+from .services import inscrire, annuler, DejaInscrit, InterventionComplete
 from django.db.models import Q, ProtectedError
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
@@ -186,3 +187,27 @@ class ClientUpdateView(SuccessMessageMixin, UpdateView):
         """
         return f'Client « {self.get_object()} » modifié.'
 
+
+################# INSCRIPTIONS
+
+def liste_inscriptions(request):
+    # ------------------------------------------------> 2 joins client et intervention avec leur propre relation formation
+    inscriptions = Inscription.objects.select_related('client', 'intervention__formation')
+    return render(request, 'catalog/liste_inscriptions.html', {'inscriptions': inscriptions})
+
+def nouvelle_inscription(request):
+    if request.method == 'POST':
+        form = InscriptionForm(request.POST)
+        if form.is_valid():
+            try:
+                inscrire(form.cleaned_data['client'], form.cleaned_data['intervention'])
+            except (DejaInscrit, InterventionComplete) as erreur:
+                form.add_error(None, str(erreur))          # erreur « de formulaire »
+            else:
+                messages.success(request, 'Inscription enregistrée.')
+                return redirect('catalog:inscriptions')
+    else:
+        form = InscriptionForm()
+    return render(request, 'catalog/form.html', {
+        'form': form, 'titre': 'Nouvelle inscription', 'retour': 'catalog:inscriptions',
+    })

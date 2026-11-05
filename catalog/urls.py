@@ -21,8 +21,11 @@ urlpatterns = [
     # les urls n'utilisent QUE des fonctions ! url utilisant une CBV: on demande .as_view()
     path('clients/<int:pk>/modifier/',     views.ClientUpdateView.as_view(),   name='modifier-client'),
     # path('clients/<int:pk>/modifier/',     views.modifier_client,   name='modifier-client'),
-    path('clients/<int:pk>/supprimer', views.supprimer_client, name="supprimer-client")
+    path('clients/<int:pk>/supprimer', views.supprimer_client, name="supprimer-client"),
     
+
+    path('inscriptions/', views.liste_inscriptions, name='inscriptions'),
+    path('inscriptions/nouvelle/', views.nouvelle_inscription, name='nouvelle-inscription'),
     
     # exemple de route matchée par une regex
     

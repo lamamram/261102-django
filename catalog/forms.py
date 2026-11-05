@@ -1,6 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import Client
+from .models import Client, Inscription, Intervention
+from django.db.models import F
 import re
 
 class NouveauClientForm(forms.Form):
@@ -75,6 +76,55 @@ class ClientForm(forms.ModelForm):
         if valeur and not re.fullmatch(r"[\d\s+]{8,20}", valeur):
             raise ValidationError("Format invalide - chiffres, espace et + attendu.")
         return valeur
+
+########################## CHAMPS CUSTOM ####################
+
+# ---------------------------> séléction de champs d'un modèle
+class InterventionChoiceField(forms.ModelChoiceField):
+    """
+    surcharger les méthodes de base de la classe parente
+    """
+    def label_from_instance(self, intervention):
+        """
+        méthode qui alimente les valeurs de la liste de choix
+        """
+        return f"{intervention.numero} - {intervention.formation.nom} \
+{intervention.ville}, {intervention.date_debut:%d/%m/%Y} \
+— {intervention.places} place(s)"
+
+
+
+class InscriptionForm(forms.ModelForm):
+    """
+    formulaire d'inscription:
+      - 1 champs et widget complexe multi champs: dropdown qui présente des listes d'inscription liés
+        + le numéro de l'intervention - nom de la formation (ville, dates début -- places dispo calculées à la voléé )
+    """
+    # champs de formulaire composite
+    intervention = InterventionChoiceField(
+        # alimenter le dropdown directement à partir d'un queryset
+        queryset=(Intervention.objects.filter(statut='A')
+                    .annotate(places=F('capacite') - F('nb_inscrits'))
+                    .filter(places__gt=0)
+                    .select_related('formation')
+        ),
+        # queryset=Intervention.objects.none(),
+        label="Intervention"
+    )
+
+    class Meta:
+        model = Inscription
+        fields = ['client', 'intervention']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # alimenter à l'instanciation
+        # self.fields['intervention'].queryset = (
+        #     Intervention.objects.filter(statut='A')
+        #     .annotate(places=F('capacite') - F('nb_inscrits'))
+        #     .filter(places__gt=0)
+        #     .select_related('formation')
+        # )
 
 
 

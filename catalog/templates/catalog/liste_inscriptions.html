@@ -1,0 +1,26 @@
+{% extends "catalog/base.html" %}
+
+{% block titre %}Inscriptions — GestiFormation{% endblock %}
+
+{% block contenu %}
+<section class="inscriptions">
+    <h1>Inscriptions</h1>
+    <table class="tableau">
+        <thead><tr><th>Client</th><th>Formation</th><th>Intervention</th><th>Statut</th><th>Montant HT</th></tr></thead>
+        <tbody>
+        {% for i in inscriptions %}
+            <tr>
+                <td>{{ i.client }}</td>
+                <td>{{ i.intervention.formation.nom }}</td>
+                <td>{{ i.intervention.numero }} — {{ i.intervention.date_debut|date:"d/m/Y" }}</td>
+                <td>{{ i.get_statut_display }}</td>
+                <td>{{ i.montant_ht|floatformat:2 }} €</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="5" class="vide">Aucune inscription.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <p><a class="btn" href="{% url 'catalog:nouvelle-inscription' %}">+ Nouvelle inscription</a></p>
+</section>
+{% endblock %}
