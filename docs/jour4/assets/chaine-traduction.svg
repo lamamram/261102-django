@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 360" role="img" aria-label="Chaîne de traduction Django : marquer, extraire, traduire, compiler, servir">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#475569"/>
+    </marker>
+    <marker id="arr-ok" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#0f766e"/>
+    </marker>
+  </defs>
+  <rect width="1080" height="360" fill="#ffffff"/>
+  <text x="540" y="30" text-anchor="middle" font-family="system-ui, sans-serif" font-size="18" font-weight="600" fill="#1f2937">La chaîne de traduction — du code source à la page dans la bonne langue</text>
+
+  <!-- flèches -->
+  <g stroke="#475569" stroke-width="2" fill="none">
+    <line x1="205" y1="135" x2="233" y2="135" marker-end="url(#arr)"/>
+    <line x1="415" y1="135" x2="443" y2="135" marker-end="url(#arr)"/>
+    <line x1="625" y1="135" x2="653" y2="135" marker-end="url(#arr)"/>
+    <line x1="835" y1="135" x2="863" y2="135" marker-end="url(#arr)"/>
+  </g>
+
+  <!-- 1 Marquer -->
+  <g font-family="system-ui, sans-serif">
+    <rect x="25" y="65" width="180" height="150" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="115" y="92" text-anchor="middle" font-size="12" font-weight="600" fill="#4f46e5">1 · MARQUER</text>
+    <text x="115" y="114" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2937">Le code</text>
+    <g font-size="10.5" fill="#475569" text-anchor="middle">
+      <text x="115" y="140">gettext(…) · gettext_lazy</text>
+      <text x="115" y="158">ngettext · pgettext</text>
+      <text x="115" y="176">{% translate %}</text>
+      <text x="115" y="194">{% blocktranslate %}</text>
+    </g>
+  </g>
+
+  <!-- 2 Extraire -->
+  <g font-family="system-ui, sans-serif">
+    <rect x="235" y="65" width="180" height="150" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text x="325" y="92" text-anchor="middle" font-size="12" font-weight="600" fill="#475569">2 · EXTRAIRE</text>
+    <text x="325" y="114" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2937">makemessages</text>
+    <g font-size="10.5" fill="#475569" text-anchor="middle">
+      <text x="325" y="140">manage.py makemessages</text>
+      <text x="325" y="158">-l en</text>
+      <text x="325" y="182" fill="#6b7280">parcourt .py et .html</text>
+      <text x="325" y="198" fill="#6b7280">(outils GNU gettext)</text>
+    </g>
+  </g>
+
+  <!-- 3 Traduire -->
+  <g font-family="system-ui, sans-serif">
+    <rect x="445" y="65" width="180" height="150" rx="10" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.5"/>
+    <text x="535" y="92" text-anchor="middle" font-size="12" font-weight="600" fill="#0f766e">3 · TRADUIRE</text>
+    <text x="535" y="114" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2937">django.po</text>
+    <g font-size="10.5" fill="#475569" text-anchor="middle">
+      <text x="535" y="140">msgid  « Connexion »</text>
+      <text x="535" y="158">msgstr « Log in »</text>
+      <text x="535" y="182" fill="#b45309">#, fuzzy  →  ignoré !</text>
+      <text x="535" y="198" fill="#6b7280">éditeur : Poedit, VS Code</text>
+    </g>
+  </g>
+
+  <!-- 4 Compiler -->
+  <g font-family="system-ui, sans-serif">
+    <rect x="655" y="65" width="180" height="150" rx="10" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.5"/>
+    <text x="745" y="92" text-anchor="middle" font-size="12" font-weight="600" fill="#0f766e">4 · COMPILER</text>
+    <text x="745" y="114" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2937">compilemessages</text>
+    <g font-size="10.5" fill="#475569" text-anchor="middle">
+      <text x="745" y="140">django.po  →  django.mo</text>
+      <text x="745" y="158">format binaire, rapide</text>
+      <text x="745" y="182" fill="#b45309">à refaire après chaque</text>
+      <text x="745" y="198" fill="#b45309">modification du .po</text>
+    </g>
+  </g>
+
+  <!-- 5 Servir -->
+  <g font-family="system-ui, sans-serif">
+    <rect x="865" y="65" width="190" height="150" rx="10" fill="#fff7ed" stroke="#d97706" stroke-width="1.5"/>
+    <text x="960" y="92" text-anchor="middle" font-size="12" font-weight="600" fill="#b45309">5 · SERVIR</text>
+    <text x="960" y="114" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2937">LocaleMiddleware</text>
+    <g font-size="10.5" fill="#475569" text-anchor="middle">
+      <text x="960" y="140">langue de la requête</text>
+      <text x="960" y="158">→ catalogue .mo chargé</text>
+      <text x="960" y="176">→ chaînes traduites</text>
+      <text x="960" y="198" fill="#6b7280">dates et nombres localisés</text>
+    </g>
+  </g>
+
+  <!-- boucle de retour -->
+  <path d="M960,217 C960,290 325,290 325,217" fill="none" stroke="#0f766e" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arr-ok)"/>
+  <text x="640" y="278" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11.5" fill="#0f766e">une nouvelle chaîne dans le code : on relance makemessages — les traductions existantes sont conservées</text>
+
+  <!-- fichiers -->
+  <g font-family="system-ui, sans-serif" font-size="11" fill="#475569">
+    <rect x="25" y="315" width="1030" height="30" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+    <text x="40" y="335">Arborescence : <tspan font-weight="600">locale/en/LC_MESSAGES/django.po</tspan>  et  <tspan font-weight="600">django.mo</tspan>   (LOCALE_PATHS = [BASE_DIR / 'locale'])</text>
+  </g>
+</svg>

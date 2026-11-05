@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 460" role="img" aria-label="Cycle d'exécution de manage.py test : base de test, transactions par test, et trajet du client de test">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#475569"/>
+    </marker>
+    <marker id="arr-ok" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#0f766e"/>
+    </marker>
+  </defs>
+  <rect width="1080" height="460" fill="#ffffff"/>
+  <text x="540" y="30" text-anchor="middle" font-family="system-ui, sans-serif" font-size="18" font-weight="600" fill="#1f2937">Un test Django — une base jetable, une transaction par test, aucun réseau</text>
+
+  <!-- panneau gauche : cycle -->
+  <text x="40" y="62" font-family="system-ui, sans-serif" font-size="13" font-weight="600" fill="#475569">Cycle de vie (manage.py test)</text>
+  <g font-family="system-ui, sans-serif">
+    <rect x="40" y="75" width="440" height="52" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="56" y="97" font-size="13" font-weight="600" fill="#1f2937">1 · Créer la base « test_… »</text>
+    <text x="56" y="116" font-size="11" fill="#475569">SQLite : en mémoire · migrations appliquées · le seed n'est PAS chargé</text>
+
+    <rect x="40" y="141" width="440" height="52" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text x="56" y="163" font-size="13" font-weight="600" fill="#1f2937">2 · Par classe : setUpTestData()</text>
+    <text x="56" y="182" font-size="11" fill="#475569">données communes créées une seule fois, dans une transaction de classe</text>
+
+    <rect x="40" y="207" width="440" height="108" rx="8" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.5"/>
+    <text x="56" y="229" font-size="13" font-weight="600" fill="#1f2937">3 · Par test (indépendant des autres)</text>
+    <g font-size="11" fill="#475569">
+      <text x="56" y="251">savepoint  →  setUp()  →  test_…()  →  tearDown()</text>
+      <text x="56" y="271">ROLLBACK : toutes les écritures du test disparaissent</text>
+      <text x="56" y="291" fill="#0f766e">l'ordre d'exécution n'a donc aucune importance (--shuffle)</text>
+    </g>
+
+    <rect x="40" y="329" width="440" height="52" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text x="56" y="351" font-size="13" font-weight="600" fill="#1f2937">4 · Détruire la base de test</text>
+    <text x="56" y="370" font-size="11" fill="#475569">db.sqlite3 (la vraie base de développement) n'est jamais touchée</text>
+  </g>
+  <g stroke="#475569" stroke-width="2">
+    <line x1="260" y1="128" x2="260" y2="139" marker-end="url(#arr)"/>
+    <line x1="260" y1="194" x2="260" y2="205" marker-end="url(#arr)"/>
+    <line x1="260" y1="316" x2="260" y2="327" marker-end="url(#arr)"/>
+  </g>
+
+  <!-- panneau droit : client de test -->
+  <text x="540" y="62" font-family="system-ui, sans-serif" font-size="13" font-weight="600" fill="#475569">Le client de test : tout le trajet, sans serveur</text>
+  <g font-family="system-ui, sans-serif">
+    <rect x="540" y="75" width="500" height="52" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="556" y="97" font-size="13" font-weight="600" fill="#1f2937">self.client.get(reverse('catalog:clients'))</text>
+    <text x="556" y="116" font-size="11" fill="#475569">force_login(user) pour s'authentifier sans passer par le formulaire</text>
+
+    <rect x="540" y="141" width="500" height="52" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text x="556" y="163" font-size="13" font-weight="600" fill="#1f2937">Middlewares → résolution d'URL → décorateurs</text>
+    <text x="556" y="182" font-size="11" fill="#475569">session, langue, authentification, permissions : le vrai code est exécuté</text>
+
+    <rect x="540" y="207" width="500" height="52" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text x="556" y="229" font-size="13" font-weight="600" fill="#1f2937">Vue → ORM → gabarit</text>
+    <text x="556" y="248" font-size="11" fill="#475569">requêtes réelles sur la base de test, HTML réellement rendu</text>
+
+    <rect x="540" y="273" width="500" height="108" rx="8" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.5"/>
+    <text x="556" y="295" font-size="13" font-weight="600" fill="#1f2937">La réponse, enrichie pour les assertions</text>
+    <g font-size="11" fill="#475569">
+      <text x="556" y="317">response.status_code · response.context['form']</text>
+      <text x="556" y="337">assertContains · assertRedirects · assertTemplateUsed</text>
+      <text x="556" y="357">assertNumQueries · get_messages · session</text>
+    </g>
+  </g>
+  <g stroke="#475569" stroke-width="2">
+    <line x1="790" y1="128" x2="790" y2="139" marker-end="url(#arr)"/>
+    <line x1="790" y1="194" x2="790" y2="205" marker-end="url(#arr)"/>
+    <line x1="790" y1="260" x2="790" y2="271" marker-end="url(#arr-ok)"/>
+  </g>
+
+  <text x="540" y="425" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11.5" fill="#6b7280">Le client de test ne vérifie pas le CSRF par défaut : django.test.Client(enforce_csrf_checks=True) pour le tester.  DEBUG est forcé à False pendant les tests.</text>
+</svg>
