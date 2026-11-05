@@ -1,6 +1,6 @@
 <dl class="fiche">
-    <dt>Code</dt>       <dd><code>{{ formation.code }}</code></dd>
-    <dt>Public</dt>      <dd>{{ formation.public|default:"Tous publics" }}</dd>
-    <dt>Durée</dt>       <dd>{{ formation.duree }} jour{{ formation.duree|pluralize }} — 7 h/jour</dd>
-    <dt>Tarif</dt>       <dd class="tarif">{{ formation.prix|floatformat:2 }} € HT</dd>
+    <dt>Code</dt>       <dd><code>{{ object.code }}</code></dd>
+    <dt>Public</dt>      <dd>{{ object.public|default:"Tous publics" }}</dd>
+    <dt>Durée</dt>       <dd>{{ object.duree }} jour{{ object.duree|pluralize }} — 7 h/jour</dd>
+    <dt>Tarif</dt>       <dd class="tarif">{{ object.prix|floatformat:2 }} € HT</dd>
 </dl>

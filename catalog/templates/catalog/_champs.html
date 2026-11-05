@@ -1,0 +1,16 @@
+{# erreurs non liées à aucun widget ==> dans clean() avec self.add_error(None, ...) #}
+{% if form.non_field_errors %}
+<ul class="erreurs">
+    {% for error in form.non_field_errors %}
+        <li>{{ error }}</li>
+    {% endfor %}</ul>
+{% endif %}
+
+{% for field in form %}
+<div class="champ {{ field.name }} {% if field.errors %}champ-erreur{% endif %}">
+    {{ field.label_tag }}
+    {{ field }}
+    {% if field.help_text %}<small class="aide">{{ field.help_text }}</small>{% endif %}
+    {% for error in field.errors %}<span class="erreur">{{ error }}</span>{% endfor %}
+</div>
+{% endfor %}
