@@ -8,6 +8,7 @@ Idempotent : peut être relancé sans dupliquer les données.
 from datetime import date
 import os
 from django.db import transaction
+from django.contrib.auth import get_user_model
 
 # django.core.exceptions.ImproperlyConfigured: 
 # Requested setting INSTALLED_APPS, but settings are not configured. 
@@ -18,7 +19,32 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gesti.settings')
 django.setup()
 
 # à importer après avoir utiliser django !!!
+from django.contrib.auth.models import Group, Permission
 from catalog.models import Client, Competence, Contrat, Formation, Intervention
+
+
+GROUPES = {
+    'Formateurs': [
+        'view_formation', 'view_intervention', 'view_client', 'view_inscription',
+    ],
+    'Gestionnaires': [
+        'view_formation', 'add_formation', 'change_formation',
+        'view_intervention', 'add_intervention', 'change_intervention',
+        'view_client', 'add_client', 'change_client',
+        'view_contrat', 'add_contrat', 'change_contrat',
+        'view_inscription', 'add_inscription', 'change_inscription',
+        'annuler_inscription',
+    ],
+}
+
+MOT_DE_PASSE_DEMO = 'demo-2026'      # ⚠️ démonstration uniquement
+
+# identifiant, prénom, nom, e-mail, groupe, is_staff
+COMPTES = [
+    ('alice',    'Alice',    'Martin',  'alice@example.org',    None,            False),
+    ('francois', 'François', 'Lemaire', 'francois@example.org', 'Formateurs',    True),
+    ('gaelle',   'Gaëlle',   'Roux',    'gaelle@example.org',   'Gestionnaires', True),
+]
 
 COMPETENCES = ['Django', 'ORM', 'Templates', 'Formulaires']
 
@@ -90,6 +116,36 @@ def seed_clients_contrats():
         },
     )
 
+def seed_groupes():
+    for nom, codenames in GROUPES.items():
+        groupe, _ = Group.objects.get_or_create(name=nom)
+        groupe.permissions.set(
+            Permission.objects.filter(content_type__app_label='catalog', codename__in=codenames)
+        )
+
+def seed_comptes():
+    # get_user_model(): factory qui retourne le modèle d'utilisateur lié au type d'authenfication
+    # par défaut auth: username/pass
+    User = get_user_model()
+    for username, prenom, nom, email, groupe, staff in COMPTES:
+        user, cree = User.objects.get_or_create(
+            username=username,
+            defaults={'first_name': prenom, 'last_name': nom, 'email': email, 'is_staff': staff},
+        )
+        if cree:
+            # génère un hash "salé" en base de donnée
+            user.set_password(MOT_DE_PASSE_DEMO)
+            user.save()
+        if groupe:
+            user.groups.add(Group.objects.get(name=groupe))
+
+    # le compte « alice » est aussi un client
+    alice = User.objects.get(username='alice')
+    Client.objects.update_or_create(
+        email='alice@example.org',
+        defaults={'prenom': 'Alice', 'nom': 'Martin', 'utilisateur': alice},
+    )
+
 # transforme le script en transaction (tout ou rien)
 @transaction.atomic
 def run():
@@ -97,6 +153,8 @@ def run():
     seed_formations()
     seed_interventions()
     seed_clients_contrats()
+    seed_groupes()
+    seed_comptes()
     print(
         f'Seed OK — {Competence.objects.count()} compétences, '
         f'{Formation.objects.count()} formations, '

@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import Q
+from django.conf import settings
 
 class Competence(models.Model):
     """Compétence visée par une formation (ex. « ORM », « Templates »)."""
@@ -115,6 +116,17 @@ class Client(models.Model):
     email = models.EmailField('e-mail', unique=True)
     telephone = models.CharField('téléphone', max_length=20, blank=True)
     date_creation = models.DateTimeField('créé le', auto_now_add=True)
+
+    utilisateur = models.OneToOneField(
+        # settings principaux du projet:
+        # certains visibles dans gesti/settings.py et pas d'autres
+        # comme AUTH_USER_MODEL qui contient la classe d'utilisateur comme ger_user_model()
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='client',
+        verbose_name='compte utilisateur'
+    )
 
     class Meta:
         verbose_name = 'client'
