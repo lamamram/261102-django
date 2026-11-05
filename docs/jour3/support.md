@@ -373,8 +373,43 @@ Le jour 2 avait laissé **Client ↔ Intervention** en blanc, avec un compteur s
 # catalog/models.py — ajout J3
 from django.db.models import Q
 
+class Inscription(models.Model):
+    """Un client inscrit à une intervention — la table de liaison porte ses propres données."""
+    STATUTS = [
+        ('P', 'En attente'),
+        ('C', 'Confirmée'),
+        ('X', 'Annulée'),
+    ]
+    
+    statut = models.CharField('statut', max_length=1, default="P", choices=STATUTS)
+    montant_ht = models.DecimalField('montant HT (€)', max_digits=10, decimal_places=2)
+    date_inscription = models.DateTimeField('inscrit le', auto_now_add=True)
 
-?????
+    client = models.ForeignKey(
+        Client, on_delete=models.PROTECT, related_name='inscriptions', verbose_name='client'
+    )
+
+    intervention = models.ForeignKey(
+        Intervention, on_delete=models.PROTECT, related_name='inscriptions', verbose_name='intervention',
+    )
+
+    class Meta:
+        verbose_name = 'inscription'
+        # ---------> - : décroissant
+        ordering = ['-date_inscription']
+        ## contraintes composites impossible d'exprimer dans un champs
+        constraints = [
+            models.UniqueConstraint(
+                fields=["client", "intervention"],
+                # la contrainte est assurée si l'inscription n'est pas annulée (non statut X)
+                # métier: un client peut annuler et ensuite se réinscrire !!!!
+                condition=~Q(statut='X'),
+                name='inscription_unique_client_intervention_active',
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.client} --> {self.intervention}"   
 ```
 
 Quatre choix à justifier :
