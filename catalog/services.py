@@ -52,5 +52,20 @@ def inscrire(client: Client, intervention: Intervention):
         montant_ht=intervention.formation.prix
     )
 
-def annuler(inscription: Inscription):
-    pass
+def annuler(inscription: Inscription) -> bool:
+    """
+    libère la place et change le statut à X et retourne True si le changement est fait 
+    """
+    # si on veut utiliser plusieurs transactions dans la même procédure
+    with transaction.atomic():
+       change = Inscription.object.filter(
+           pk=inscription.pk
+        ).exclude(statut='X').update('X')
+       # change est le nb éléments modifiés: 1 => True, 0 => False
+       if change:
+           Intervention.objects.filter(
+               pk=inscription.intervention_id
+            ).update(nb_inscrits=F('nb_inscrits') - 1)
+    return bool(change)
+
+    
