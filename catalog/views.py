@@ -9,6 +9,7 @@ from django.db.models import Q, ProtectedError
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.contrib.auth import login
+from django.contrib.auth.decorators import login_required
 
 # Create your views here.
 def accueil(request: HttpRequest) -> HttpResponse:
@@ -66,6 +67,7 @@ def interne(request):
 
 ########## version vues fonctions
 
+@login_required
 def liste_clients(request: HttpRequest):
     # q vient d'un queryPAram adossée à l'url en GET: domain/xxxx?q=blabla%20blibli
     q = request.GET.get('q', '').strip()
@@ -102,7 +104,7 @@ def deprecated_nouveau_client(request):
         'form': form
     })
 
-
+@login_required
 def nouveau_client(request):
     if request.method == 'POST':
         form = ClientForm(request.POST)
@@ -135,6 +137,7 @@ def modifier_client(request, pk):
         'form': form, 'titre': f'Modifier {client}', 'retour': 'catalog:clients',
     })
 
+@login_required
 def supprimer_client(request, pk: int):
     client = get_object_or_404(Client, pk=pk)
     if request.method == 'POST':
@@ -190,12 +193,13 @@ class ClientUpdateView(SuccessMessageMixin, UpdateView):
 
 
 ################# INSCRIPTIONS
-
+@login_required
 def liste_inscriptions(request):
     # ------------------------------------------------> 2 joins client et intervention avec leur propre relation formation
     inscriptions = Inscription.objects.select_related('client', 'intervention__formation')
     return render(request, 'catalog/liste_inscriptions.html', {'inscriptions': inscriptions})
 
+@login_required
 def nouvelle_inscription(request):
     if request.method == 'POST':
         form = InscriptionForm(request.POST)
@@ -236,4 +240,17 @@ def creer_compte(request):
         form = CompteForm()
     return render(request, 'catalog/form.html', {
         'form': form, 'titre': 'Créer un compte', 'retour': 'catalog:accueil',
+    })
+
+@login_required
+def mon_espace(request):
+    # -----------------------------------------> utilisateur loggé
+    client = Client.objects.filter(utilisateur=request.user).first()
+    inscriptions = (
+        Inscription.objects
+        .filter(client__utilisateur=request.user)        # ← la propriété est dans la requête
+        .select_related('intervention__formation')
+    )
+    return render(request, 'catalog/mon_espace.html', {
+        'client': client, 'inscriptions': inscriptions,
     })

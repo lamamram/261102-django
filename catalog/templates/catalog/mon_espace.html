@@ -1,0 +1,36 @@
+{% extends "catalog/base.html" %}
+
+{% block titre %}Mon espace — GestiFormation{% endblock %}
+
+{% block contenu %}
+<section class="espace">
+    <h1>Bonjour {{ user.first_name|default:user.get_username }}</h1>
+    {% if not client %}
+        <p class="vide">Aucun profil client n'est associé à ce compte.</p>
+    {% endif %}
+
+    <h2>Mes inscriptions</h2>
+    <table class="tableau">
+        <thead><tr><th>Formation</th><th>Intervention</th><th>Début</th><th>Statut</th><th></th></tr></thead>
+        <tbody>
+        {% for i in inscriptions %}
+            <tr>
+                <td>{{ i.intervention.formation.nom }}</td>
+                <td>{{ i.intervention.numero }}</td>
+                <td>{{ i.intervention.date_debut|date:"d/m/Y" }}</td>
+                <td>{{ i.get_statut_display }}</td>
+                <td>
+                    {% if i.statut != 'X' %}
+                    <form method="post" action="{% url 'catalog:annuler-ma-inscription' i.pk %}" class="inline">
+                        {% csrf_token %}<button type="submit" class="lien">Annuler</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="5" class="vide">Aucune inscription.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}

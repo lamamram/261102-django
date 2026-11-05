@@ -18,9 +18,22 @@
             <a class="logo" href="">GestiFormation</a>
             <ul>
                 <li><a href="{% url 'catalog:liste-formations' %}">Catalogue</a></li>
-                <li><a href="{% url 'catalog:clients' %}">Clients</a></li>
-                <li>???? — <a href="#">Déconnexion</a></li>
-                <li><a href="{% url "login" %}">Connexion</a></li>
+                {% if user.is_authenticated %}
+                    <li><a href="{% url 'catalog:clients' %}">Clients</a></li>
+                    
+                    {% comment "comptes/logout ne peut être appelé qu'en POST !!!" %}
+                        <li>???? — <a href="{% url "logout" %}">Déconnexion</a></li>
+                    {% endcomment %}
+                    
+                    <li>
+                        <form method="post" action="{% url 'logout' %}" class="inline">
+                            {% csrf_token %}<button type="submit" class="lien">Déconnexion</button>
+                        </form>
+                    </li>
+                {% else %}
+                    <li><a href="{% url "login" %}">Connexion</a></li>
+                    <li><a href="{% url "catalog:creer-compte" %}">Créer un compte</a></li>
+                {% endif %}
             </ul>
         </nav>
     </header>
