@@ -2,8 +2,11 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpRequest, HttpResponse
 from .models import Formation, Intervention, Client
 from django.contrib import messages # messages Flash
+from django.contrib.messages.views import SuccessMessageMixin
 from .forms import NouveauClientForm, ClientForm
 from django.db.models import Q, ProtectedError
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.urls import reverse_lazy
 
 # Create your views here.
 def accueil(request: HttpRequest) -> HttpResponse:
@@ -57,6 +60,28 @@ def page_introuvable(request, exception):
 def interne(request):
     return render(request, "catalog/500.html", status=500)
 
+################################ CLIENTS #######################################
+
+########## version vues fonctions
+
+def liste_clients(request: HttpRequest):
+    # q vient d'un queryPAram adossée à l'url en GET: domain/xxxx?q=blabla%20blibli
+    q = request.GET.get('q', '').strip()
+    if q:
+        clients = Client.objects.filter(
+            # Q permet d'utiliser les opérateur logiques dans filter: |, &, ~
+            Q(prenom__icontains=q) |
+            Q(nom__icontains=q) |
+            Q(societe__icontains=q) |
+            Q(email__icontains=q)
+        )
+    else:
+        clients = Client.objects.all()
+    return render(request, 'catalog/liste_clients.html', {
+        "clients": clients
+    })
+
+
 def deprecated_nouveau_client(request):
     # en POST j'arrive ici car j'ai soumis le formulaire
     if request.method == 'POST':
@@ -94,23 +119,6 @@ def nouveau_client(request):
         'retour': 'catalog:clients'
     })
 
-def liste_clients(request: HttpRequest):
-    # q vient d'un queryPAram adossée à l'url en GET: domain/xxxx?q=blabla%20blibli
-    q = request.GET.get('q', '').strip()
-    if q:
-        clients = Client.objects.filter(
-            # Q permet d'utiliser les opérateur logiques dans filter: |, &, ~
-            Q(prenom__icontains=q) |
-            Q(nom__icontains=q) |
-            Q(societe__icontains=q) |
-            Q(email__icontains=q)
-        )
-    else:
-        clients = Client.objects.all()
-    return render(request, 'catalog/liste_clients.html', {
-        "clients": clients
-    })
-
 def modifier_client(request, pk):
     client = get_object_or_404(Client, pk=pk)
     if request.method == 'POST':
@@ -140,3 +148,41 @@ def supprimer_client(request, pk: int):
     return render(request, 'catalog/confirmer_suppression.html', {
         'objet': client, 'retour': 'catalog:clients',
     })
+
+########### version CBV : Class Based View ; Cas suffisamment simples et générique
+
+class ClientUpdateView(SuccessMessageMixin, UpdateView):
+    """
+    contrepartie en POO de la fonction "modifier_client"
+    avec comportement génériques
+    - model, form_class, template_name, success_url
+    avec customisation directe
+    - get_context_data
+    avec customisation indirecte avec des Mixins 
+       == classe auxiliaire à ajouter en héritage multiple !
+    - SuccessMessageMixin.get_success_message
+    """
+    model = Client
+    form_class = ClientForm
+    template_name = 'catalog/form.html'
+    # -----------> l'url sera redirigée si le formulaire est validé
+    success_url = reverse_lazy('catalog:clients')
+
+    def get_context_data(self, **kwargs):
+        """
+        customisation du contexte pour être compatible avec le template !!
+        """
+        # super() charge le form dans contexte !
+        context = super().get_context_data(**kwargs)
+        # ----------------------------> l'objet instancié (client) !
+        context["titre"] = f'Modifier {self.get_object()}'
+        context["retour"] = 'catalog:clients'
+        return context
+
+    def get_success_message(self, cleaned_data):
+        """
+        méthode héritée de la Mixin SuccessMessageMixin
+        pour gérer les messages en succès
+        """
+        return f'Client « {self.get_object()} » modifié.'
+

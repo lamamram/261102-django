@@ -1079,18 +1079,20 @@ Rendu dans le navigateur (extraits) — c'est **ce que Django génère** à part
 # catalog/views.py — extrait J2
 from django.db.models import Q
 
-def liste_clients(request):
+    # q vient d'un queryPAram adossée à l'url en GET: domain/xxxx?q=blabla%20blibli
     q = request.GET.get('q', '').strip()
-    clients = Client.objects.order_by('nom', 'prenom')
     if q:
-        clients = clients.filter(
+        clients = Client.objects.filter(
+            # Q permet d'utiliser les opérateur logiques dans filter: |, &, ~
             Q(prenom__icontains=q) |
             Q(nom__icontains=q) |
             Q(societe__icontains=q) |
             Q(email__icontains=q)
         )
+    else:
+        clients = Client.objects.all()
     return render(request, 'catalog/liste_clients.html', {
-        'clients': clients, 'q': q,
+        "clients": clients
     })
 ```
 
