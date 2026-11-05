@@ -3,11 +3,12 @@ from django.http import HttpRequest, HttpResponse
 from .models import Formation, Intervention, Client, Inscription
 from django.contrib import messages # messages Flash
 from django.contrib.messages.views import SuccessMessageMixin
-from .forms import NouveauClientForm, ClientForm, InscriptionForm
+from .forms import NouveauClientForm, ClientForm, InscriptionForm, CompteForm
 from .services import inscrire, annuler, DejaInscrit, InterventionComplete
 from django.db.models import Q, ProtectedError
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
+from django.contrib.auth import login
 
 # Create your views here.
 def accueil(request: HttpRequest) -> HttpResponse:
@@ -210,4 +211,29 @@ def nouvelle_inscription(request):
         form = InscriptionForm()
     return render(request, 'catalog/form.html', {
         'form': form, 'titre': 'Nouvelle inscription', 'retour': 'catalog:inscriptions',
+    })
+
+######### gestion authentification
+
+def creer_compte(request):
+    if request.method == 'POST':
+        form = CompteForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)           # §7.4 : compléter avant d'écrire
+            user.email = user.email.lower()
+            user.save()
+            client, _ = Client.objects.get_or_create(
+                email=user.email,
+                defaults={'prenom': user.first_name, 'nom': user.last_name},
+            )
+            if client.utilisateur_id is None:
+                client.utilisateur = user
+                client.save(update_fields=['utilisateur'])
+            login(request, user)                     # connecté dès la création
+            messages.success(request, 'Compte créé. Bienvenue !')
+            return redirect('catalog:mon-espace')
+    else:
+        form = CompteForm()
+    return render(request, 'catalog/form.html', {
+        'form': form, 'titre': 'Créer un compte', 'retour': 'catalog:accueil',
     })

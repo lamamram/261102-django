@@ -8,24 +8,29 @@ from . import views
 app_name = "catalog"
 
 urlpatterns = [
+
+    ################ URLS PUBLIQUES ############################
     # ces chemins sont la continuation de la partie du gesti/urls.py
     # un vue est un CALLABLE (fonction ou classe)
     path('', views.accueil, name='accueil'),
     path('formations/', views.liste_formations, name="liste-formations"),
-
     # l'attribut name fait le lien entre l'url et son invocation dans un template et/ou dans une vue
     path('formations/<int:pk>', views.detail_formation, name="detail-formation"),
+    path('creer-compte/', views.creer_compte, name='creer-compte'),
+
+    ################### AUTHENTIFIE ###########################
+    # -------------- Client --------------------------    
     path('clients/', views.liste_clients, name="clients"),
     path('clients/nouveau/', views.nouveau_client, name="nouveau-client"),
-
     # les urls n'utilisent QUE des fonctions ! url utilisant une CBV: on demande .as_view()
     path('clients/<int:pk>/modifier/',     views.ClientUpdateView.as_view(),   name='modifier-client'),
     # path('clients/<int:pk>/modifier/',     views.modifier_client,   name='modifier-client'),
     path('clients/<int:pk>/supprimer', views.supprimer_client, name="supprimer-client"),
     
-
+    # --------------- Inscription -----------------------
     path('inscriptions/', views.liste_inscriptions, name='inscriptions'),
     path('inscriptions/nouvelle/', views.nouvelle_inscription, name='nouvelle-inscription'),
+
     
     # exemple de route matchée par une regex
     

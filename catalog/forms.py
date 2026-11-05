@@ -3,6 +3,8 @@ from django.core.exceptions import ValidationError
 from .models import Client, Inscription, Intervention
 from django.db.models import F
 import re
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import get_user_model
 
 class NouveauClientForm(forms.Form):
 
@@ -125,6 +127,15 @@ class InscriptionForm(forms.ModelForm):
         #     .filter(places__gt=0)
         #     .select_related('formation')
         # )
+
+####################### formulaire compte utilisateur
+
+class CompteForm(UserCreationForm):
+    email = forms.EmailField(label='E-mail')
+
+    class Meta(UserCreationForm.Meta):
+        model = get_user_model()
+        fields = ['username', 'first_name', 'last_name', 'email']
 
 
 

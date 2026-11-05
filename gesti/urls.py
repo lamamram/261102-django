@@ -24,7 +24,7 @@ urlpatterns = [
     # ce chemin permet de consulter les urls de 
     # l'application admin déjà installé dans settings INSTALLED_APPS
     path('admin/', admin.site.urls),
-    # TO-DO: générer la liste urls de l'application catalog
+    path('comptes/', include('django.contrib.auth.urls')), # contiennent login, logout, password_change ...
     # => catalog/urls.py
     path('', include('catalog.urls')),
 ] + debug_toolbar_urls()

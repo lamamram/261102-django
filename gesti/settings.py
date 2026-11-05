@@ -154,3 +154,8 @@ SHELL_PLUS_PRE_IMPORTS = [
     ('django.forms.models', ('model_to_dict',)),
     ('django.db', ('connection', 'reset_queries'))
 ]
+
+##### règlage d' AUTHENTIFICATION pout cabler les vues de django.contrib.auth et nos vues
+LOGIN_URL = 'login'                          # où renvoyer un anonyme (nom d'URL)
+LOGIN_REDIRECT_URL = 'catalog:mon-espace'    # après connexion, sans ?next=
+LOGOUT_REDIRECT_URL = 'catalog:accueil'

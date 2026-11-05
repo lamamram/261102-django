@@ -994,6 +994,8 @@ LOGIN_REDIRECT_URL = 'catalog:mon-espace'    # après connexion, sans ?next=
 LOGOUT_REDIRECT_URL = 'catalog:accueil'
 ```
 
+> 💡 le template login.html doit être placée dans l'espace **registration** !!!
+
 ```html
 {# catalog/templates/registration/login.html — Django cherche ce chemin exact #}
 {% extends "catalog/base.html" %}

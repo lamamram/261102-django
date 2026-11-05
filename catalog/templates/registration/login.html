@@ -1,0 +1,16 @@
+{% extends "catalog/base.html" %}
+
+{% block titre %}Connexion — {{ block.super }}{% endblock %}
+
+{% block contenu %}
+<section class="formulaire">
+    <h1>Connexion</h1>
+    <form method="post" class="form">
+        {% csrf_token %}
+        {% include "catalog/_champs.html" %}
+        <input type="hidden" name="next" value="{{ next }}">
+        <button type="submit" class="btn">Se connecter</button>
+    </form>
+    <p>Pas encore de compte ? <a href="{% url 'catalog:creer-compte' %}">Créer un compte</a></p>
+</section>
+{% endblock %}
