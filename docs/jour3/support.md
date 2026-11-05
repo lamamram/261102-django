@@ -518,7 +518,39 @@ C'est le **`F` du jour 2** (§5.7) dans son rôle final. Le filtre `nb_inscrits_
 
 ```python
 # catalog/forms.py — ajout J3
-????
+from django.db.models import F
+
+class InscriptionForm(forms.ModelForm):
+    """
+    formulaire d'inscription:
+      - 1 champs et widget complexe multi champs: dropdown qui présente des listes d'inscription liés
+        + le numéro de l'intervention - nom de la formation (ville, dates début -- places dispo calculées à la voléé )
+    """
+    # champs de formulaire composite
+    intervention = InterventionChoiceField(
+        # alimenter le dropdown directement à partir d'un queryset
+        queryset=(Intervention.objects.filter(statut='A')
+                    .annotate(places=F('capacite') - F('nb_inscrits'))
+                    .filter(places__gt=0)
+                    .select_related('formation')
+        ),
+        # queryset=Intervention.objects.none(),
+        label="Intervention"
+    )
+
+    class Meta:
+        model = Inscription
+        fields = ['client', 'intervention']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # alimenter à l'instanciation
+        # self.fields['intervention'].queryset = (
+        #     Intervention.objects.filter(statut='A')
+        #     .annotate(places=F('capacite') - F('nb_inscrits'))
+        #     .filter(places__gt=0)
+        #     .select_related('formation')
+        # )
 ```
 
 Deux idées : le **`queryset` d'un champ de choix se restreint dans `__init__`** (seules les interventions ouvertes et non complètes sont proposées — l'annotation `places` du jour 2, réutilisée) ; et **`label_from_instance`** contrôle le texte de chaque option (sans lui, `<select>` affiche `str(intervention)` = le numéro seul).
@@ -527,12 +559,33 @@ Deux idées : le **`queryset` d'un champ de choix se restreint dans `__init__`**
 
 ```python
 # catalog/views.py — ajout J3
-?????
+def liste_inscriptions(request):
+    # ------------------------------------------------> 2 joins client et intervention avec leur propre relation formation
+    inscriptions = Inscription.objects.select_related('client', 'intervention__formation')
+    return render(request, 'catalog/liste_inscriptions.html', {'inscriptions': inscriptions})
+
+def nouvelle_inscription(request):
+    if request.method == 'POST':
+        form = InscriptionForm(request.POST)
+        if form.is_valid():
+            try:
+                inscrire(form.cleaned_data['client'], form.cleaned_data['intervention'])
+            except (DejaInscrit, InterventionComplete) as erreur:
+                form.add_error(None, str(erreur))          # erreur « de formulaire »
+            else:
+                messages.success(request, 'Inscription enregistrée.')
+                return redirect('catalog:inscriptions')
+    else:
+        form = InscriptionForm()
+    return render(request, 'catalog/form.html', {
+        'form': form, 'titre': 'Nouvelle inscription', 'retour': 'catalog:inscriptions',
+    })
 ```
 
 ```python
 # catalog/urls.py — ajouts
-?????
+path('inscriptions/', views.liste_inscriptions, name='inscriptions'),
+path('inscriptions/nouvelle/', views.nouvelle_inscription, name='nouvelle-inscription'),
 ```
 
 ```html
