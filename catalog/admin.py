@@ -99,23 +99,23 @@ class InterventionAdmin(admin.ModelAdmin):
 
 # ---------- clients, contrats, inscriptions ----------
 
-# @admin.register(Client)
-# class ClientAdmin(admin.ModelAdmin):
-#     list_display = ('nom', 'prenom', 'societe', 'email', 'utilisateur', 'date_creation')
-#     list_select_related = ('utilisateur',)
-#     search_fields = ('nom', 'prenom', 'societe', 'email')
-#     autocomplete_fields = ('utilisateur',)
-#     inlines = [ContratInline]
+@admin.register(Client)
+class ClientAdmin(admin.ModelAdmin):
+    list_display = ('nom', 'prenom', 'societe', 'email', 'utilisateur', 'date_creation')
+    list_select_related = ('utilisateur',)
+    search_fields = ('nom', 'prenom', 'societe', 'email')
+    autocomplete_fields = ('utilisateur',)
+    inlines = [ContratInline]
 
 
-# @admin.register(Contrat)
-# class ContratAdmin(admin.ModelAdmin):
-#     list_display = ('numero', 'titre', 'client', 'montant_ht', 'date_signature')
-#     list_select_related = ('client',)
-#     list_filter = ('date_signature',)
-#     search_fields = ('numero', 'titre', 'client__nom', 'client__email')
-#     autocomplete_fields = ('client',)
-#     date_hierarchy = 'date_signature'
+@admin.register(Contrat)
+class ContratAdmin(admin.ModelAdmin):
+    list_display = ('numero', 'titre', 'client', 'montant_ht', 'date_signature')
+    list_select_related = ('client',)
+    list_filter = ('date_signature',)
+    search_fields = ('numero', 'titre', 'client__nom', 'client__email')
+    autocomplete_fields = ('client',)
+    date_hierarchy = 'date_signature'
 
 
 @admin.register(Inscription)

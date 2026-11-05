@@ -1,16 +1,22 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpRequest, HttpResponse
-from .models import Formation, Intervention, Client, Inscription
+from django.urls import reverse_lazy
+from django.db.models import Q, ProtectedError
+
 from django.contrib import messages # messages Flash
 from django.contrib.messages.views import SuccessMessageMixin
-from .forms import NouveauClientForm, ClientForm, InscriptionForm, CompteForm
-from .services import inscrire, annuler, DejaInscrit, InterventionComplete
-from django.db.models import Q, ProtectedError
+
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
-from django.urls import reverse_lazy
+from django.views.decorators.http import require_POST
+
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required, permission_required
-from django.views.decorators.http import require_POST
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+
+from .models import Formation, Intervention, Client, Inscription
+from .forms import NouveauClientForm, ClientForm, InscriptionForm, CompteForm
+from .services import inscrire, annuler, DejaInscrit, InterventionComplete
+
 
 # Create your views here.
 def accueil(request: HttpRequest) -> HttpResponse:
@@ -164,7 +170,11 @@ def supprimer_client(request, pk: int):
 
 ########### version CBV : Class Based View ; Cas suffisamment simples et générique
 
-class ClientUpdateView(SuccessMessageMixin, UpdateView):
+class ClientUpdateView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    SuccessMessageMixin, 
+    UpdateView):
     """
     contrepartie en POO de la fonction "modifier_client"
     avec comportement génériques
@@ -180,6 +190,7 @@ class ClientUpdateView(SuccessMessageMixin, UpdateView):
     template_name = 'catalog/form.html'
     # -----------> l'url sera redirigée si le formulaire est validé
     success_url = reverse_lazy('catalog:clients')
+    permission_required = 'catalog.change_client'
 
     def get_context_data(self, **kwargs):
         """
@@ -242,6 +253,15 @@ def sinscrire(request, pk):
         else:
             messages.success(request, f'Inscription à {intervention.formation.nom} enregistrée.')
     return redirect('catalog:detail-formation', pk=intervention.formation_id)
+
+@login_required
+@require_POST
+def annuler_ma_inscription(request, pk):
+    # filtrer par propriétaire : l'inscription d'un autre → 404, pas 403
+    inscription = get_object_or_404(Inscription, pk=pk, client__utilisateur=request.user)
+    if annuler(inscription):
+        messages.success(request, 'Inscription annulée.')
+    return redirect('catalog:mon-espace')
 
 ######### gestion authentification
 

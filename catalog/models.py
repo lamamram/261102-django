@@ -205,6 +205,7 @@ class Inscription(models.Model):
                 name='inscription_unique_client_intervention_active',
             )
         ]
+        permissions = [('annuler_inscription', "Peut annuler l'inscription d'un client")]
 
     def __str__(self):
         return f"{self.client} --> {self.intervention}"   

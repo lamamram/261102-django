@@ -42,21 +42,20 @@
             à {{ intervention.ville }}
             ({{ intervention.places_dispo }} places restantes)
         </p>
-    {% empty %}
-        <p class="vide">Aucune intervention planifiée pour cette formation.</p>
-    {% endfor %}
-    </section>
-
-    <footer class="action">
+        <div class="action">
         {% if user.is_authenticated %}
             <form method="post" action="{% url 'catalog:sinscrire' intervention.pk %}" class="inline">
                 {% csrf_token %}
-                <button type="submit" class="btn" {% if intervention.places_dispo == 0 %}disabled{% endif %}>S'inscrire à cette formation</button>
+                <button type="submit" class="btn" {% if intervention.places_dispo == 0 %}disabled{% endif %}>S'inscrire à cette intervention</button>
             </form>
         {% else %}
             <a href="{% url 'login' %}?next={{ request.path|urlencode }}">Se connecter pour s'inscrire</a>
         {% endif %}
-    </footer>
+        </div>
+    {% empty %}
+        <p class="vide">Aucune intervention planifiée pour cette formation.</p>
+    {% endfor %}
+    </section>
 
 
 </article>

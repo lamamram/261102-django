@@ -33,8 +33,8 @@ urlpatterns = [
     path('interventions/<int:pk>/s-inscrire/', views.sinscrire, name='sinscrire'),
 
     # ---------------- espace utilisateur
-    path('mon-espace/', views.mon_espace, name='mon-espace')
-
+    path('mon-espace/', views.mon_espace, name='mon-espace'),
+    path('mon-espace/inscriptions/<int:pk>/annuler/', views.annuler_ma_inscription, name='annuler-ma-inscription'),
     
     # exemple de route matchée par une regex
     
