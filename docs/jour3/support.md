@@ -435,7 +435,77 @@ python manage.py migrate
 
 ```python
 # catalog/services.py
-????
+from django.db import transaction
+from django.db.models import F, Q
+
+from .models import Inscription, Intervention, Client
+
+class DejaInscrit(Exception):
+    def __init__(self, cl, inter):
+        self.cl = cl
+        self.inter = inter
+
+    def __str__(self):
+        return f"client: {self.cl} est déjà été inscrit à l'intervention: {self.inter}"
+
+class InterventionComplete(Exception):
+    def __init__(self, inter):
+        self.inter = inter
+
+    def __str__(self):
+        return f"plus de places sur l'intervention: {self.inter} !!"
+
+@transaction.atomic
+def inscrire(client: Client, intervention: Intervention):
+    """
+    on inscrit si
+        - le client n'est pas déjà inscrit !!!
+        - s'il ya des places dispo !!!
+          dans ce cas on met à jour les nb_inscrits de l'intervention
+    dans ce cas on créé une inscription 
+    """
+    # if Inscription.objects.filter(
+    #     Q(client=client) & 
+    #     Q(intervention=intervention) &
+    #     ~Q(statut='X')
+    # ).exists():
+    # exclude (NAND) != filter (AND)
+    if Inscription.objects.filter(
+        client=client, intervention=intervention
+    ).exclude(statut='X'):
+        raise DejaInscrit(client, intervention)
+
+    # 1. retourne l'intervention s'il ya des places dispo OU QuerySet vide
+    # 2. s'il ya intervention : on incrémente les places dispo
+    places_prises = Intervention.objects.filter(
+        pk=intervention.pk, statut='A', nb_inscrits__lt=F('capacite')
+    ).update(nb_inscrits=F('nb_inscrits') +  1)
+    if not places_prises:
+        raise InterventionComplete(intervention)
+
+    return Inscription.objects.create(
+        client=client, 
+        intervention=intervention,
+        montant_ht=intervention.formation.prix
+    )
+
+def annuler(inscription: Inscription) -> bool:
+    """
+    libère la place et change le statut à X et retourne True si le changement est fait 
+    """
+    # si on veut utiliser plusieurs transactions dans la même procédure
+    with transaction.atomic():
+       change = Inscription.object.filter(
+           pk=inscription.pk
+        ).exclude(statut='X').update('X')
+       # change est le nb éléments modifiés: 1 => True, 0 => False
+       if change:
+           Intervention.objects.filter(
+               pk=inscription.intervention_id
+            ).update(nb_inscrits=F('nb_inscrits') - 1)
+    return bool(change)
+
+    
 ```
 
 C'est le **`F` du jour 2** (§5.7) dans son rôle final. Le filtre `nb_inscrits__lt=F('capacite')` **dans l'`UPDATE`** est la clé : deux requêtes simultanées sur la dernière place s'exécutent l'une après l'autre dans la base ; la seconde trouve `nb_inscrits == capacite`, met à jour **0 ligne**, et lève `InterventionComplete`. Avec `if intervention.places_dispo > 0: …; intervention.save()`, les deux passeraient.
@@ -508,19 +578,22 @@ Deux idées : le **`queryset` d'un champ de choix se restreint dans `__init__`**
 | 1 | `/inscriptions/nouvelle/` | la liste ne propose **pas** la intervention complète `PY-102-2601` |
 | 2 | inscrire Marie Dupont à `PY-101-2612` (7/12) | inscription créée, intervention à **8/12** (vérifier en shell) |
 | 3 | recommencer la même inscription | erreur « déjà inscrit », compteur **inchangé** |
-| 4 | en shell : `inscrire(client, Intervention.objects.get(numero='PY-102-2601'))` | `InterventionComplete` — la intervention est pleine |
-| 5 | en shell : `annuler(inscription)` puis réinscrire | compteur 8 → 7 → 8, réinscription **autorisée** |
+| 4 | en shell_plus : `inscrire(client, Intervention.objects.get(numero='PY-102-2601'))` | `InterventionComplete` — la intervention est pleine |
+| 5 | en shell_plus : `annuler(inscription)` puis réinscrire | compteur 8 → 7 → 8, réinscription **autorisée** |
 
 ```python
-# shell — cas 2 et 4
->>> from catalog.models import Client, Intervention
+# shell_plus — cas 2 et 4
 >>> from catalog.services import inscrire
 >>> c = Client.objects.get(email='m.dupont@acme.fr')
->>> Intervention.objects.get(numero='PY-101-2612').nb_inscrits
+>>> i= Intervention.objects.get(numero='PY-101-2612')
+>>> i..nb_inscrits
 7
->>> inscrire(c, Intervention.objects.get(numero='PY-101-2612'))
+>>> inscrire(c, i)
 <Inscription: Marie Dupont → PY-101-2612>
->>> Intervention.objects.get(numero='PY-101-2612').nb_inscrits
+>>> i.nb_inscrits
+7
+>>> i.refresh_from_db() # resynchronise l'objet python et l'enregistrement en BDD !!!!
+>>> i.nb_inscrits
 8
 ```
 

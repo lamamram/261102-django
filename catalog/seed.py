@@ -61,15 +61,18 @@ def seed_formations():
         #    --------------------------------------- WHERE  nom IN ("django", "ORM")
         formation.competences.set(Competence.objects.filter(nom__in=comps))
 
+# catalog/seed.py — seed_interventions() corrigée
 def seed_interventions():
     for numero, code, d_debut, d_fin, ville, capacite, inscrits, statut in INTERVENTIONS:
+        commun = {
+            'formation': Formation.objects.get(code=code),
+            'date_debut': d_debut, 'date_fin': d_fin, 'ville': ville,
+            'capacite': capacite, 'statut': statut,
+        }
         Intervention.objects.update_or_create(
             numero=numero,
-            defaults={
-                'formation': Formation.objects.get(code=code),
-                'date_debut': d_debut, 'date_fin': d_fin, 'ville': ville,
-                'capacite': capacite, 'nb_inscrits': inscrits, 'statut': statut,
-            },
+            defaults=commun,                                     # mises à jour à chaque relance (UPDATE OR INSERT)
+            create_defaults={**commun, 'nb_inscrits': inscrits}, # le compteur, une seule fois (INSERT)
         )
 
 def seed_clients_contrats():
