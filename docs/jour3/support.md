@@ -977,7 +977,6 @@ from django.contrib.auth.views import LoginView
 
 urlpatterns = [
     path('admin/',   admin.site.urls),
-    path('comptes/login/', LoginView.as_view(template_name='catalog/login.html'), name='login'), # page de connexion
     path('comptes/', include('django.contrib.auth.urls')),   # login, logout, password_change…
     path('',         include('catalog.urls')),
 ]
@@ -1024,20 +1023,32 @@ Le paramètre **`next`** fait revenir l'utilisateur sur la page qu'il demandait 
 {# catalog/base.html — le <ul> de la navigation #}
 <ul>
     <li><a href="{% url 'catalog:liste-formations' %}">Catalogue</a></li>
+    
+    {# filtre d'authentification #}
     {% if user.is_authenticated %}
         <li><a href="{% url 'catalog:mon-espace' %}">Mon espace</a></li>
+        
+        {# filtre de permissions #}
         {% if perms.catalog.view_client %}<li><a href="{% url 'catalog:clients' %}">Clients</a></li>{% endif %}
         {% if perms.catalog.view_inscription %}<li><a href="{% url 'catalog:inscriptions' %}">Inscriptions</a></li>{% endif %}
+        
+        {# flag autorisant l'admin #}
         {% if user.is_staff %}<li><a href="{% url 'admin:index' %}">Admin</a></li>{% endif %}
+        
+        {% comment "comptes/logout ne peut être appelé qu'en POST !!!" %}
+            <li>???? — <a href="{% url "logout" %}">Déconnexion</a></li>
+        {% endcomment %}
+        
         <li>
-            {{ user.get_username }} —
+            {# username #}
+            {{ user.get_username }}
             <form method="post" action="{% url 'logout' %}" class="inline">
                 {% csrf_token %}<button type="submit" class="lien">Déconnexion</button>
             </form>
         </li>
     {% else %}
-        <li><a href="{% url 'login' %}">Connexion</a></li>
-        <li><a href="{% url 'catalog:creer-compte' %}">Créer un compte</a></li>
+        <li><a href="{% url "login" %}">Connexion</a></li>
+        <li><a href="{% url "catalog:creer-compte" %}">Créer un compte</a></li>
     {% endif %}
 </ul>
 ```
@@ -1050,6 +1061,12 @@ Le paramètre **`next`** fait revenir l'utilisateur sur la page qu'il demandait 
 
 ### 9.4. Créer un compte — un `ModelForm` fourni
 
+```python
+# catalog.urls.py
+path('creer-compte/', views.creer_compte, name='creer-compte'),
+path('mon-espace/', views.mon_espace, name='mon-espace'),
+```
+
 `UserCreationForm` est un **ModelForm** sur `User` : il valide la politique de mot de passe (`AUTH_PASSWORD_VALIDATORS`), demande la confirmation et **hache** le mot de passe. On l'étend avec l'e-mail et le nom.
 
 ```python
@@ -1057,17 +1074,39 @@ Le paramètre **`next`** fait revenir l'utilisateur sur la page qu'il demandait 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 
+class CompteForm(UserCreationForm):
+    email = forms.EmailField(label='E-mail')
 
-?????
+    class Meta(UserCreationForm.Meta):
+        model = get_user_model()
+        fields = ['username', 'first_name', 'last_name', 'email']
 ```
 
 **Le lien compte ↔ client** : un `Client` peut être rattaché à un compte.
+**ajout d'une permission**: une `Inscription` peut être annulée
 
 ```python
 # catalog/models.py — ajout dans Client (J3)
 from django.conf import settings
 
-?????
+class Client(models.Model):
+    ....
+    utilisateur = models.OneToOneField(
+        # settings principaux du projet:
+        # certains visibles dans gesti/settings.py et pas d'autres
+        # comme AUTH_USER_MODEL qui contient la classe d'utilisateur comme ger_user_model()
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='client',
+        verbose_name='compte utilisateur'
+    )
+
+class Inscription(models.Model):
+    ...
+    class Meta:
+        ...
+        permissions = [('annuler_inscription', "Peut annuler l'inscription d'un client")]
 ```
 
 ```bash
@@ -1079,11 +1118,86 @@ python manage.py migrate
 
 ```python
 # catalog/views.py — ajout J3
-?????
+from django.contrib.auth import login
+from .forms import CompteForm
+
+def creer_compte(request):
+    if request.method == 'POST':
+        form = CompteForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)           # §7.4 : compléter avant d'écrire
+            user.email = user.email.lower()
+            user.save()
+            client, _ = Client.objects.get_or_create(
+                email=user.email,
+                defaults={'prenom': user.first_name, 'nom': user.last_name},
+            )
+            if client.utilisateur_id is None:
+                client.utilisateur = user
+                client.save(update_fields=['utilisateur'])
+            login(request, user)                     # connecté dès la création
+            messages.success(request, 'Compte créé. Bienvenue !')
+            return redirect('catalog:mon-espace')
+    else:
+        form = CompteForm()
+    return render(request, 'catalog/form.html', {
+        'form': form, 'titre': 'Créer un compte', 'retour': 'catalog:accueil',
+    })
+
+def mon_espace(request):
+    # -----------------------------------------> utilisateur loggé
+    client = Client.objects.filter(utilisateur=request.user).first()
+    inscriptions = (
+        Inscription.objects
+        .filter(client__utilisateur=request.user)        # ← la propriété est dans la requête
+        .select_related('intervention__formation')
+    )
+    return render(request, 'catalog/mon_espace.html', {
+        'client': client, 'inscriptions': inscriptions,
+    })
 ```
 
 > ⚠️ **Piège n°30 — rattacher un compte à un client par e-mail non vérifié** : ici, saisir l'adresse d'un client existant suffit à **hériter de son profil et de ses inscriptions**. C'est acceptable pour une démonstration ; en production, on **envoie un lien de confirmation** avant de rattacher (jour 5, e-mails). À dire à voix haute : une fonctionnalité pratique peut être une faille.
 
+```html
+{# catalog/templates/catalog/mon_espace.html #}
+{% extends "catalog/base.html" %}
+
+{% block titre %}Mon espace — GestiFormation{% endblock %}
+
+{% block contenu %}
+<section class="espace">
+    <h1>Bonjour {{ user.first_name|default:user.get_username }}</h1>
+    {% if not client %}
+        <p class="vide">Aucun profil client n'est associé à ce compte.</p>
+    {% endif %}
+
+    <h2>Mes inscriptions</h2>
+    <table class="tableau">
+        <thead><tr><th>Formation</th><th>Intervention</th><th>Début</th><th>Statut</th><th></th></tr></thead>
+        <tbody>
+        {% for i in inscriptions %}
+            <tr>
+                <td>{{ i.intervention.formation.nom }}</td>
+                <td>{{ i.intervention.numero }}</td>
+                <td>{{ i.intervention.date_debut|date:"d/m/Y" }}</td>
+                <td>{{ i.get_statut_display }}</td>
+                <td>
+                    {% if i.statut != 'X' %}
+                    <form method="post" action="{% url 'catalog:annuler-ma-inscription' i.pk %}" class="inline">
+                        {% csrf_token %}<button type="submit" class="lien">Annuler</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="5" class="vide">Aucune inscription.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}
+```
 ### 9.5. Protéger les vues
 
 **Décorateurs** pour les vues fonctionnelles :
@@ -1094,14 +1208,43 @@ python manage.py migrate
 | `@permission_required('catalog.add_client', raise_exception=True)` | il possède la permission `<app>.<codename>` | **403** |
 | `@require_POST` | la méthode HTTP est `POST` | **405** |
 
+**Mixins** pour les CBVs (UpdateView ...)
+|---|---|---|
+| LoginRequiredMixin | l'utilisateur est connecté | idem @login_required |
+| PermissionRequiredMixin | l'utilisateur a des droits | idem @permission_required |
+
+
+
 Les permissions de modèle sont créées **automatiquement** pour chaque modèle (`add_`, `change_`, `delete_`, `view_`). Leur nom complet : `catalog.view_client`.
 
 ```python
 # catalog/views.py — les gardes d'accès (J3)
 from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 
 
-????
+@login_required
+# ------------------> permission ou [permissions] --------> 403
+@permission_required('catalog.view_client', raise_exception=True)
+def liste_clients(request: HttpRequest):
+    ...
+
+@login_required
+@permission_required('catalog.add_client', raise_exception=True)
+def nouveau_client(request):
+    ...
+
+class ClientUpdateView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    SuccessMessageMixin, 
+    UpdateView):
+    permission_required = 'catalog.change_client'
+    ...
+
+@login_required
+def mon_espace(request):
+    ...
 ```
 
 **L'ordre des décorateurs compte.** `@login_required` est **au-dessus** : il tranche d'abord *connecté ou non* (redirection), puis `@permission_required` tranche *autorisé ou non* (403).
@@ -1136,8 +1279,8 @@ Dans les gabarits, les colonnes d'action de `liste_clients.html` se conditionnen
 
 ```html
 <td>
-    ????<a href="{% url 'catalog:modifier-client' c.pk %}">Modifier</a>{% endif %}
-    ????<a href="{% url 'catalog:supprimer-client' c.pk %}">Supprimer</a>{% endif %}
+    {% if perms.catalog.change_client %}<a href="{% url 'catalog:modifier-client' c.pk %}">Modifier</a>{% endif %}
+    {% if perms.catalog.delete_client %}<a href="{% url 'catalog:supprimer-client' c.pk %}">Supprimer</a>{% endif %}
 </td>
 ```
 
@@ -1199,8 +1342,9 @@ def seed_groupes():
             Permission.objects.filter(content_type__app_label='catalog', codename__in=codenames)
         )
 
-
 def seed_comptes():
+    # get_user_model(): factory qui retourne le modèle d'utilisateur lié au type d'authenfication
+    # par défaut auth: username/pass
     User = get_user_model()
     for username, prenom, nom, email, groupe, staff in COMPTES:
         user, cree = User.objects.get_or_create(
@@ -1208,6 +1352,7 @@ def seed_comptes():
             defaults={'first_name': prenom, 'last_name': nom, 'email': email, 'is_staff': staff},
         )
         if cree:
+            # génère un hash "salé" en base de donnée
             user.set_password(MOT_DE_PASSE_DEMO)
             user.save()
         if groupe:
@@ -1220,6 +1365,7 @@ def seed_comptes():
         defaults={'prenom': 'Alice', 'nom': 'Martin', 'utilisateur': alice},
     )
 
+...
 
 # dans run() :  seed_groupes(); seed_comptes()   (après seed_clients_contrats())
 ```
@@ -1239,20 +1385,6 @@ Une permission de modèle répond à *« peut-il lire **les** inscriptions ? »*
 # catalog/views.py — ajouts J3
 from django.views.decorators.http import require_POST
 from .services import annuler
-
-
-@login_required
-def mon_espace(request):
-    client = Client.objects.filter(utilisateur=request.user).first()
-    inscriptions = (
-        Inscription.objects
-        .filter(client__utilisateur=request.user)        # ← la propriété est dans la requête
-        .select_related('intervention__formation')
-    )
-    return render(request, 'catalog/mon_espace.html', {
-        'client': client, 'inscriptions': inscriptions,
-    })
-
 
 @login_required
 @require_POST
@@ -1283,56 +1415,11 @@ def annuler_ma_inscription(request, pk):
 
 ```python
 # catalog/urls.py — ajouts
-path('creer-compte/',                     views.creer_compte,            name='creer-compte'),
-path('mon-espace/',                       views.mon_espace,              name='mon-espace'),
-path('interventions/<int:pk>/s-inscrire/',     views.sinscrire,               name='sinscrire'),
-path('mon-espace/inscriptions/<int:pk>/annuler/',
-                                          views.annuler_ma_inscription,  name='annuler-ma-inscription'),
+path('interventions/<int:pk>/s-inscrire/', views.sinscrire, name='sinscrire'),
+path('mon-espace/inscriptions/<int:pk>/annuler/', views.annuler_ma_inscription, name='annuler-ma-inscription'),
 ```
 
 > ⚠️ **Piège n°33 — l'accès aux objets d'autrui par simple changement d'identifiant (IDOR)** : `get_object_or_404(Inscription, pk=pk)` + `@login_required` laisse **n'importe quel connecté** annuler l'inscription n° 7 en changeant le nombre dans l'URL. La permission existe, la propriété n'est pas vérifiée. On filtre **toujours** par propriétaire (`client__utilisateur=request.user`) : l'objet d'autrui **n'existe pas** (404) — et l'on ne révèle même pas qu'il existe.
-
-Les deux gabarits :
-
-```html
-{# catalog/templates/catalog/mon_espace.html #}
-{% extends "catalog/base.html" %}
-
-{% block titre %}Mon espace — GestiFormation{% endblock %}
-
-{% block contenu %}
-<section class="espace">
-    <h1>Bonjour {{ user.first_name|default:user.get_username }}</h1>
-    {% if not client %}
-        <p class="vide">Aucun profil client n'est associé à ce compte.</p>
-    {% endif %}
-
-    <h2>Mes inscriptions</h2>
-    <table class="tableau">
-        <thead><tr><th>Formation</th><th>Intervention</th><th>Début</th><th>Statut</th><th></th></tr></thead>
-        <tbody>
-        {% for i in inscriptions %}
-            <tr>
-                <td>{{ i.intervention.formation.nom }}</td>
-                <td>{{ i.intervention.numero }}</td>
-                <td>{{ i.intervention.date_debut|date:"d/m/Y" }}</td>
-                <td>{{ i.get_statut_display }}</td>
-                <td>
-                    {% if i.statut != 'X' %}
-                    <form method="post" action="{% url 'catalog:annuler-ma-inscription' i.pk %}" class="inline">
-                        {% csrf_token %}<button type="submit" class="lien">Annuler</button>
-                    </form>
-                    {% endif %}
-                </td>
-            </tr>
-        {% empty %}
-            <tr><td colspan="5" class="vide">Aucune inscription.</td></tr>
-        {% endfor %}
-        </tbody>
-    </table>
-</section>
-{% endblock %}
-```
 
 Le bouton « S'inscrire » s'ajoute à la fiche détail, dans la boucle des interventions (J2, §5.6) :
 

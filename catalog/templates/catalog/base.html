@@ -18,16 +18,25 @@
             <a class="logo" href="">GestiFormation</a>
             <ul>
                 <li><a href="{% url 'catalog:liste-formations' %}">Catalogue</a></li>
+                
+                {# filtre d'authentification #}
                 {% if user.is_authenticated %}
                     <li><a href="{% url 'catalog:mon-espace' %}">Mon espace</a></li>
+                    
+                    {# filtre de permissions #}
                     {% if perms.catalog.view_client %}<li><a href="{% url 'catalog:clients' %}">Clients</a></li>{% endif %}
                     {% if perms.catalog.view_inscription %}<li><a href="{% url 'catalog:inscriptions' %}">Inscriptions</a></li>{% endif %}
+                    
+                    {# flag autorisant l'admin #}
                     {% if user.is_staff %}<li><a href="{% url 'admin:index' %}">Admin</a></li>{% endif %}
+                    
                     {% comment "comptes/logout ne peut être appelé qu'en POST !!!" %}
                         <li>???? — <a href="{% url "logout" %}">Déconnexion</a></li>
                     {% endcomment %}
                     
                     <li>
+                        {# username #}
+                        {{ user.get_username }}
                         <form method="post" action="{% url 'logout' %}" class="inline">
                             {% csrf_token %}<button type="submit" class="lien">Déconnexion</button>
                         </form>

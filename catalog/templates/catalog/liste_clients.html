@@ -22,8 +22,8 @@
                 <td>{{ c.email }}</td>
                 <td>{{ c.telephone|default:"—" }}</td>
                 <td>
-                    <a href="{% url 'catalog:modifier-client' c.pk %}">Modifier</a> ·
-                    <a href="{% url 'catalog:supprimer-client' c.pk %}">Supprimer</a>
+                    {% if perms.catalog.change_client %}<a href="{% url 'catalog:modifier-client' c.pk %}">Modifier</a>{% endif %}
+                    {% if perms.catalog.delete_client %}<a href="{% url 'catalog:supprimer-client' c.pk %}">Supprimer</a>{% endif %}
                 </td>
             </tr>
         {% empty %}
