@@ -33,3 +33,4 @@ urlpatterns = [
 # pour le voir ==> DEBUG = False
 handler404 = 'catalog.views.page_introuvable'
 handler500 = 'catalog.views.interne'
+handler403 = 'catalog.views.acces_refuse'

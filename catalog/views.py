@@ -9,7 +9,8 @@ from django.db.models import Q, ProtectedError
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.contrib.auth import login
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
+from django.views.decorators.http import require_POST
 
 # Create your views here.
 def accueil(request: HttpRequest) -> HttpResponse:
@@ -63,11 +64,16 @@ def page_introuvable(request, exception):
 def interne(request):
     return render(request, "catalog/500.html", status=500)
 
+def acces_refuse(request, exception=None):
+    return render(request, 'catalog/403.html', status=403)
+
 ################################ CLIENTS #######################################
 
 ########## version vues fonctions
 
 @login_required
+# ------------------> permission ou [permissions] --------> 403
+@permission_required('catalog.view_client', raise_exception=True)
 def liste_clients(request: HttpRequest):
     # q vient d'un queryPAram adossée à l'url en GET: domain/xxxx?q=blabla%20blibli
     q = request.GET.get('q', '').strip()
@@ -105,6 +111,7 @@ def deprecated_nouveau_client(request):
     })
 
 @login_required
+@permission_required('catalog.add_client', raise_exception=True)
 def nouveau_client(request):
     if request.method == 'POST':
         form = ClientForm(request.POST)
@@ -138,6 +145,7 @@ def modifier_client(request, pk):
     })
 
 @login_required
+@permission_required('catalog.delete_client', raise_exception=True)
 def supprimer_client(request, pk: int):
     client = get_object_or_404(Client, pk=pk)
     if request.method == 'POST':
@@ -194,12 +202,14 @@ class ClientUpdateView(SuccessMessageMixin, UpdateView):
 
 ################# INSCRIPTIONS
 @login_required
+@permission_required('catalog.view_inscription', raise_exception=True)
 def liste_inscriptions(request):
     # ------------------------------------------------> 2 joins client et intervention avec leur propre relation formation
     inscriptions = Inscription.objects.select_related('client', 'intervention__formation')
     return render(request, 'catalog/liste_inscriptions.html', {'inscriptions': inscriptions})
 
 @login_required
+@permission_required('catalog.add_inscription', raise_exception=True)
 def nouvelle_inscription(request):
     if request.method == 'POST':
         form = InscriptionForm(request.POST)
@@ -216,6 +226,22 @@ def nouvelle_inscription(request):
     return render(request, 'catalog/form.html', {
         'form': form, 'titre': 'Nouvelle inscription', 'retour': 'catalog:inscriptions',
     })
+
+@login_required
+@require_POST
+def sinscrire(request, pk):
+    intervention = get_object_or_404(Intervention.objects.select_related('formation'), pk=pk, statut='A')
+    client = Client.objects.filter(utilisateur=request.user).first()
+    if client is None:
+        messages.error(request, "Aucun profil client n'est associé à votre compte.")
+    else:
+        try:
+            inscrire(client, intervention)
+        except (DejaInscrit, InterventionComplete) as erreur:
+            messages.error(request, str(erreur))
+        else:
+            messages.success(request, f'Inscription à {intervention.formation.nom} enregistrée.')
+    return redirect('catalog:detail-formation', pk=intervention.formation_id)
 
 ######### gestion authentification
 

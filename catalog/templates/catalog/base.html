@@ -19,7 +19,7 @@
             <ul>
                 <li><a href="{% url 'catalog:liste-formations' %}">Catalogue</a></li>
                 {% if user.is_authenticated %}
-                    <li><a href="{% url 'catalog:clients' %}">Clients</a></li>
+                    {% if perms.catalog.view_client %}<li><a href="{% url 'catalog:clients' %}">Clients</a></li>{% endif %}
                     
                     {% comment "comptes/logout ne peut être appelé qu'en POST !!!" %}
                         <li>???? — <a href="{% url "logout" %}">Déconnexion</a></li>

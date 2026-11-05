@@ -1,0 +1,9 @@
+{% extends "catalog/base.html" %}
+{% block titre %}Accès refusé — GestiFormation{% endblock %}
+{% block contenu %}
+<section class="erreur-page">
+    <h1>403 — Accès refusé</h1>
+    <p>Votre compte n'a pas les droits nécessaires pour cette page.</p>
+    <p><a class="btn" href="{% url 'catalog:accueil' %}">Retour à l'accueil</a></p>
+</section>
+{% endblock %}
