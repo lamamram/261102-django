@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 505" role="img" aria-label="Architecture de production : navigateur, reverse proxy TLS, conteneur Gunicorn avec Django en settings_prod et WhiteNoise, base PostgreSQL, SMTP et fournisseurs OAuth, configuration par variables d'environnement">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#475569"/>
+    </marker>
+    <marker id="arr-ok" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#0f766e"/>
+    </marker>
+    <marker id="arr-warn" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#b45309"/>
+    </marker>
+  </defs>
+  <rect width="1080" height="505" fill="#ffffff"/>
+  <text x="540" y="30" text-anchor="middle" font-family="system-ui, sans-serif" font-size="18" font-weight="600" fill="#1f2937">GestiFormation en production — du navigateur à la base, configuré par l'environnement</text>
+
+  <!-- variables d'environnement -->
+  <g font-family="system-ui, sans-serif">
+    <rect x="300" y="50" width="640" height="44" rx="8" fill="#fff7ed" stroke="#b45309" stroke-width="1.5"/>
+    <text x="316" y="70" font-size="12.5" font-weight="600" fill="#1f2937">Environnement (jamais dans le dépôt)</text>
+    <text x="316" y="86" font-size="10.5" fill="#475569">SECRET_KEY · ALLOWED_HOSTS · CSRF_TRUSTED_ORIGINS · DATABASE_URL · EMAIL_* · GITHUB_* · GOOGLE_* · SITE_URL</text>
+  </g>
+  <line x1="620" y1="95" x2="620" y2="118" stroke="#b45309" stroke-width="2" marker-end="url(#arr-warn)"/>
+
+  <!-- gauche : navigateur et proxy -->
+  <g font-family="system-ui, sans-serif">
+    <rect x="30" y="205" width="130" height="70" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text x="95" y="236" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2937">Navigateur</text>
+    <text x="95" y="254" text-anchor="middle" font-size="10.5" fill="#475569">fr / en</text>
+
+    <rect x="225" y="185" width="165" height="110" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="307" y="212" text-anchor="middle" font-size="13" font-weight="600" fill="#1f2937">Reverse proxy</text>
+    <g font-size="10.5" fill="#475569" text-anchor="middle">
+      <text x="307" y="234">termine TLS (HTTPS)</text>
+      <text x="307" y="251">certificat renouvelé</text>
+      <text x="307" y="268">X-Forwarded-Proto: https</text>
+    </g>
+  </g>
+  <g stroke="#475569" stroke-width="2">
+    <line x1="160" y1="240" x2="223" y2="240" marker-end="url(#arr)"/>
+    <line x1="390" y1="240" x2="438" y2="240" marker-end="url(#arr)"/>
+  </g>
+  <g font-family="system-ui, sans-serif" font-size="10.5" fill="#475569" text-anchor="middle">
+    <text x="192" y="231">HTTPS</text>
+    <text x="414" y="231">HTTP</text>
+  </g>
+
+  <!-- centre : le conteneur -->
+  <rect x="440" y="120" width="360" height="285" rx="10" fill="#ffffff" stroke="#64748b" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="456" y="141" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#475569">Conteneur (Dockerfile) — un utilisateur non root</text>
+  <g font-family="system-ui, sans-serif">
+    <rect x="458" y="154" width="324" height="58" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text x="472" y="176" font-size="13" font-weight="600" fill="#1f2937">Gunicorn</text>
+    <text x="472" y="194" font-size="10.5" fill="#475569">gesti.wsgi:application · 3 workers · journaux sur stdout</text>
+
+    <rect x="458" y="228" width="324" height="78" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="472" y="250" font-size="13" font-weight="600" fill="#1f2937">Django — gesti.settings_prod</text>
+    <text x="472" y="268" font-size="10.5" fill="#475569">DEBUG = False · SECURE_SSL_REDIRECT · cookies Secure · HSTS</text>
+    <text x="472" y="285" font-size="10.5" fill="#475569">pas de debug_toolbar · tests et migrations hors de ce processus</text>
+
+    <rect x="458" y="322" width="324" height="68" rx="8" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.5"/>
+    <text x="472" y="344" font-size="13" font-weight="600" fill="#1f2937">WhiteNoise — /static/</text>
+    <text x="472" y="362" font-size="10.5" fill="#475569">fichiers de STATIC_ROOT : noms hachés (base.b5fba….css),</text>
+    <text x="472" y="378" font-size="10.5" fill="#475569">versions gzip, cache navigateur très long — pas de nginx dédié</text>
+  </g>
+  <g stroke="#475569" stroke-width="2">
+    <line x1="620" y1="213" x2="620" y2="226" marker-end="url(#arr)"/>
+    <line x1="620" y1="307" x2="620" y2="320" marker-end="url(#arr-ok)" stroke="#0f766e"/>
+  </g>
+
+  <!-- droite : services -->
+  <g font-family="system-ui, sans-serif">
+    <rect x="870" y="135" width="180" height="70" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text x="886" y="160" font-size="13" font-weight="600" fill="#1f2937">PostgreSQL</text>
+    <text x="886" y="178" font-size="10.5" fill="#475569">DATABASE_URL</text>
+    <text x="886" y="193" font-size="10.5" fill="#475569">connexions persistantes</text>
+
+    <rect x="870" y="225" width="180" height="70" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text x="886" y="250" font-size="13" font-weight="600" fill="#1f2937">Serveur SMTP</text>
+    <text x="886" y="268" font-size="10.5" fill="#475569">EMAIL_HOST · PORT · TLS</text>
+    <text x="886" y="283" font-size="10.5" fill="#475569">timeout 10 s</text>
+
+    <rect x="870" y="315" width="180" height="70" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text x="886" y="340" font-size="13" font-weight="600" fill="#1f2937">GitHub · Google</text>
+    <text x="886" y="358" font-size="10.5" fill="#475569">OAuth : client_id + secret</text>
+    <text x="886" y="373" font-size="10.5" fill="#475569">appel serveur à serveur</text>
+  </g>
+  <g stroke="#475569" stroke-width="2">
+    <line x1="782" y1="170" x2="868" y2="170" marker-end="url(#arr)"/>
+    <line x1="782" y1="260" x2="868" y2="260" marker-end="url(#arr)"/>
+    <line x1="782" y1="350" x2="868" y2="350" marker-end="url(#arr)"/>
+  </g>
+  <g font-family="system-ui, sans-serif" font-size="10.5" fill="#475569" text-anchor="middle">
+    <text x="825" y="162">SQL</text>
+    <text x="825" y="252">SMTP</text>
+    <text x="825" y="342">HTTPS</text>
+  </g>
+
+  <!-- bas : chaîne de livraison -->
+  <text x="30" y="428" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#475569">Construction de l'image</text>
+  <text x="620" y="428" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#475569">À chaque déploiement</text>
+  <g font-family="system-ui, sans-serif" font-size="11" fill="#1f2937" text-anchor="middle">
+    <rect x="30" y="438" width="110" height="34" rx="6" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.2"/>
+    <text x="85" y="459">test --shuffle</text>
+    <rect x="150" y="438" width="170" height="34" rx="6" fill="#f8fafc" stroke="#64748b" stroke-width="1.2"/>
+    <text x="235" y="459">pip install -r requirements</text>
+    <rect x="330" y="438" width="125" height="34" rx="6" fill="#f8fafc" stroke="#64748b" stroke-width="1.2"/>
+    <text x="392" y="459">compilemessages</text>
+    <rect x="465" y="438" width="110" height="34" rx="6" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.2"/>
+    <text x="520" y="459">collectstatic</text>
+
+    <rect x="620" y="438" width="130" height="34" rx="6" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.2"/>
+    <text x="685" y="459">check --deploy</text>
+    <rect x="760" y="438" width="90" height="34" rx="6" fill="#f8fafc" stroke="#64748b" stroke-width="1.2"/>
+    <text x="805" y="459">migrate</text>
+    <rect x="860" y="438" width="100" height="34" rx="6" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.2"/>
+    <text x="910" y="459">gunicorn</text>
+  </g>
+  <g stroke="#475569" stroke-width="1.8">
+    <line x1="140" y1="455" x2="148" y2="455" marker-end="url(#arr)"/>
+    <line x1="320" y1="455" x2="328" y2="455" marker-end="url(#arr)"/>
+    <line x1="455" y1="455" x2="463" y2="455" marker-end="url(#arr)"/>
+    <line x1="750" y1="455" x2="758" y2="455" marker-end="url(#arr)"/>
+    <line x1="850" y1="455" x2="858" y2="455" marker-end="url(#arr)"/>
+  </g>
+  <text x="540" y="494" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11.5" fill="#6b7280">Le même code tourne partout : seules les variables d'environnement et le module de réglages (settings / settings_prod) changent.</text>
+</svg>

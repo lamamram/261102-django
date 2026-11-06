@@ -252,7 +252,7 @@ Trois points à faire nommer :
     <h1>{{ titre }}</h1>
     <form method="post" class="form">
         {% csrf_token %}
-        ????
+        {% include "catalog/_champs.html" %}
         <button type="submit" class="btn">Enregistrer</button>
     </form>
 </section>
@@ -322,7 +322,42 @@ Le triptyque « afficher / valider / enregistrer / rediriger » est si courant q
 from django.urls import reverse_lazy
 from django.views.generic import UpdateView
 
-????
+class ClientUpdateView(
+    SuccessMessageMixin, 
+    UpdateView):
+    """
+    contrepartie en POO de la fonction "modifier_client"
+    avec comportement génériques
+    - model, form_class, template_name, success_url
+    avec customisation directe
+    - get_context_data
+    avec customisation indirecte avec des Mixins 
+       == classe auxiliaire à ajouter en héritage multiple !
+    - SuccessMessageMixin.get_success_message
+    """
+    model = Client
+    form_class = ClientForm
+    template_name = 'catalog/form.html'
+    # -----------> l'url sera redirigée si le formulaire est validé
+    success_url = reverse_lazy('catalog:clients')
+
+    def get_context_data(self, **kwargs):
+        """
+        customisation du contexte pour être compatible avec le template !!
+        """
+        # super() charge le form dans contexte !
+        context = super().get_context_data(**kwargs)
+        # ----------------------------> l'objet instancié (client) !
+        context["titre"] = f'Modifier {self.get_object()}'
+        context["retour"] = 'catalog:clients'
+        return context
+
+    def get_success_message(self, cleaned_data):
+        """
+        méthode héritée de la Mixin SuccessMessageMixin
+        pour gérer les messages en succès
+        """
+        return f'Client « {self.get_object()} » modifié.'
 ```
 
 ```python
