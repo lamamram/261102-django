@@ -17,6 +17,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+def env_bool(nom, defaut=False):
+    return os.environ.get(nom, str(int(defaut))).strip().lower() in ('1', 'true', 'yes', 'on')
+
+
+def env_list(nom):
+    return [v.strip() for v in os.environ.get(nom, '').split(',') if v.strip()]
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -24,16 +32,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
+
 SECRET_KEY = os.environ.get("SECRET_KEY")
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-# ajouter des entrées ici en dehors d'un environnement local :127.0.0.1
-# i.e: runserver 0.0.0.0:<port> OU prod
-ALLOWED_HOSTS = [
-    # "*"
-]
+DEBUG = env_bool('DJANGO_DEBUG', True)               # gesti.settings = développement ; la production utilise settings_prod
+ALLOWED_HOSTS = env_list('ALLOWED_HOSTS')
 
 
 # Application definition
@@ -144,6 +146,9 @@ USE_THOUSAND_SEPARATOR = True                 # « 1 890,50 » plutôt que « 18
 # base de l'URI pour chercher les fichiers statiques (images, css, js)
 # ce static/ fait référence au sous dossier static/ de chaque application
 STATIC_URL = 'static/'
+
+# destination de `collectstatic` : le dossier que WhiteNoise sert en production (cf. settings_prod)
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

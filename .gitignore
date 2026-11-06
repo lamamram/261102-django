@@ -1,5 +1,10 @@
+# .gitignore — J5
 *.pyc
 __pycache__/
 .venv/
 .env*
-*.mo
+!.env.example          # exception : le modèle, lui, est versionné
+*.mo                   # compilé : artefact ; le .po (source de la traduction) EST versionné
+staticfiles/
+htmlcov/
+.coverage
