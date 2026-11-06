@@ -310,7 +310,7 @@ xgettext --version                # doit répondre — redémarrer le terminal a
 
 ```bash
 mkdir locale                                      # le dossier doit exister avant la première extraction
-python manage.py makemessages -l en -i venv       # -i : ignorer le dossier de l'environnement virtuel
+python manage.py makemessages -l en -i .venv       # -i : ignorer le dossier de l'environnement virtuel
 # → locale/en/LC_MESSAGES/django.po
 python manage.py compilemessages
 # → locale/en/LC_MESSAGES/django.mo
