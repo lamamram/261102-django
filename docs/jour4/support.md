@@ -1500,6 +1500,7 @@ pip install coverage
 coverage run --source=catalog --omit="*/migrations/*,catalog/seed.py,catalog/tests/*" manage.py test --shuffle
 coverage report -m                  # tableau + numéros de lignes non couvertes
 coverage html                       # rapport navigable : htmlcov/index.html
+coverage report -m --fail-under=85  # rapport bloquant en CI/CD
 ```
 
 Un résultat réaliste sur le dépôt, suite complète (74 tests) :
