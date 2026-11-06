@@ -34,7 +34,6 @@ class PagesPubliquesTests(TestCase):
         cls.cloturee = creer_intervention(cls.formation, statut='C')
 
     def test_accueil(self):
-        # ---------> urrlib/requests.get("http//xxxx.xx/yy/zz...")
         self.assertEqual(self.client.get(reverse('catalog:accueil')).status_code, 200)
 
     def test_catalogue_liste_les_formations(self):
@@ -48,7 +47,6 @@ class PagesPubliquesTests(TestCase):
         self.assertNotContains(reponse, self.cloturee.numero)
 
     def test_formation_inconnue_utilise_la_page_404_du_projet(self):
-        # ----------------------------------------------------------------> <int:pk>
         reponse = self.client.get(reverse('catalog:detail-formation', args=[999999]))
         self.assertEqual(reponse.status_code, 404)
         self.assertTemplateUsed(reponse, 'catalog/404.html')
@@ -56,7 +54,6 @@ class PagesPubliquesTests(TestCase):
 
 class PagesErreurTests(SimpleTestCase):
     def test_la_page_500_appelee_directement(self):
-        # --------> requête mockée
         requete = RequestFactory().get('/')          # pas de middleware, pas d'URL : la vue seule
         reponse = interne(requete)
         self.assertEqual(reponse.status_code, 500)
@@ -72,7 +69,6 @@ class CrudClientTests(TestCase):
         )
 
     def setUp(self):
-        #-----------> authentification d'un utilisateur qui peut gérer les clients
         self.client.force_login(self.gestionnaire)
 
     def test_creation_valide(self):
@@ -156,10 +152,6 @@ class InscriptionBackOfficeTests(TestCase):
 
     def test_le_nombre_de_requetes_ne_depend_pas_du_nombre_de_lignes(self):
         def compter():
-            """
-            compter le nb de requêtes effectuées en exécutant un flux
-            test l'utilisation de lazy/eager loading pour les requêtes liées
-            """
             with CaptureQueriesContext(connection) as contexte:
                 self.client.get(reverse('catalog:inscriptions'))
             return len(contexte)
@@ -260,7 +252,6 @@ class MonEspaceTests(TestCase):
 
 class CsrfTests(TestCase):
     def test_un_post_sans_jeton_est_refuse(self):
-        # -----------> client custom
         navigateur = ClientHTTP(enforce_csrf_checks=True)       # le client de test n'applique pas le CSRF par défaut
         navigateur.force_login(creer_utilisateur('alice'))
         reponse = navigateur.post(reverse('catalog:sinscrire', args=[1]))

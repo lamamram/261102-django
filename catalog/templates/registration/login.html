@@ -1,4 +1,5 @@
 {% extends "catalog/base.html" %}
+{% load i18n socialaccount %}
 
 {% block titre %}Connexion — {{ block.super }}{% endblock %}
 
@@ -11,6 +12,19 @@
         <input type="hidden" name="next" value="{{ next }}">
         <button type="submit" class="btn">Se connecter</button>
     </form>
+
+    {# un bouton par fournisseur configuré (variables d'environnement) ; POST obligatoire : CSRF #}
+    {% get_providers as fournisseurs %}
+    {% if fournisseurs %}
+    <div class="social">
+        <p>{% translate "ou continuer avec" %}</p>
+        {% for fournisseur in fournisseurs %}
+        <form method="post" action="{% provider_login_url fournisseur process='login' %}" class="inline">
+            {% csrf_token %}<button type="submit" class="btn">{{ fournisseur.name }}</button>
+        </form>
+        {% endfor %}
+    </div>
+    {% endif %}
     <p>Pas encore de compte ? <a href="{% url 'catalog:creer-compte' %}">Créer un compte</a></p>
 </section>
 {% endblock %}

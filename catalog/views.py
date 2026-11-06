@@ -4,6 +4,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpRequest, HttpResponse
 from django.urls import reverse_lazy
 from django.db.models import Q, ProtectedError
+from django.utils import timezone
+from django.utils.formats import get_format
 
 from django.contrib import messages # messages Flash
 from django.contrib.messages.views import SuccessMessageMixin
@@ -20,8 +22,7 @@ from .forms import NouveauClientForm, ClientForm, InscriptionForm, CompteForm
 from .services import inscrire, annuler, rattacher_client, DejaInscrit, InterventionComplete
 
 from django.utils.translation import gettext as _
-from django.utils import timezone
-from django.utils.formats import get_format
+
 
 # Create your views here.
 def accueil(request: HttpRequest) -> HttpResponse:
@@ -129,8 +130,6 @@ def nouveau_client(request):
         if form.is_valid():
             # ici forme CONTIENT un objet Modèle !!! qui peut utiliser save() --> create et/ ou  update
             client = form.save()
-            # Avant _:                f'Client « {client} » créé.'
-            # mais _ ne gère pas le f-string donc on utilise le formatage à la sauce python2 avec notation %(<key>)s 
             messages.success(request, _('Client « %(client)s » créé.') % {'client': client})
             return redirect('catalog:clients')
     else:
@@ -227,6 +226,40 @@ def liste_inscriptions(request):
     inscriptions = Inscription.objects.select_related('client', 'intervention__formation')
     return render(request, 'catalog/liste_inscriptions.html', {'inscriptions': inscriptions})
 
+
+def _to_text(valeur) -> str:
+    """Neutralise l'injection de formules : Excel exécute une cellule qui commence par = + - @"""
+    texte = str(valeur)
+    return "'" + texte if texte.startswith(('=', '+', '-', '@', '\t', '\r')) else texte
+
+
+@login_required
+@permission_required('catalog.view_inscription', raise_exception=True)
+def export_inscriptions(request):
+    """Export CSV des inscriptions, filtrable par ?statut=P|C|X ; mêmes droits que la liste."""
+    inscriptions = Inscription.objects.select_related('client', 'intervention__formation')
+    statut = request.GET.get('statut', '')
+    if statut in dict(Inscription.STATUTS):
+        inscriptions = inscriptions.filter(statut=statut)
+
+    reponse = HttpResponse(content_type='text/csv; charset=utf-8')
+    reponse['Content-Disposition'] = f'attachment; filename="inscriptions-{timezone.localdate():%Y%m%d}.csv"'
+    reponse.write('\ufeff')                      # BOM : Excel reconnaît l'UTF-8
+    writer = csv.writer(reponse, delimiter=';')    # Excel en langue française attend « ; »
+    writer.writerow([
+        _('Client'), _('E-mail'), _('Société'), _('Formation'), _('Intervention'),
+        _('Début'), _('Statut'), _('Montant HT (€)'), _('Inscrit le'),
+    ])
+    for i in inscriptions.iterator(chunk_size=500):
+        writer.writerow([
+            _to_text(i.client), i.client.email, _to_text(i.client.societe),
+            _to_text(i.intervention.formation.nom), i.intervention.numero,
+            i.intervention.date_debut.isoformat(), i.get_statut_display(),
+            str(i.montant_ht).replace('.', get_format('DECIMAL_SEPARATOR')),     # virgule en français, jamais de milliers
+            timezone.localtime(i.date_inscription).strftime('%Y-%m-%d %H:%M'),
+        ])
+    return reponse
+
 @login_required
 @permission_required('catalog.add_inscription', raise_exception=True)
 def nouvelle_inscription(request):
@@ -270,48 +303,6 @@ def annuler_ma_inscription(request, pk):
     if annuler(inscription):
         messages.success(request, _('Inscription annulée.'))
     return redirect('catalog:mon-espace')
-
-
-def _to_text(valeur) -> str:
-    """Neutralise l'injection de formules : Excel exécute une cellule qui commence par = + - @"""
-    texte = str(valeur)
-    return "'" + texte if texte.startswith(('=', '+', '-', '@', '\t', '\r')) else texte
-
-
-@login_required
-@permission_required('catalog.view_inscription', raise_exception=True)
-def export_inscriptions(request):
-    """Export CSV des inscriptions, filtrable par ?statut=P|C|X ; mêmes droits que la liste."""
-    inscriptions = Inscription.objects.select_related('client', 'intervention__formation')
-    statut = request.GET.get('statut', '')
-    if statut in dict(Inscription.STATUTS):
-        inscriptions = inscriptions.filter(statut=statut)
-
-
-    # -------> créer une réponse HTTPResponse de base
-    # ---------------------> header Content-Type; charset UTF-8 pour Excel
-    reponse = HttpResponse(content_type='text/csv; charset=utf-8')
-    # -----> header Content-Disposition pour forcer le téléchargement de PJ du fichier CSV
-    reponse['Content-Disposition'] = f'attachment; filename="inscriptions-{timezone.localdate():%Y%m%d}.csv"'
-    reponse.write('\ufeff')                      # BOM : Excel reconnaît l'UTF-8
-    
-    
-    
-    writer = csv.writer(reponse, delimiter=';')    # Excel en langue française attend « ; »
-    writer.writerow([
-        _('Client'), _('E-mail'), _('Société'), _('Formation'), _('Intervention'),
-        _('Début'), _('Statut'), _('Montant HT (€)'), _('Inscrit le'),
-    ])
-    
-    for i in inscriptions.iterator(chunk_size=500):
-        writer.writerow([
-            _to_text(i.client), i.client.email, _to_text(i.client.societe),
-            _to_text(i.intervention.formation.nom), i.intervention.numero,
-            i.intervention.date_debut.isoformat(), i.get_statut_display(),
-            str(i.montant_ht).replace('.', get_format('DECIMAL_SEPARATOR')),     # virgule en français, jamais de milliers
-            timezone.localtime(i.date_inscription).strftime('%Y-%m-%d %H:%M'),
-        ])
-    return reponse
 
 ######### gestion authentification
 

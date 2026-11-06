@@ -65,7 +65,7 @@ class ClientForm(forms.ModelForm):
             'prenom': forms.TextInput(attrs={'placeholder': _('Entrez votre prénom ici...')}) 
         }
         error_messages = {
-            'email': {'unique': _('Un client existe déjà avec cet e-mail.')},
+            'email': {'unique': _('Un client existe déjà avec cet e-mail.')}
         }
 
     def clean_email(self):
@@ -77,7 +77,7 @@ class ClientForm(forms.ModelForm):
     def clean_telephone(self):
         valeur = self.cleaned_data.get('telephone', '')
         if valeur and not re.fullmatch(r"[\d\s+]{8,20}", valeur):
-            raise ValidationError(_("Format invalide - chiffres, espace et + attendu."), code='telephone_invalide')
+            raise ValidationError(_("Format invalide - chiffres, espace et + attendu."))
         return valeur
 
 ########################## CHAMPS CUSTOM ####################
@@ -91,7 +91,6 @@ class InterventionChoiceField(forms.ModelChoiceField):
         """
         méthode qui alimente les valeurs de la liste de choix
         """
-        # -------------> version singulier, version pluriel, lié à un paramètre int
         places = ngettext('%(n)d place', '%(n)d places', intervention.places) % {'n': intervention.places}
         return f"{intervention.numero} - {intervention.formation.nom} \
 {intervention.ville}, {intervention.date_debut:%d/%m/%Y} \

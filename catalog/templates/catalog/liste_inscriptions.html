@@ -1,5 +1,6 @@
 {% extends "catalog/base.html" %}
 {% load i18n %}
+
 {% block titre %}Inscriptions — GestiFormation{% endblock %}
 
 {% block contenu %}
@@ -23,6 +24,7 @@
     </table>
     <p>
         <a class="btn" href="{% url 'catalog:nouvelle-inscription' %}">+ Nouvelle inscription</a>
-        <a class="btn" href="{% url 'catalog:export-inscriptions' %}">{% translate "Exporter en CSV" %}</a></p>
+        <a class="btn" href="{% url 'catalog:export-inscriptions' %}">{% translate "Exporter en CSV" %}</a>
+    </p>
 </section>
 {% endblock %}

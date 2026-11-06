@@ -12,12 +12,9 @@ from catalog.services import DejaInscrit, InterventionComplete, annuler, inscrir
 
 from .factories import creer_client, creer_formation, creer_intervention
 
-## REM: pour les tests plus complexes on pourrait utiliser django-behave pour écrire des tests de comportement (BDD).
-## 1. écrire des scénarios de comportement en langage naturel gherkin (Given/When/Then) pour chaque fonctionnalité à tester.
-## 2. implémenter les steps (@given => fixtures, @when => use case, @then => expected vs actual) correspondants en Python avec django-behave.
 
 class InterventionTests(SimpleTestCase):
-    """Aucun accès base : SimpleTestCase suffit. pas besoin de gérer une base de données de test. pas de transaction."""
+    """Aucun accès base : SimpleTestCase suffit."""
 
     def test_places_dispo(self):
         self.assertEqual(Intervention(capacite=10, nb_inscrits=3).places_dispo, 7)
@@ -27,25 +24,13 @@ class InterventionTests(SimpleTestCase):
 
 
 class InscrireTests(TestCase):
-    """
-    TestCase 
-    nécessite la base de données de test.
-    avec django TestCase, la base de données de test est automatiquement gérée.
-    creation / seed / nettoyage des données de test sont gérés automatiquement.
-    """
     @classmethod
     def setUpTestData(cls):
-        """
-        Données statiques utilisées pour tous les tests de cette classe.
-        """
         cls.formation = creer_formation(prix=Decimal('1890.00'))
         cls.alice = creer_client()
         cls.bob = creer_client()
 
     def setUp(self):
-        """
-        données instanciées par chaque méthode de test.
-        """
         self.intervention = creer_intervention(self.formation, capacite=2)
 
     def places_prises(self):

@@ -30,8 +30,8 @@ urlpatterns = [
     # --------------- Inscription -----------------------
     path('inscriptions/', views.liste_inscriptions, name='inscriptions'),
     path('inscriptions/nouvelle/', views.nouvelle_inscription, name='nouvelle-inscription'),
-    path('interventions/<int:pk>/s-inscrire/', views.sinscrire, name='sinscrire'),
     path('inscriptions/export.csv', views.export_inscriptions, name='export-inscriptions'),
+    path('interventions/<int:pk>/s-inscrire/', views.sinscrire, name='sinscrire'),
 
     # ---------------- espace utilisateur
     path('mon-espace/', views.mon_espace, name='mon-espace'),

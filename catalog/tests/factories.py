@@ -11,14 +11,10 @@ from catalog.models import Client, Formation, Intervention
 
 _sequence = count(1)
 
-## REM on peut remplacer cet itrateur par le paquet faker pour générer des données aléatoires réalistes
-## REM2 on peut des fixtures csv/SQL à injecter avec django_csv_tests
-
 
 def creer_formation(**champs):
     n = next(_sequence)
     defauts = {'code': f'T-{n:03d}', 'nom': f'Formation {n}', 'duree': 2, 'prix': Decimal('1000.00')}
-    # ---------------------------> fusion de dicts : champs écrase defaults et injecté dans create()
     return Formation.objects.create(**{**defauts, **champs})
 
 

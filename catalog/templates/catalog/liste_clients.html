@@ -30,7 +30,6 @@
         {% empty %}
             <tr><td colspan="4" class="vide">
                 {% if q %}
-                    {# blocktranslate ne gère que les variables {{var}} pas {% if, for ...%} #}
                     {% blocktranslate with query=q %}
                         Aucun client pour « {{ query }}».
                     {% endblocktranslate %}

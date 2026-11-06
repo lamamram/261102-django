@@ -1,0 +1,14 @@
+{% load i18n %}{% autoescape off %}{% blocktranslate with prenom=client.prenom %}Bonjour {{ prenom }},{% endblocktranslate %}
+
+{% blocktranslate with nom=formation.nom numero=intervention.numero debut=intervention.date_debut|date:"DATE_FORMAT" ville=intervention.ville trimmed %}
+Votre inscription à « {{ nom }} » est enregistrée.
+Intervention {{ numero }} — {{ ville }}, à partir du {{ debut }}.
+{% endblocktranslate %}
+
+{% blocktranslate with montant=inscription.montant_ht|floatformat:"2g" %}Montant : {{ montant }} € HT.{% endblocktranslate %}
+
+{% translate "Retrouvez vos inscriptions dans votre espace :" %}
+{{ url_espace }}
+
+{% translate "L'équipe GestiFormation" %}
+{% endautoescape %}
