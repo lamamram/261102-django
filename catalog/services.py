@@ -58,9 +58,9 @@ def annuler(inscription: Inscription) -> bool:
     """
     # si on veut utiliser plusieurs transactions dans la même procédure
     with transaction.atomic():
-       change = Inscription.object.filter(
+       change = Inscription.objects.filter(
            pk=inscription.pk
-        ).exclude(statut='X').update('X')
+        ).exclude(statut='X').update(statut='X')
        # change est le nb éléments modifiés: 1 => True, 0 => False
        if change:
            Intervention.objects.filter(
