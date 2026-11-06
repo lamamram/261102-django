@@ -1,4 +1,3 @@
-# gesti/settings_prod.py
 """
 Production : DJANGO_SETTINGS_MODULE=gesti.settings_prod
 

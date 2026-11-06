@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 def env_bool(nom, defaut=False):
     return os.environ.get(nom, str(int(defaut))).strip().lower() in ('1', 'true', 'yes', 'on')
 
@@ -32,9 +33,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-
 SECRET_KEY = os.environ.get("SECRET_KEY")
-DEBUG = env_bool('DJANGO_DEBUG', True)               # gesti.settings = développement ; la production utilise settings_prod
+
+# SECURITY WARNING: don't run with debug turned on in production!
+# gesti.settings = développement ; la production utilise gesti.settings_prod (DEBUG = False)
+DEBUG = env_bool('DJANGO_DEBUG', True)
+
+# ajouter des entrées ici en dehors d'un environnement local :127.0.0.1
+# i.e: runserver 0.0.0.0:<port> OU prod
 ALLOWED_HOSTS = env_list('ALLOWED_HOSTS')
 
 
@@ -49,7 +55,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # nos propres applicatons comme catalog
     'catalog.apps.CatalogConfig',
-    # dépendances utilitaires
+    # connexion sociale (OAuth)
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.github',
+    'allauth.socialaccount.providers.google',
+    # dépendances utilitaires (développement : retirées par settings_prod)
     'django_extensions',
     'debug_toolbar'
 
@@ -63,6 +75,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'allauth.account.middleware.AccountMiddleware',     # requis par allauth, après les messages
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
@@ -121,7 +134,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'fr'                          # langue par défaut (était 'en-us')
+LANGUAGE_CODE = 'fr'
 
 LANGUAGES = [                                 # langues proposées — noms écrits dans leur propre langue
     ('fr', 'Français'),
@@ -131,12 +144,10 @@ LANGUAGES = [                                 # langues proposées — noms écr
 LOCALE_PATHS = [BASE_DIR / 'locale']          # où chercher / écrire nos catalogues
 
 TIME_ZONE = 'Europe/Paris'                    # était 'UTC' : le stockage reste en UTC (USE_TZ = True)
-
 USE_I18N = True
-
 USE_TZ = True
-
 USE_THOUSAND_SEPARATOR = True                 # « 1 890,50 » plutôt que « 1890,50 »
+
 
 
 
@@ -176,3 +187,50 @@ SHELL_PLUS_PRE_IMPORTS = [
 LOGIN_URL = 'login'                          # où renvoyer un anonyme (nom d'URL)
 LOGIN_REDIRECT_URL = 'catalog:mon-espace'    # après connexion, sans ?next=
 LOGOUT_REDIRECT_URL = 'catalog:accueil'
+
+
+##### E-MAIL : le backend change selon l'environnement, le code d'envoi jamais
+# développement : les messages s'affichent dans le terminal du serveur
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '25'))
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = env_bool('EMAIL_USE_TLS', False)
+EMAIL_TIMEOUT = 10                            # sans délai, un SMTP muet bloque la requête indéfiniment
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'GestiFormation <formations@example.org>')
+SERVER_EMAIL = DEFAULT_FROM_EMAIL             # expéditeur des e-mails d'erreur envoyés aux ADMINS
+SITE_URL = os.environ.get('SITE_URL', 'http://127.0.0.1:8000')   # liens absolus dans les e-mails (pas de request)
+
+
+##### CONNEXION SOCIALE (django-allauth) : OAuth 2.0 / OpenID Connect
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',               # nos comptes locaux et l'admin
+    'allauth.account.auth_backends.AuthenticationBackend',     # comptes sociaux
+]
+ACCOUNT_ADAPTER = 'catalog.adapters.CompteAdapter'             # pas d'inscription locale par allauth
+SOCIALACCOUNT_ADAPTER = 'catalog.adapters.SocialAdapter'       # mais inscription sociale ouverte
+ACCOUNT_EMAIL_VERIFICATION = 'none'                            # l'e-mail vient du fournisseur (vérifié chez lui)
+SOCIALACCOUNT_LOGIN_ON_GET = False                             # démarrer le flux = POST + CSRF
+
+
+def _app_oauth(prefixe):
+    """Identifiants OAuth lus dans l'environnement ; None si le fournisseur n'est pas configuré."""
+    client_id = os.environ.get(f'{prefixe}_CLIENT_ID')
+    if not client_id:
+        return None
+    return {'client_id': client_id, 'secret': os.environ.get(f'{prefixe}_SECRET', ''), 'key': ''}
+
+
+SOCIALACCOUNT_PROVIDERS = {}
+if _app_oauth('GITHUB'):
+    SOCIALACCOUNT_PROVIDERS['github'] = {'SCOPE': ['user:email'], 'APP': _app_oauth('GITHUB')}
+if _app_oauth('GOOGLE'):
+    SOCIALACCOUNT_PROVIDERS['google'] = {'SCOPE': ['profile', 'email'], 'APP': _app_oauth('GOOGLE')}
+
+
+
+
+
+
+
