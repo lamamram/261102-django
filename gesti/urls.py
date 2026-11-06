@@ -15,19 +15,25 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
+from django.conf.urls.i18n import i18n_patterns
 from django.urls import path, include
 # pas d'import relatif ni absolu car le dossier racine n'est PAS un package
 # import catalog.urls 
 from debug_toolbar.toolbar import debug_toolbar_urls
 
 urlpatterns = [
+    path('i18n/', include('django.conf.urls.i18n')),           # set_language (POST)
+]
+
+urlpatterns += i18n_patterns(
     # ce chemin permet de consulter les urls de 
     # l'application admin déjà installé dans settings INSTALLED_APPS
     path('admin/', admin.site.urls),
     path('comptes/', include('django.contrib.auth.urls')), # contiennent login, logout, password_change ...
     # => catalog/urls.py
     path('', include('catalog.urls')),
-] + debug_toolbar_urls()
+) 
+urlpatterns += debug_toolbar_urls()
 
 # gestion != d'urlpatterns
 # pour le voir ==> DEBUG = False

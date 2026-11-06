@@ -1,0 +1,483 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-05 22:28+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: .\catalog\emails.py:32
+#, python-format
+msgid "Inscription enregistrée : %(formation)s"
+msgstr "Registration saved: %(formation)s"
+
+#: .\catalog\forms.py:12
+msgid "Prénom"
+msgstr "First name"
+
+#: .\catalog\forms.py:13 .\catalog\forms.py:65
+msgid "Entrez votre prénom ici..."
+msgstr "Enter your first name here..."
+
+#: .\catalog\forms.py:14 .\catalog\templates\catalog\liste_clients.html:17
+msgid "Nom"
+msgstr "Last name"
+
+#: .\catalog\forms.py:15 .\catalog\templates\catalog\liste_clients.html:17
+#: .\catalog\views.py:250
+msgid "Société"
+msgstr "Company"
+
+#: .\catalog\forms.py:16 .\catalog\forms.py:136
+#: .\catalog\templates\catalog\liste_clients.html:17 .\catalog\views.py:250
+msgid "E-mail"
+msgstr "Email"
+
+#: .\catalog\forms.py:17
+msgid "Téléphone"
+msgstr "Phone"
+
+#: .\catalog\forms.py:31 .\catalog\forms.py:80
+msgid "Format invalide - chiffres, espace et + attendu."
+msgstr "Invalid format - digits, spaces and + expected."
+
+#: .\catalog\forms.py:38 .\catalog\forms.py:68
+msgid "Un client existe déjà avec cet e-mail."
+msgstr "A client already exists with this email."
+
+#: .\catalog\forms.py:50
+msgid "Marie Dupont est connue avec une société — la rappeler."
+msgstr "Marie Dupont is known with a company — call her back."
+
+#: .\catalog\forms.py:94 .\catalog\tests\test_i18n.py:77
+#, python-format
+msgid "%(n)d place"
+msgid_plural "%(n)d places"
+msgstr[0] "%(n)d seat"
+msgstr[1] "%(n)d seats"
+
+#: .\catalog\forms.py:116
+#: .\catalog\templates\catalog\emails\confirmation_inscription.html:11
+#: .\catalog\views.py:250
+msgid "Intervention"
+msgstr "Session"
+
+#: .\catalog\models.py:9 .\catalog\models.py:13
+msgid "compétence"
+msgstr "skill"
+
+#: .\catalog\models.py:10
+msgid "description"
+msgstr "description"
+
+#: .\catalog\models.py:22
+msgid "code"
+msgstr "code"
+
+#: .\catalog\models.py:23
+msgid "intitulé"
+msgstr "title"
+
+#: .\catalog\models.py:29
+msgid "public visé"
+msgstr "target audience"
+
+#: .\catalog\models.py:30
+msgid "durée (jours)"
+msgstr "duration (days)"
+
+#: .\catalog\models.py:31
+msgid "tarif HT (€)"
+msgstr "price excl. tax (€)"
+
+#: .\catalog\models.py:36
+msgid "nouveauté"
+msgstr "new"
+
+#: .\catalog\models.py:38
+msgid "créée le"
+msgstr "created on"
+
+#: .\catalog\models.py:48
+msgid "compétences"
+msgstr "skills"
+
+#: .\catalog\models.py:56 .\catalog\models.py:87
+msgid "formation"
+msgstr "course"
+
+#: .\catalog\models.py:68
+msgid "à venir"
+msgstr "upcoming"
+
+#: .\catalog\models.py:69
+msgid "En cours"
+msgstr "In progress"
+
+#: .\catalog\models.py:70
+msgid "Clôturée"
+msgstr "Closed"
+
+#: .\catalog\models.py:73 .\catalog\models.py:143
+msgid "numéro"
+msgstr "number"
+
+#: .\catalog\models.py:74
+msgid "date de début"
+msgstr "start date"
+
+#: .\catalog\models.py:75
+msgid "date de fin"
+msgstr "end date"
+
+#: .\catalog\models.py:76
+msgid "ville"
+msgstr "city"
+
+#: .\catalog\models.py:77
+msgid "capacité (places)"
+msgstr "capacity (seats)"
+
+#: .\catalog\models.py:78
+msgid "inscrits"
+msgstr "registered"
+
+#: .\catalog\models.py:81 .\catalog\models.py:183
+msgid "statut"
+msgstr "status"
+
+#: .\catalog\models.py:98 .\catalog\models.py:192
+msgid "intervention"
+msgstr "session"
+
+#: .\catalog\models.py:114
+msgid "prénom"
+msgstr "first name"
+
+#: .\catalog\models.py:115
+msgid "nom"
+msgstr "last name"
+
+#: .\catalog\models.py:116
+msgid "société"
+msgstr "company"
+
+#: .\catalog\models.py:117
+msgid "e-mail"
+msgstr "email"
+
+#: .\catalog\models.py:118
+msgid "téléphone"
+msgstr "phone"
+
+#: .\catalog\models.py:119 .\catalog\models.py:144
+msgid "créé le"
+msgstr "created on"
+
+#: .\catalog\models.py:129
+msgid "compte utilisateur"
+msgstr "user account"
+
+#: .\catalog\models.py:133 .\catalog\models.py:164 .\catalog\models.py:188
+msgid "client"
+msgstr "client"
+
+#: .\catalog\models.py:142
+msgid "titre"
+msgstr "title"
+
+#: .\catalog\models.py:145
+msgid "commentaire"
+msgstr "comment"
+
+#: .\catalog\models.py:150
+msgid "document"
+msgstr "document"
+
+#: .\catalog\models.py:166 .\catalog\models.py:184
+msgid "montant HT (€)"
+msgstr "amount excl. tax (€)"
+
+#: .\catalog\models.py:167
+msgid "signé le"
+msgstr "signed on"
+
+#: .\catalog\models.py:170
+msgid "contrat"
+msgstr "contract"
+
+#: .\catalog\models.py:172
+msgid "contrats"
+msgstr "contracts"
+
+#: .\catalog\models.py:178
+msgid "En attente"
+msgstr "Pending"
+
+#: .\catalog\models.py:179
+msgid "Confirmée"
+msgstr "Confirmed"
+
+#: .\catalog\models.py:180
+msgid "Annulée"
+msgstr "Cancelled"
+
+#: .\catalog\models.py:185
+msgid "inscrit le"
+msgstr "registered on"
+
+#: .\catalog\models.py:196
+msgid "inscription"
+msgstr "registration"
+
+#: .\catalog\models.py:209
+msgid "Peut annuler l'inscription d'un client"
+msgstr "Can cancel a client's registration"
+
+#: .\catalog\services.py:15
+#, python-format
+msgid "client: %(client)s est déjà été inscrit à l'intervention: %(inter)s"
+msgstr "client: %(client)s is already registered for session: %(inter)s"
+
+#: .\catalog\services.py:22
+#, python-format
+msgid "plus de places sur l'intervention: %(inter)s !!"
+msgstr "no seats left on session: %(inter)s !!"
+
+#: .\catalog\templates\catalog\403.html:6
+msgid "Accès refusé"
+msgstr "Access denied"
+
+#: .\catalog\templates\catalog\403.html:7
+msgid "Votre compte n'a pas les droits nécessaires pour cette page."
+msgstr "Your account does not have the required permissions for this page."
+
+#: .\catalog\templates\catalog\403.html:8
+#: .\catalog\templates\catalog\404.html:10
+#: .\catalog\templates\catalog\500.html:9
+msgid "Retour à l'accueil"
+msgstr "Back to home"
+
+#: .\catalog\templates\catalog\404.html:8
+msgid "page introuvable"
+msgstr "page not found"
+
+#: .\catalog\templates\catalog\404.html:9
+msgid "La page demandée n'existe pas ou a été déplacée."
+msgstr "The requested page does not exist or has been moved."
+
+#: .\catalog\templates\catalog\500.html:7
+msgid "erreur interne"
+msgstr "internal error"
+
+#: .\catalog\templates\catalog\500.html:8
+msgid "Une erreur est survenue côté serveur. L'équipe a été prévenue."
+msgstr "A server error occurred. The team has been notified."
+
+#: .\catalog\templates\catalog\base.html:26
+msgid "Langue"
+msgstr ""
+
+#: .\catalog\templates\catalog\base.html:35
+msgid "Catalogue"
+msgstr "Catalog"
+
+#: .\catalog\templates\catalog\base.html:39
+msgid "Mon espace"
+msgstr "My account"
+
+#: .\catalog\templates\catalog\base.html:42
+#: .\catalog\templates\catalog\liste_clients.html:4
+#: .\catalog\templates\catalog\liste_clients.html:8
+msgid "Clients"
+msgstr "Clients"
+
+#: .\catalog\templates\catalog\base.html:43
+msgid "Inscriptions"
+msgstr "Registrations"
+
+#: .\catalog\templates\catalog\base.html:46
+msgid "Admin"
+msgstr "Admin"
+
+#: .\catalog\templates\catalog\base.html:56
+msgid "Déconnexion"
+msgstr "Log out"
+
+#: .\catalog\templates\catalog\base.html:60
+msgid "Connexion"
+msgstr "Log in"
+
+#: .\catalog\templates\catalog\base.html:61
+msgid "Créer un compte"
+msgstr "Sign up"
+
+#: .\catalog\templates\catalog\base.html:80
+msgid "site de démonstration"
+msgstr "demo site"
+
+#: .\catalog\templates\catalog\emails\confirmation_inscription.html:4
+#: .\catalog\templates\catalog\emails\confirmation_inscription.txt:1
+#, python-format
+msgid "Bonjour %(prenom)s,"
+msgstr "Hello %(prenom)s,"
+
+#: .\catalog\templates\catalog\emails\confirmation_inscription.html:6
+#, python-format
+msgid "Votre inscription à <strong>« %(nom)s »</strong> est enregistrée."
+msgstr "Your registration for <strong>“%(nom)s”</strong> has been saved."
+
+#: .\catalog\templates\catalog\emails\confirmation_inscription.html:12
+#: .\catalog\views.py:251
+msgid "Début"
+msgstr "Start"
+
+#: .\catalog\templates\catalog\emails\confirmation_inscription.html:13
+msgid "Montant HT"
+msgstr "Amount excl. tax"
+
+#: .\catalog\templates\catalog\emails\confirmation_inscription.html:15
+msgid "Voir mes inscriptions"
+msgstr "View my registrations"
+
+#: .\catalog\templates\catalog\emails\confirmation_inscription.html:16
+#: .\catalog\templates\catalog\emails\confirmation_inscription.txt:13
+msgid "L'équipe GestiFormation"
+msgstr "The GestiFormation team"
+
+#: .\catalog\templates\catalog\emails\confirmation_inscription.txt:3
+#, python-format
+msgid ""
+"Votre inscription à « %(nom)s » est enregistrée. Intervention %(numero)s — "
+"%(ville)s, à partir du %(debut)s."
+msgstr ""
+"Your registration for “%(nom)s” has been saved. Session %(numero)s — "
+"%(ville)s, starting %(debut)s."
+
+#: .\catalog\templates\catalog\emails\confirmation_inscription.txt:8
+#, python-format
+msgid "Montant : %(montant)s € HT."
+msgstr "Amount: €%(montant)s excl. tax."
+
+#: .\catalog\templates\catalog\emails\confirmation_inscription.txt:10
+msgid "Retrouvez vos inscriptions dans votre espace :"
+msgstr "Find your registrations in your account:"
+
+#: .\catalog\templates\catalog\liste_clients.html:12
+msgid "Rechercher"
+msgstr "Search"
+
+#: .\catalog\templates\catalog\liste_clients.html:17
+msgid "Tél."
+msgstr "Phone"
+
+#: .\catalog\templates\catalog\liste_clients.html:17
+msgid "Actions"
+msgstr "Actions"
+
+#: .\catalog\templates\catalog\liste_clients.html:26
+msgid "Modifier"
+msgstr "Edit"
+
+#: .\catalog\templates\catalog\liste_clients.html:27
+msgid "Supprimer"
+msgstr "Delete"
+
+#: .\catalog\templates\catalog\liste_clients.html:33
+#, python-format
+msgid ""
+"\n"
+"                        Aucun client pour « %(query)s».\n"
+"                    "
+msgstr ""
+"\n"
+"                        No clients for « %(query)s ».\n"
+"                    "
+
+#: .\catalog\templates\catalog\liste_clients.html:37
+msgid "Aucun client — créez le premier."
+msgstr "No clients — create the first one."
+
+#: .\catalog\templates\catalog\liste_clients.html:44
+msgid "+ Nouveau client"
+msgstr "+ New client"
+
+#: .\catalog\templates\catalog\liste_inscriptions.html:27
+msgid "Exporter en CSV"
+msgstr "Export as CSV"
+
+#: .\catalog\templates\registration\login.html:20
+msgid "ou continuer avec"
+msgstr "or continue with"
+
+#: .\catalog\views.py:133
+#, python-format
+msgid "Client « %(client)s » créé."
+msgstr "Client « %(client)s » created."
+
+#: .\catalog\views.py:152
+#, python-format
+msgid "Client « %(client)s » modifié."
+msgstr "Client « %(client)s » updated."
+
+#: .\catalog\views.py:169
+msgid "Suppression impossible : ce client a des contrats ou des inscriptions."
+msgstr "Cannot delete: this client has contracts or registrations."
+
+#: .\catalog\views.py:172
+#, python-format
+msgid "Client « %(client)s » supprimé."
+msgstr "Client « %(client)s » deleted."
+
+#: .\catalog\views.py:250
+msgid "Client"
+msgstr "Client"
+
+#: .\catalog\views.py:250
+msgid "Formation"
+msgstr "Course"
+
+#: .\catalog\views.py:251
+msgid "Statut"
+msgstr "Status"
+
+#: .\catalog\views.py:251
+msgid "Montant HT (€)"
+msgstr "Amount excl. tax (€)"
+
+#: .\catalog\views.py:251
+msgid "Inscrit le"
+msgstr "Registered on"
+
+#: .\catalog\views.py:274
+msgid "Inscription enregistrée."
+msgstr "Registration saved."
+
+#: .\catalog\views.py:288
+msgid "Aucun profil client n'est associé à votre compte."
+msgstr "No client profile is linked to your account."
+
+#: .\catalog\views.py:295
+#, python-format
+msgid "Inscription à %(fnom)s enregistrée."
+msgstr "Registration for %(fnom)s saved."
+
+#: .\catalog\views.py:304
+msgid "Inscription annulée."
+msgstr "Registration cancelled."
+
+#: .\catalog\views.py:318
+msgid "Compte créé. Bienvenue !"
+msgstr "Account created. Welcome!"

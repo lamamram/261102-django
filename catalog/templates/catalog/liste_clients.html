@@ -1,19 +1,20 @@
 {% extends "catalog/base.html" %}
+{% load i18n %}
 
-{% block titre %}Clients — {{ block.super }}{% endblock %}
+{% block titre %}{% translate "Clients" %} — {{ block.super }}{% endblock %}
 
 {% block contenu %}
 <section class="clients">
-    <h1>Clients</h1>
+    <h1>{% translate "Clients" %}</h1>
     
     <form method="get" class="recherche">
         <input type="search" name="q" value="{{ q }}" placeholder="Nom, société, e-mail…">
-        <button type="submit" class="btn">Rechercher</button>
+        <button type="submit" class="btn">{% translate "Rechercher" %}</button>
     </form>
     {# ⚠️ pas de {% csrf_token %} : c'est un GET #}
     
     <table class="tableau">
-        <thead><tr><th>Nom</th><th>Société</th><th>E-mail</th><th>Tél.</th><th>Actions</th></tr></thead>
+        <thead><tr><th>{% translate "Nom" %}</th><th>{% translate "Société" %}</th><th>{% translate "E-mail" %}</th><th>{% translate "Tél." %}</th><th>{% translate "Actions" %}</th></tr></thead>
         <tbody>
         {% for c in clients %}
             <tr>
@@ -22,18 +23,25 @@
                 <td>{{ c.email }}</td>
                 <td>{{ c.telephone|default:"—" }}</td>
                 <td>
-                    {% if perms.catalog.change_client %}<a href="{% url 'catalog:modifier-client' c.pk %}">Modifier</a>{% endif %}
-                    {% if perms.catalog.delete_client %}<a href="{% url 'catalog:supprimer-client' c.pk %}">Supprimer</a>{% endif %}
+                    {% if perms.catalog.change_client %}<a href="{% url 'catalog:modifier-client' c.pk %}">{% translate "Modifier" %}</a>{% endif %}
+                    {% if perms.catalog.delete_client %}<a href="{% url 'catalog:supprimer-client' c.pk %}">{% translate "Supprimer" %}</a>{% endif %}
                 </td>
             </tr>
         {% empty %}
             <tr><td colspan="4" class="vide">
-                {% if q %}Aucun client pour « {{ q }}».{% else %}Aucun client — créez le premier.{% endif %}
+                {% if q %}
+                    {# blocktranslate ne gère que les variables {{var}} pas {% if, for ...%} #}
+                    {% blocktranslate with query=q %}
+                        Aucun client pour « {{ query }}».
+                    {% endblocktranslate %}
+                {% else %}
+                    {% translate "Aucun client — créez le premier." %}
+                {% endif %}
             </td></tr>
         {% endfor %}
         </tbody>
     </table>
 
-    <p><a class="btn" href="{% url 'catalog:nouveau-client' %}">+ Nouveau client</a></p>
+    <p><a class="btn" href="{% url 'catalog:nouveau-client' %}">{% translate "+ Nouveau client" %}</a></p>
 </section>
 {% endblock %}

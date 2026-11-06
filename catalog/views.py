@@ -15,7 +15,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 
 from .models import Formation, Intervention, Client, Inscription
 from .forms import NouveauClientForm, ClientForm, InscriptionForm, CompteForm
-from .services import inscrire, annuler, DejaInscrit, InterventionComplete
+from .services import inscrire, annuler, rattacher_client, DejaInscrit, InterventionComplete
+
+from django.utils.translation import gettext as _
 
 
 # Create your views here.
@@ -124,6 +126,9 @@ def nouveau_client(request):
         if form.is_valid():
             # ici forme CONTIENT un objet Modèle !!! qui peut utiliser save() --> create et/ ou  update
             client = form.save()
+            # Avant _:                f'Client « {client} » créé.'
+            # mais _ ne gère pas le f-string donc on utilise le formatage à la sauce python2 avec notation %(<key>)s 
+            messages.success(request, _('Client « %(client)s » créé.') % {'client': client})
             return redirect('catalog:clients')
     else:
         form = ClientForm()
@@ -142,7 +147,7 @@ def modifier_client(request, pk):
         form = ClientForm(request.POST, instance=client)       # ← la seule différence
         if form.is_valid():
             form.save()
-            messages.success(request, f'Client « {client} » modifié.')
+            messages.success(request, _('Client « %(client)s » modifié.') % {'client': client})
             return redirect('catalog:clients')
     else:
         form = ClientForm(instance=client)                     # pré-rempli
@@ -159,10 +164,10 @@ def supprimer_client(request, pk: int):
         try:
             client.delete()
         except ProtectedError:
-            messages.error(request, 'Suppression impossible : ce client a des contrats ou des inscriptions.')
+            messages.error(request, _('Suppression impossible : ce client a des contrats ou des inscriptions.'))
         # else adossé à try/except garantit que le try s'est exécuté jusqu'ou bout ==> pas d'erreur
         else:
-            messages.success(request, f'Client « {client} » supprimé.')
+            messages.success(request, _('Client « %(client)s » supprimé.') % {'client': client})
         return redirect('catalog:clients')
     return render(request, 'catalog/confirmer_suppression.html', {
         'objet': client, 'retour': 'catalog:clients',
@@ -230,7 +235,7 @@ def nouvelle_inscription(request):
             except (DejaInscrit, InterventionComplete) as erreur:
                 form.add_error(None, str(erreur))          # erreur « de formulaire »
             else:
-                messages.success(request, 'Inscription enregistrée.')
+                messages.success(request, _('Inscription enregistrée.'))
                 return redirect('catalog:inscriptions')
     else:
         form = InscriptionForm()
@@ -244,14 +249,14 @@ def sinscrire(request, pk):
     intervention = get_object_or_404(Intervention.objects.select_related('formation'), pk=pk, statut='A')
     client = Client.objects.filter(utilisateur=request.user).first()
     if client is None:
-        messages.error(request, "Aucun profil client n'est associé à votre compte.")
+        messages.error(request, _("Aucun profil client n'est associé à votre compte."))
     else:
         try:
             inscrire(client, intervention)
         except (DejaInscrit, InterventionComplete) as erreur:
             messages.error(request, str(erreur))
         else:
-            messages.success(request, f'Inscription à {intervention.formation.nom} enregistrée.')
+            messages.success(request, _('Inscription à %(fnom)s enregistrée.') % {'fnom': intervention.formation.nom})
     return redirect('catalog:detail-formation', pk=intervention.formation_id)
 
 @login_required
@@ -260,7 +265,7 @@ def annuler_ma_inscription(request, pk):
     # filtrer par propriétaire : l'inscription d'un autre → 404, pas 403
     inscription = get_object_or_404(Inscription, pk=pk, client__utilisateur=request.user)
     if annuler(inscription):
-        messages.success(request, 'Inscription annulée.')
+        messages.success(request, _('Inscription annulée.'))
     return redirect('catalog:mon-espace')
 
 ######### gestion authentification
@@ -272,15 +277,9 @@ def creer_compte(request):
             user = form.save(commit=False)           # §7.4 : compléter avant d'écrire
             user.email = user.email.lower()
             user.save()
-            client, _ = Client.objects.get_or_create(
-                email=user.email,
-                defaults={'prenom': user.first_name, 'nom': user.last_name},
-            )
-            if client.utilisateur_id is None:
-                client.utilisateur = user
-                client.save(update_fields=['utilisateur'])
-            login(request, user)                     # connecté dès la création
-            messages.success(request, 'Compte créé. Bienvenue !')
+            rattacher_client(user)                   # même règle que la connexion sociale
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')   # 2 backends : à préciser
+            messages.success(request, _('Compte créé. Bienvenue !'))
             return redirect('catalog:mon-espace')
     else:
         form = CompteForm()

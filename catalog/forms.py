@@ -5,15 +5,16 @@ from django.db.models import F
 import re
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import get_user_model
+from django.utils.translation import gettext as _, ngettext
 
 class NouveauClientForm(forms.Form):
 
-    prenom = forms.CharField(label="Prénom", max_length=60,
-                             widget=forms.TextInput(attrs={'placeholder': 'Entrez votre prénom ici...'}))
-    nom = forms.CharField(label="Nom", max_length=60)
-    societe   = forms.CharField(label='Société', max_length=100, required=False)
-    email     = forms.EmailField(label='E-mail') # pas nécessairement unique !!!
-    telephone = forms.CharField(label='Téléphone', max_length=20, required=False)
+    prenom = forms.CharField(label=_("Prénom"), max_length=60,
+                             widget=forms.TextInput(attrs={'placeholder': _('Entrez votre prénom ici...')}))
+    nom = forms.CharField(label=_("Nom"), max_length=60)
+    societe   = forms.CharField(label=_('Société'), max_length=100, required=False)
+    email     = forms.EmailField(label=_('E-mail')) # pas nécessairement unique !!!
+    telephone = forms.CharField(label=_('Téléphone'), max_length=20, required=False)
 
     # --------------- méthodes de validation de champs individuel ----------------
     # forme_générique = def clean_<field>(self):
@@ -27,14 +28,14 @@ class NouveauClientForm(forms.Form):
         """
         valeur = self.cleaned_data.get('telephone', '')
         if valeur and not re.fullmatch(r"[\d\s+]{8,20}", valeur):
-            raise ValidationError("Format invalide - chiffres, espace et + attendu.")
+            raise ValidationError(_("Format invalide - chiffres, espace et + attendu."))
         # CE RETURN EST IMPORTANT !!!
         return valeur
 
     def clean_email(self) -> str:
         valeur = self.cleaned_data.get('email')
         if valeur and Client.objects.filter(email__iexact=valeur).exists():
-            raise ValidationError("Un client existe déjà avec cet e-mail.")
+            raise ValidationError(_("Un client existe déjà avec cet e-mail."))
         return valeur
 
     # -------------- validation globale: nettoyage cross - champs -----------------------
@@ -46,7 +47,7 @@ class NouveauClientForm(forms.Form):
                 and not data.get('societe'):
 
             # add_error permet de cibler le champs en erreur dans le cas de validation cross-champs
-            self.add_error('societe', 'Marie Dupont est connue avec une société — la rappeler.')
+            self.add_error('societe', _('Marie Dupont est connue avec une société — la rappeler.'))
             # ou créer une erreur globale
             # self.add_error(None, 'Marie Dupont est connue avec une société — la rappeler.')
         return data
@@ -61,10 +62,10 @@ class ClientForm(forms.ModelForm):
         # champs à afficher (liste blanche)
         fields = ['prenom', 'nom', 'societe', 'email', 'telephone']
         widgets = {
-            'prenom': forms.TextInput(attrs={'placeholder': 'Entrez votre prénom ici...'}) 
+            'prenom': forms.TextInput(attrs={'placeholder': _('Entrez votre prénom ici...')}) 
         }
         error_messages = {
-            'email': {'unique': 'Un client existe déjà avec cet e-mail.'}
+            'email': {'unique': _('Un client existe déjà avec cet e-mail.')}
         }
 
     def clean_email(self):
@@ -76,7 +77,7 @@ class ClientForm(forms.ModelForm):
     def clean_telephone(self):
         valeur = self.cleaned_data.get('telephone', '')
         if valeur and not re.fullmatch(r"[\d\s+]{8,20}", valeur):
-            raise ValidationError("Format invalide - chiffres, espace et + attendu.")
+            raise ValidationError(_("Format invalide - chiffres, espace et + attendu."))
         return valeur
 
 ########################## CHAMPS CUSTOM ####################
@@ -90,9 +91,11 @@ class InterventionChoiceField(forms.ModelChoiceField):
         """
         méthode qui alimente les valeurs de la liste de choix
         """
+        # -------------> version singulier, version pluriel, lié à un paramètre int
+        places = ngettext('%(n)d place', '%(n)d places', intervention.places) % {'n': intervention.places}
         return f"{intervention.numero} - {intervention.formation.nom} \
 {intervention.ville}, {intervention.date_debut:%d/%m/%Y} \
-— {intervention.places} place(s)"
+— {places}"
 
 
 
@@ -111,7 +114,7 @@ class InscriptionForm(forms.ModelForm):
                     .select_related('formation')
         ),
         # queryset=Intervention.objects.none(),
-        label="Intervention"
+        label=_("Intervention")
     )
 
     class Meta:
@@ -131,7 +134,7 @@ class InscriptionForm(forms.ModelForm):
 ####################### formulaire compte utilisateur
 
 class CompteForm(UserCreationForm):
-    email = forms.EmailField(label='E-mail')
+    email = forms.EmailField(label=_('E-mail'))
 
     class Meta(UserCreationForm.Meta):
         model = get_user_model()

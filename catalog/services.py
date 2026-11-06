@@ -1,7 +1,10 @@
 from django.db import transaction
 from django.db.models import F, Q
+from django.utils.translation import get_language
 
+from . import emails
 from .models import Inscription, Intervention, Client
+from django.utils.translation import gettext as _
 
 class DejaInscrit(Exception):
     def __init__(self, cl, inter):
@@ -9,14 +12,14 @@ class DejaInscrit(Exception):
         self.inter = inter
 
     def __str__(self):
-        return f"client: {self.cl} est déjà été inscrit à l'intervention: {self.inter}"
+        return _("client: %(client)s est déjà été inscrit à l'intervention: %(inter)s") % {"client": self.cl, "inter": self.inter}
 
 class InterventionComplete(Exception):
     def __init__(self, inter):
         self.inter = inter
 
     def __str__(self):
-        return f"plus de places sur l'intervention: {self.inter} !!"
+        return _("plus de places sur l'intervention: %(inter)s !!") % {"inter": self.inter}
 
 @transaction.atomic
 def inscrire(client: Client, intervention: Intervention):
@@ -46,11 +49,15 @@ def inscrire(client: Client, intervention: Intervention):
     if not places_prises:
         raise InterventionComplete(intervention)
 
-    return Inscription.objects.create(
+    inscription = Inscription.objects.create(
         client=client, 
         intervention=intervention,
         montant_ht=intervention.formation.prix
     )
+    # l'e-mail part APRÈS le commit : jamais pour une inscription finalement annulée par un rollback
+    langue = get_language()
+    transaction.on_commit(lambda: emails.confirmation_inscription(inscription, langue))
+    return inscription
 
 def annuler(inscription: Inscription) -> bool:
     """
@@ -67,5 +74,23 @@ def annuler(inscription: Inscription) -> bool:
                pk=inscription.intervention_id
             ).update(nb_inscrits=F('nb_inscrits') - 1)
     return bool(change)
+
+
+def rattacher_client(user) -> Client | None:
+    """
+    retrouve (ou crée) le Client portant l'e-mail de l'utilisateur et le lui rattache
+    sans jamais voler un Client déjà lié à un autre compte ; None si le compte n'a pas d'e-mail
+    """
+    email = user.email.lower()
+    if not email:
+        return None
+    client, _cree = Client.objects.get_or_create(
+        email=email,
+        defaults={'prenom': user.first_name, 'nom': user.last_name},
+    )
+    if client.utilisateur_id is None:
+        client.utilisateur = user
+        client.save(update_fields=['utilisateur'])
+    return client
 
     

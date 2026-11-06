@@ -1,12 +1,12 @@
 {% extends "catalog/base.html" %}
-
+{% load i18n %}
 {# block.super affiche la valeur du bloc sur le gabarit hérité #}
 {% block titre %}Page introuvable - {{ block.super }}{% endblock titre %}
 
 {% block contenu %}
 <div class="erreur">
-    <h1>404 — page introuvable</h1>
-    <p>La page demandée n'existe pas ou a été déplacée.</p>
-    <a class="btn" href="{% url "catalog:accueil" %}">Retour à l'accueil</a>
+    <h1>404 — {% translate "page introuvable" %}</h1>
+    <p>{% translate "La page demandée n'existe pas ou a été déplacée." %}</p>
+    <a class="btn" href="{% url "catalog:accueil" %}">{% translate "Retour à l'accueil" %}</a>
 </div>
 {% endblock contenu %}

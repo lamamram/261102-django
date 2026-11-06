@@ -1,6 +1,8 @@
 {% load static %}
+{% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -16,19 +18,32 @@
     <header class="entete">
         <nav class="nav">
             <a class="logo" href="">GestiFormation</a>
+            <form action="{% url 'set_language' %}" method="post" class="inline">
+                {% csrf_token %}
+                <input name="next" type="hidden" value="{{ request.get_full_path }}">
+                {% get_available_languages as LANGUAGES %}
+                {% get_language_info_list for LANGUAGES as langues %}
+                <select name="language" onchange="this.form.submit()" aria-label="{% translate 'Langue' %}">
+                    {% for langue in langues %}
+                        <option value="{{ langue.code }}"{% if langue.code == LANGUAGE_CODE %} selected{% endif %}>
+                            {{ langue.name_local }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
             <ul>
-                <li><a href="{% url 'catalog:liste-formations' %}">Catalogue</a></li>
+                <li><a href="{% url 'catalog:liste-formations' %}">{% translate "Catalogue" %}</a></li>
                 
                 {# filtre d'authentification #}
                 {% if user.is_authenticated %}
-                    <li><a href="{% url 'catalog:mon-espace' %}">Mon espace</a></li>
+                    <li><a href="{% url 'catalog:mon-espace' %}">{% translate "Mon espace" %}</a></li>
                     
                     {# filtre de permissions #}
-                    {% if perms.catalog.view_client %}<li><a href="{% url 'catalog:clients' %}">Clients</a></li>{% endif %}
-                    {% if perms.catalog.view_inscription %}<li><a href="{% url 'catalog:inscriptions' %}">Inscriptions</a></li>{% endif %}
+                    {% if perms.catalog.view_client %}<li><a href="{% url 'catalog:clients' %}">{% translate "Clients" %}</a></li>{% endif %}
+                    {% if perms.catalog.view_inscription %}<li><a href="{% url 'catalog:inscriptions' %}">{% translate "Inscriptions" %}</a></li>{% endif %}
                     
                     {# flag autorisant l'admin #}
-                    {% if user.is_staff %}<li><a href="{% url 'admin:index' %}">Admin</a></li>{% endif %}
+                    {% if user.is_staff %}<li><a href="{% url 'admin:index' %}">{% translate "Admin" %}</a></li>{% endif %}
                     
                     {% comment "comptes/logout ne peut être appelé qu'en POST !!!" %}
                         <li>???? — <a href="{% url "logout" %}">Déconnexion</a></li>
@@ -38,12 +53,12 @@
                         {# username #}
                         {{ user.get_username }}
                         <form method="post" action="{% url 'logout' %}" class="inline">
-                            {% csrf_token %}<button type="submit" class="lien">Déconnexion</button>
+                            {% csrf_token %}<button type="submit" class="lien">{% translate "Déconnexion" %}</button>
                         </form>
                     </li>
                 {% else %}
-                    <li><a href="{% url "login" %}">Connexion</a></li>
-                    <li><a href="{% url "catalog:creer-compte" %}">Créer un compte</a></li>
+                    <li><a href="{% url "login" %}">{% translate "Connexion" %}</a></li>
+                    <li><a href="{% url "catalog:creer-compte" %}">{% translate "Créer un compte" %}</a></li>
                 {% endif %}
             </ul>
         </nav>
@@ -62,7 +77,7 @@
     </main>
 
     <footer class="pied">
-        <p>{% now "d/m/Y" %} — GestiFormation, site de démonstration</p>
+        <p>{% now "d/m/Y" %} — GestiFormation, {% translate "site de démonstration" %}</p>
     </footer>
 </body>
 </html>
