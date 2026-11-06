@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 590" role="img" aria-label="Matrice des rôles et permissions de GestiFormation : anonyme, stagiaire, formateur, gestionnaire, administrateur">
+  <rect width="1120" height="590" fill="#ffffff"/>
+  <text x="560" y="30" text-anchor="middle" font-family="system-ui, sans-serif" font-size="18" font-weight="600" fill="#1f2937">Rôles et permissions — qui peut faire quoi dans GestiFormation</text>
+
+  <!-- fonds de lignes -->
+  <g>
+    <rect x="20" y="100" width="1080" height="38" fill="#f8fafc"/>
+    <rect x="20" y="176" width="1080" height="38" fill="#f8fafc"/>
+    <rect x="20" y="252" width="1080" height="38" fill="#f8fafc"/>
+    <rect x="20" y="328" width="1080" height="38" fill="#f8fafc"/>
+    <rect x="20" y="404" width="1080" height="38" fill="#f8fafc"/>
+    <rect x="20" y="480" width="1080" height="56" fill="#eef2ff"/>
+  </g>
+  <rect x="20" y="100" width="1080" height="436" fill="none" stroke="#cbd5e1"/>
+
+  <!-- en-têtes -->
+  <g font-family="system-ui, sans-serif" font-size="14" font-weight="600" fill="#1f2937" text-anchor="middle">
+    <rect x="20" y="52" width="340" height="48" fill="#1f2937"/>
+    <text x="190" y="82" fill="#ffffff">Capacité</text>
+    <rect x="360" y="52" width="150" height="48" fill="#64748b"/>
+    <text x="435" y="82" fill="#ffffff">Anonyme</text>
+    <rect x="510" y="52" width="150" height="48" fill="#0f766e"/>
+    <text x="585" y="82" fill="#ffffff">Stagiaire</text>
+    <rect x="660" y="52" width="150" height="48" fill="#4f46e5"/>
+    <text x="735" y="82" fill="#ffffff">Formateur</text>
+    <rect x="810" y="52" width="150" height="48" fill="#4f46e5"/>
+    <text x="885" y="82" fill="#ffffff">Gestionnaire</text>
+    <rect x="960" y="52" width="140" height="48" fill="#b91c1c"/>
+    <text x="1030" y="82" fill="#ffffff">Administrateur</text>
+  </g>
+
+  <!-- libellés -->
+  <g font-family="system-ui, sans-serif" font-size="12" fill="#1f2937">
+    <text x="30" y="124">Catalogue et fiches formations</text>
+    <text x="30" y="162">Mon espace (ses propres inscriptions)</text>
+    <text x="30" y="200">S'inscrire / annuler soi-même (profil lié)</text>
+    <text x="30" y="238">Accéder à /admin/  (is_staff)</text>
+    <text x="30" y="276">Consulter clients, sessions (view_)</text>
+    <text x="30" y="314">Créer / modifier clients, sessions (add_, change_)</text>
+    <text x="30" y="352">Inscrire un client  (add_inscription)</text>
+    <text x="30" y="390">Annuler l'inscription d'un tiers (annuler_…)</text>
+    <text x="30" y="428">Supprimer des données  (delete_)</text>
+    <text x="30" y="466">Gérer comptes, groupes, permissions</text>
+    <text x="30" y="514" font-weight="600">Mécanisme Django</text>
+  </g>
+
+  <!-- ✔ / — : colonnes 435, 585, 735, 885, 1030 -->
+  <g font-family="system-ui, sans-serif" font-size="18" text-anchor="middle">
+    <!-- ligne 1 -->
+    <g fill="#0f766e" font-weight="700">
+      <text x="435" y="126">✔</text><text x="585" y="126">✔</text><text x="735" y="126">✔</text><text x="885" y="126">✔</text><text x="1030" y="126">✔</text>
+    </g>
+    <!-- ligne 2 -->
+    <text x="435" y="164" fill="#cbd5e1">—</text>
+    <g fill="#0f766e" font-weight="700"><text x="585" y="164">✔</text><text x="735" y="164">✔</text><text x="885" y="164">✔</text><text x="1030" y="164">✔</text></g>
+    <!-- ligne 3 -->
+    <g fill="#cbd5e1"><text x="435" y="202">—</text><text x="735" y="202">—</text><text x="885" y="202">—</text><text x="1030" y="202">—</text></g>
+    <text x="585" y="202" fill="#0f766e" font-weight="700">✔</text>
+    <!-- ligne 4 -->
+    <g fill="#cbd5e1"><text x="435" y="240">—</text><text x="585" y="240">—</text></g>
+    <g fill="#0f766e" font-weight="700"><text x="735" y="240">✔</text><text x="885" y="240">✔</text><text x="1030" y="240">✔</text></g>
+    <!-- ligne 5 -->
+    <g fill="#cbd5e1"><text x="435" y="278">—</text><text x="585" y="278">—</text></g>
+    <g fill="#0f766e" font-weight="700"><text x="735" y="278">✔</text><text x="885" y="278">✔</text><text x="1030" y="278">✔</text></g>
+    <!-- ligne 6 -->
+    <g fill="#cbd5e1"><text x="435" y="316">—</text><text x="585" y="316">—</text><text x="735" y="316">—</text></g>
+    <g fill="#0f766e" font-weight="700"><text x="885" y="316">✔</text><text x="1030" y="316">✔</text></g>
+    <!-- ligne 7 -->
+    <g fill="#cbd5e1"><text x="435" y="354">—</text><text x="585" y="354">—</text><text x="735" y="354">—</text></g>
+    <g fill="#0f766e" font-weight="700"><text x="885" y="354">✔</text><text x="1030" y="354">✔</text></g>
+    <!-- ligne 8 -->
+    <g fill="#cbd5e1"><text x="435" y="392">—</text><text x="585" y="392">—</text><text x="735" y="392">—</text></g>
+    <g fill="#0f766e" font-weight="700"><text x="885" y="392">✔</text><text x="1030" y="392">✔</text></g>
+    <!-- ligne 9 -->
+    <g fill="#cbd5e1"><text x="435" y="430">—</text><text x="585" y="430">—</text><text x="735" y="430">—</text><text x="885" y="430">—</text></g>
+    <text x="1030" y="430" fill="#0f766e" font-weight="700">✔</text>
+    <!-- ligne 10 -->
+    <g fill="#cbd5e1"><text x="435" y="468">—</text><text x="585" y="468">—</text><text x="735" y="468">—</text><text x="885" y="468">—</text></g>
+    <text x="1030" y="468" fill="#0f766e" font-weight="700">✔</text>
+  </g>
+
+  <!-- mécanisme -->
+  <g font-family="system-ui, sans-serif" font-size="11" fill="#374151" text-anchor="middle">
+    <text x="435" y="512">request.user</text>
+    <text x="435" y="527">anonyme</text>
+    <text x="585" y="512">compte simple</text>
+    <text x="585" y="527">+ Client.utilisateur</text>
+    <text x="735" y="512">is_staff + groupe</text>
+    <text x="735" y="527">Formateurs</text>
+    <text x="885" y="512">is_staff + groupe</text>
+    <text x="885" y="527">Gestionnaires</text>
+    <text x="1030" y="512">is_superuser</text>
+    <text x="1030" y="527">(toutes permissions)</text>
+  </g>
+
+  <text x="560" y="565" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11.5" fill="#6b7280">Une permission porte sur une table (add_, change_, …) ; la propriété d'une ligne se vérifie dans la vue (client__utilisateur=request.user).</text>
+</svg>

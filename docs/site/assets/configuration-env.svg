@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 470" role="img" aria-label="Configuration par couches : variables d'environnement, settings.py pour le développement et les tests, settings_prod.py qui l'importe puis durcit ; tableau comparatif développement et production">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#475569"/>
+    </marker>
+    <marker id="arr-ok" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#0f766e"/>
+    </marker>
+    <marker id="arr-warn" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#b45309"/>
+    </marker>
+  </defs>
+  <rect width="1080" height="470" fill="#ffffff"/>
+  <text x="540" y="30" text-anchor="middle" font-family="system-ui, sans-serif" font-size="18" font-weight="600" fill="#1f2937">Trois couches de configuration : environnement, réglages communs, durcissement de production</text>
+
+  <!-- couches -->
+  <g font-family="system-ui, sans-serif">
+    <rect x="30" y="62" width="440" height="82" rx="8" fill="#fff7ed" stroke="#b45309" stroke-width="1.5"/>
+    <text x="46" y="85" font-size="13" font-weight="600" fill="#1f2937">1 · Environnement — .env (ignoré par git)</text>
+    <text x="46" y="105" font-size="10.5" fill="#475569">secrets et valeurs propres à la machine : SECRET_KEY, DATABASE_URL,</text>
+    <text x="46" y="121" font-size="10.5" fill="#475569">ALLOWED_HOSTS, EMAIL_*, *_CLIENT_ID… — modèle versionné : .env.example</text>
+    <text x="46" y="137" font-size="10.5" fill="#b45309" font-weight="600">en production : variables de la plateforme, pas de fichier</text>
+
+    <rect x="30" y="180" width="440" height="112" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="46" y="203" font-size="13" font-weight="600" fill="#1f2937">2 · gesti/settings.py — développement et tests</text>
+    <text x="46" y="223" font-size="10.5" fill="#475569">lit l'environnement avec env_bool() et env_list()</text>
+    <text x="46" y="239" font-size="10.5" fill="#475569">valeurs par défaut sûres pour travailler : DEBUG = True, SQLite,</text>
+    <text x="46" y="255" font-size="10.5" fill="#475569">e-mail dans la console, debug_toolbar, django_extensions</text>
+    <text x="46" y="276" font-size="10.5" fill="#4f46e5" font-weight="600">manage.py test et runserver l'utilisent tels quels</text>
+
+    <rect x="30" y="330" width="440" height="112" rx="8" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.5"/>
+    <text x="46" y="353" font-size="13" font-weight="600" fill="#1f2937">3 · gesti/settings_prod.py — production</text>
+    <text x="46" y="373" font-size="10.5" fill="#475569">from .settings import *  puis surcharge : DEBUG = False,</text>
+    <text x="46" y="389" font-size="10.5" fill="#475569">variables obligatoires (ImproperlyConfigured si absentes),</text>
+    <text x="46" y="405" font-size="10.5" fill="#475569">PostgreSQL, HTTPS, WhiteNoise, journaux sur stdout</text>
+    <text x="46" y="426" font-size="10.5" fill="#0f766e" font-weight="600">DJANGO_SETTINGS_MODULE=gesti.settings_prod</text>
+  </g>
+  <g stroke-width="2">
+    <line x1="250" y1="145" x2="250" y2="178" stroke="#b45309" marker-end="url(#arr-warn)"/>
+    <line x1="250" y1="293" x2="250" y2="328" stroke="#0f766e" marker-end="url(#arr-ok)"/>
+  </g>
+  <g font-family="system-ui, sans-serif" font-size="10.5" fill="#475569">
+    <text x="262" y="165">os.environ</text>
+    <text x="262" y="314">import *  puis surcharge</text>
+  </g>
+
+  <!-- tableau comparatif -->
+  <g font-family="system-ui, sans-serif">
+    <rect x="510" y="62" width="540" height="34" rx="6" fill="#1f2937"/>
+    <g font-size="11.5" font-weight="600" fill="#ffffff">
+      <text x="522" y="84">Réglage</text>
+      <text x="650" y="84">settings.py</text>
+      <text x="820" y="84">settings_prod.py</text>
+    </g>
+    <g font-size="10.5" fill="#1f2937">
+      <rect x="510" y="96" width="540" height="33" fill="#f8fafc"/>
+      <text x="522" y="117" font-weight="600">DEBUG</text><text x="650" y="117">True (défaut)</text><text x="820" y="117">False — forcé</text>
+
+      <text x="522" y="150" font-weight="600">SECRET_KEY</text><text x="650" y="150">environnement</text><text x="820" y="150">environnement — obligatoire</text>
+
+      <rect x="510" y="162" width="540" height="33" fill="#f8fafc"/>
+      <text x="522" y="183" font-weight="600">ALLOWED_HOSTS</text><text x="650" y="183">vide (localhost)</text><text x="820" y="183">environnement — obligatoire</text>
+
+      <text x="522" y="216" font-weight="600">Base de données</text><text x="650" y="216">SQLite (db.sqlite3)</text><text x="820" y="216">PostgreSQL (DATABASE_URL)</text>
+
+      <rect x="510" y="228" width="540" height="33" fill="#f8fafc"/>
+      <text x="522" y="249" font-weight="600">E-mail</text><text x="650" y="249">console</text><text x="820" y="249">SMTP</text>
+
+      <text x="522" y="282" font-weight="600">Fichiers statiques</text><text x="650" y="282">runserver</text><text x="820" y="282">WhiteNoise + noms hachés</text>
+
+      <rect x="510" y="294" width="540" height="33" fill="#f8fafc"/>
+      <text x="522" y="315" font-weight="600">HTTPS</text><text x="650" y="315">non</text><text x="820" y="315">redirection + HSTS</text>
+
+      <text x="522" y="348" font-weight="600">Cookies</text><text x="650" y="348">normaux</text><text x="820" y="348">Secure (session, CSRF)</text>
+
+      <rect x="510" y="360" width="540" height="33" fill="#f8fafc"/>
+      <text x="522" y="381" font-weight="600">Outils de dev</text><text x="650" y="381">toolbar, extensions</text><text x="820" y="381">retirés</text>
+
+      <text x="522" y="414" font-weight="600">Journaux</text><text x="650" y="414">défaut Django</text><text x="820" y="414">stdout, LOG_LEVEL</text>
+    </g>
+    <rect x="510" y="62" width="540" height="365" rx="6" fill="none" stroke="#cbd5e1" stroke-width="1"/>
+  </g>
+
+  <text x="540" y="458" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11.5" fill="#6b7280">Contrôle final : python manage.py check --deploy --settings=gesti.settings_prod — ce que Django juge encore fragile.</text>
+</svg>

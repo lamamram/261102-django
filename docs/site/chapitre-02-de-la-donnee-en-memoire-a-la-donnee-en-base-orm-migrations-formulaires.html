@@ -1,0 +1,1903 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Support interactif de formation Django - Initiation et Approfondissement : 02 — De la donnée en mémoire à la donnée en base - ORM, migrations, formulaires">
+<title>02 — De la donnée en mémoire à la donnée en base - ORM, migrations, formulaires</title>
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --surface2: #1c2128; --border: #30363d;
+  --primary: #f0883e; --primary2: #ffa657;
+  --success: #3fb950; --warning: #d29922; --danger: #f85149;
+  --text: #e6edf3; --text-muted: #8b949e; --code-bg: #010409; --radius: 10px;
+  --topbar-h: 3.25rem;
+}
+:root[data-theme="light"] {
+  --bg: #ffffff; --surface: #f6f8fa; --surface2: #eaeef2; --border: #d0d7de;
+  --primary: #bc4c00; --primary2: #953800;
+  --success: #1a7f37; --warning: #9a6700; --danger: #cf222e;
+  --text: #1f2328; --text-muted: #656d76; --code-bg: #f6f8fa;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #ffffff; --surface: #f6f8fa; --surface2: #eaeef2; --border: #d0d7de;
+    --primary: #bc4c00; --primary2: #953800;
+    --success: #1a7f37; --warning: #9a6700; --danger: #cf222e;
+    --text: #1f2328; --text-muted: #656d76; --code-bg: #f6f8fa;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.7; transition: background .2s, color .2s; }
+
+/* TOPBAR — fixe, ne bouge jamais au scroll */
+.topbar {
+  position: sticky; top: 0; z-index: 200; height: var(--topbar-h);
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: .9rem; padding: 0 1rem;
+}
+.topbar .badge {
+  flex: 0 0 auto; background: var(--primary); color: #0d1117;
+  font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 20px; white-space: nowrap;
+}
+.topbar a.chapter-title {
+  flex: 1 1 auto; min-width: 0; display: flex; align-items: baseline; gap: .5rem;
+  text-decoration: none; color: var(--text); font-weight: 700; font-size: .92rem;
+  overflow: hidden;
+}
+.topbar a.chapter-title:hover { color: var(--primary); }
+.topbar a.chapter-title .num { color: var(--primary); flex: 0 0 auto; }
+.topbar a.chapter-title .txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar-links { flex: 0 0 auto; display: flex; align-items: center; gap: .5rem; }
+.topbar-link {
+  white-space: nowrap; padding: .4rem .8rem; border: 1px solid var(--border); border-radius: 20px;
+  font-size: .8rem; font-weight: 600; color: var(--text-muted); text-decoration: none; transition: all .2s;
+}
+.topbar-link:hover { color: var(--primary); border-color: var(--primary); }
+.theme-toggle {
+  flex: 0 0 auto; background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  padding: .4rem .7rem; border-radius: 20px; font-size: .8rem; cursor: pointer;
+  display: inline-flex; align-items: center; gap: .35rem;
+}
+.theme-toggle:hover { border-color: var(--primary); }
+
+/* LAYOUT — sidebar gauche + contenu */
+.layout { display: flex; align-items: flex-start; }
+.sidebar {
+  flex: 0 0 280px; width: 280px;
+  position: sticky; top: var(--topbar-h);
+  height: calc(100vh - var(--topbar-h));
+  overflow-y: auto; border-right: 1px solid var(--border); background: var(--surface);
+  padding: 1.25rem 1rem 2rem;
+}
+.objectifs {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: .8rem 1rem; margin-bottom: 1.25rem;
+}
+.objectifs-label { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--primary); }
+.objectifs ul { margin: .4rem 0 0 1.1rem; }
+.objectifs li { font-size: .82rem; color: var(--text-muted); margin-bottom: .3rem; line-height: 1.4; }
+.side-nav { display: flex; flex-direction: column; gap: .1rem; }
+.side-nav button {
+  text-align: left; background: none; border: none; border-left: 3px solid transparent;
+  color: var(--text-muted); padding: .55rem .7rem; font-size: .87rem; font-weight: 500;
+  cursor: pointer; border-radius: 0 6px 6px 0; transition: all .15s;
+}
+.side-nav button:hover { color: var(--text); background: var(--surface2); }
+.side-nav button.active { color: var(--primary); border-left-color: var(--primary); background: var(--surface2); font-weight: 600; }
+.side-nav-sep { height: 1px; background: var(--border); margin: .6rem 0; }
+
+.content { flex: 1 1 auto; min-width: 0; }
+.tab-content { display: none; padding: 2rem 2.5rem 4rem; max-width: 1100px; margin: 0 auto; }
+.tab-content.active { display: block; }
+
+/* SECTIONS */
+h2 { font-size: 1.25rem; color: var(--primary2); margin: 1.8rem 0 .8rem; border-left: 3px solid var(--primary); padding-left: .75rem; }
+h3 { font-size: 1.05rem; color: var(--text); margin: 1.4rem 0 .6rem; }
+p { margin-bottom: .9rem; }
+ul, ol { padding-left: 1.4rem; margin-bottom: .9rem; }
+li { margin-bottom: .35rem; }
+
+/* RESSOURCES — liste sous forme de cartes plutôt que de puces */
+#tab-ressources ul { list-style: none; padding-left: 0; display: flex; flex-direction: column; gap: .5rem; }
+#tab-ressources li {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: .75rem 1rem; margin-bottom: 0;
+}
+#tab-ressources li a { color: var(--primary2); font-weight: 600; text-decoration: none; }
+#tab-ressources li a:hover { text-decoration: underline; }
+
+/* AIDE — divulgation progressive pas-à-pas */
+details.aide { margin-top: 1.5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+details.aide summary {
+  cursor: pointer; padding: .8rem 1.1rem; font-weight: 600; color: var(--primary);
+  list-style: none; display: flex; align-items: center; gap: .5rem;
+}
+details.aide summary::-webkit-details-marker { display: none; }
+details.aide summary::before { content: "▶"; font-size: .7rem; transition: transform .15s; }
+details.aide[open] summary::before { transform: rotate(90deg); }
+details.aide .aide-body { padding: 0 1.1rem 1.1rem; border-top: 1px solid var(--border); margin-top: .2rem; padding-top: 1rem; }
+img { max-width: 100%; height: auto; display: block; margin: 1rem auto; }
+
+/* EXERCICE — un bloc par atelier, avec son aide pas-à-pas attachée juste en dessous */
+.exercice { padding: 1.3rem 0; border-top: 1px solid var(--border); }
+.exercice:first-of-type { border-top: none; padding-top: 0; }
+.exercice h3 { margin: 0 0 .8rem; color: var(--primary2); }
+
+/* CALLOUTS */
+.callout { border-radius: var(--radius); padding: .9rem 1.1rem; margin: 1.2rem 0; border-left: 4px solid; background: var(--surface2); }
+.callout.note   { border-color: var(--primary); }
+.callout.tip    { border-color: var(--success); }
+.callout.warn   { border-color: var(--warning); }
+.callout.danger { border-color: var(--danger); }
+.callout p:last-child { margin-bottom: 0; }
+.callout-title { font-weight: 700; font-size: .82rem; text-transform: uppercase; letter-spacing: .07em; margin-bottom: .4rem; }
+.callout.note   .callout-title { color: var(--primary); }
+.callout.tip    .callout-title { color: var(--success); }
+.callout.warn   .callout-title { color: var(--warning); }
+.callout.danger .callout-title { color: var(--danger); }
+
+/* TABLES */
+.table-wrap { overflow-x: auto; margin: 1rem 0; }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th { background: var(--surface2); color: var(--primary2); text-align: left; padding: .6rem .9rem; font-weight: 600; border: 1px solid var(--border); }
+td { padding: .55rem .9rem; border: 1px solid var(--border); vertical-align: top; }
+tr:hover td { background: var(--surface2); }
+
+/* CODE */
+.code-block { position: relative; margin: 1rem 0; }
+pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1rem 1rem 1.2rem; overflow-x: auto; }
+code { font-family: 'Consolas', 'Cascadia Code', monospace; font-size: .88rem; color: var(--primary2); }
+p code, li code, td code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 5px; padding: .05rem .35rem; }
+.copy-btn {
+  position: absolute; top: .5rem; right: .5rem;
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted);
+  padding: .25rem .6rem; font-size: .75rem; border-radius: 5px; cursor: pointer; transition: all .2s;
+}
+.copy-btn:hover { background: var(--primary); color: #0d1117; }
+.copy-btn.copied { background: var(--success); color: #0d1117; }
+
+/* QUIZ */
+.quiz-question { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem; margin-bottom: 1.2rem; }
+.quiz-question h4 { color: var(--primary2); margin-bottom: .9rem; font-size: .98rem; }
+.quiz-options { display: flex; flex-direction: column; gap: .5rem; }
+.quiz-option {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: .6rem .9rem; cursor: pointer;
+  font-size: .9rem; transition: all .2s; text-align: left; color: var(--text);
+}
+.quiz-option:hover:not(:disabled) { border-color: var(--primary); }
+.quiz-option.correct { border-color: var(--success); color: var(--success); }
+.quiz-option.wrong   { border-color: var(--danger);  color: var(--danger);  }
+.quiz-option:disabled { cursor: default; }
+.quiz-feedback { margin-top: .6rem; font-size: .87rem; color: var(--text-muted); font-style: italic; }
+.quiz-score {
+  background: var(--surface2); border: 1px solid var(--primary);
+  border-radius: var(--radius); padding: 1.5rem; text-align: center; margin-top: 1.5rem; display: none;
+}
+.quiz-score .score-num { font-size: 2.5rem; font-weight: 700; color: var(--primary); }
+.quiz-score p { color: var(--text-muted); margin-top: .4rem; }
+.btn-restart { background: var(--primary); color: #0d1117; border: none; padding: .6rem 1.4rem; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 1rem; font-size: .9rem; }
+.btn-restart:hover { background: var(--primary2); }
+
+/* RESPONSIVE — sidebar devient une barre horizontale sous 900px */
+@media (max-width: 900px) {
+  .layout { flex-direction: column; }
+  .sidebar {
+    position: static; width: 100%; height: auto; max-height: 40vh;
+    border-right: none; border-bottom: 1px solid var(--border);
+  }
+  .side-nav { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; gap: .3rem; }
+  .side-nav button { border-left: none; border-bottom: 3px solid transparent; white-space: nowrap; border-radius: 6px 6px 0 0; }
+  .side-nav button.active { border-left-color: transparent; border-bottom-color: var(--primary); }
+  .side-nav-sep { display: none; }
+  .tab-content { padding: 1.5rem 1.2rem 3rem; }
+  .topbar a.chapter-title { font-size: .82rem; }
+}
+</style>
+<link rel="stylesheet" href="assets/course-common.css">
+<script src="assets/course-common.js" defer></script>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="badge">Django - Initiation et Approfondissement</span>
+  <a class="chapter-title" href="index.html" title="Retour à l'accueil de la formation">
+    <span class="num">02</span><span class="txt">De la donnée en mémoire à la donnée en base - ORM, migrations, formulaires</span>
+  </a>
+  <div class="topbar-links">
+    
+    <a class="topbar-link" href="index.html">Sommaire</a>
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Basculer entre thème clair et sombre">
+      <span id="theme-icon">🌙</span> <span id="theme-label">Sombre</span>
+    </button>
+  </div>
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="objectifs"><span class="objectifs-label">Objectifs</span><ul><li>définir des modèles Django - champs, types, contraintes, relations (`ForeignKey`, `ManyToManyField`) ;</li><li>générer, lire et appliquer des **migrations** (`makemigrations`, `migrate`, `sqlmigrate`) ;</li><li>écrire des requêtes **ORM** - filtrage, tri, agrégats, **F objects** ;</li><li>identifier et corriger un **N+1** avec `select_related` / `prefetch_related` ;</li><li>comprendre l&#x27;**héritage de modèle** abstrait (Document → Contrat) ;</li><li>refactoriser les vues du jour 1 — **mêmes URLs, mêmes gabarits** — au profit de l&#x27;ORM ;</li><li>écrire un formulaire `forms.Form` **validé côté serveur** - `is_valid()`, `errors`, `cleaned_data`, `clean_&lt;champ&gt;`, CSRF.</li></ul></div>
+    <nav class="side-nav" id="main-nav">
+      <button class="active" onclick="showTab('objectifs-pedagogiques')">Objectifs pédagogiques</button>
+  <button class="" onclick="showTab('organisation-de-la-journee')">Organisation de la journée</button>
+  <button class="" onclick="showTab('b5-orm-de-la-table-a-l-objet-bloc-5')">B5 — ORM : de la table à l&#x27;objet (bloc 5)</button>
+  <button class="" onclick="showTab('b6-formulaires-le-serveur-ne-croit-personne-bloc-6-120-min')">B6 — Formulaires : le serveur ne croit personne (bloc 6) · 120 min</button>
+  <button class="" onclick="showTab('synthese-de-fin-de-journee')">Synthèse de fin de journée</button>
+  <button class="" onclick="showTab('annexe-commandes-du-jour-cheat-sheet')">Annexe — Commandes du jour (cheat-sheet)</button>
+    </nav>
+  </aside>
+  <div class="content">
+    <div id="tab-objectifs-pedagogiques" class="tab-content active">
+<p>À la fin de la journée, les participants sont capables de :</p>
+<ul>
+<li>définir des modèles Django : champs, types, contraintes, relations (<code>ForeignKey</code>, <code>ManyToManyField</code>) ;</li>
+<li>générer, lire et appliquer des <strong>migrations</strong> (<code>makemigrations</code>, <code>migrate</code>, <code>sqlmigrate</code>) ;</li>
+<li>écrire des requêtes <strong>ORM</strong> : filtrage, tri, agrégats, <strong>F objects</strong> ;</li>
+<li>identifier et corriger un <strong>N+1</strong> avec <code>select_related</code> / <code>prefetch_related</code> ;</li>
+<li>comprendre l'<strong>héritage de modèle</strong> abstrait (Document → Contrat) ;</li>
+<li>refactoriser les vues du jour 1 — <strong>mêmes URLs, mêmes gabarits</strong> — au profit de l'ORM ;</li>
+<li>écrire un formulaire <code>forms.Form</code> <strong>validé côté serveur</strong> : <code>is_valid()</code>, <code>errors</code>, <code>cleaned_data</code>, <code>clean_&lt;champ&gt;</code>, CSRF.</li>
+</ul>
+<h3>Livrable de la journée</h3>
+<ul>
+<li>5 modèles : <code>Competence</code>, <code>Formation</code>, <code>Intervention</code>, <code>Client</code>, <code>Contrat</code> (héritage) ;</li>
+<li>migrations appliquées + base SQLite peuplée via un script de seed ;</li>
+<li>pages catalogue et détail branchées sur l'ORM (la fiche détail gagne ses <strong>interventions à venir</strong>) ;</li>
+<li>formulaire « Nouveau client » validé côté serveur + page liste des clients avec recherche ;</li>
+<li>les 3 pages du jour 1 toujours accessibles, avec <strong>les mêmes URLs</strong>.</li>
+</ul>
+<blockquote>
+<p>💡 <strong>Fil conducteur</strong> : le découplage MVT du jour 1 paie aujourd'hui. Les vues changent de « moteur » (littéraux Python → ORM) ; les URLs et l'essentiel des gabarits ne bougent pas. On ne « réécrit » pas le site, on le <strong>rebranche</strong>.</p>
+</blockquote>
+</div>
+
+<div id="tab-organisation-de-la-journee" class="tab-content">
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Heure</th>
+<th>Séquence</th>
+<th>Blocs programme</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>09h00 – 09h15</td>
+<td>Reprise du J1, <code>check</code> + serveur + commit</td>
+<td>—</td>
+</tr>
+<tr>
+<td>09h15 – 10h45</td>
+<td><strong>B5·a</strong> — Modèles &amp; migrations</td>
+<td>Bloc 5</td>
+</tr>
+<tr>
+<td>10h45 – 11h00</td>
+<td>Pause</td>
+<td></td>
+</tr>
+<tr>
+<td>11h00 – 12h45</td>
+<td><strong>B5·b</strong> — ORM : requêtes, relations, F objects, optimisation</td>
+<td>Bloc 5</td>
+</tr>
+<tr>
+<td>12h45 – 13h45</td>
+<td>Déjeuner</td>
+<td></td>
+</tr>
+<tr>
+<td>13h45 – 14h15</td>
+<td><strong>B5·c</strong> — Héritage de modèle (Document → Contrat)</td>
+<td>Bloc 5</td>
+</tr>
+<tr>
+<td>14h15 – 16h15</td>
+<td><strong>B6</strong> — Formulaires + atelier « Nouveau client »</td>
+<td>Bloc 6</td>
+</tr>
+<tr>
+<td>16h15 – 16h30</td>
+<td>Pause</td>
+<td></td>
+</tr>
+<tr>
+<td>16h30 – 17h00</td>
+<td>Démonstrations, synthèse, preview du jour 3</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+</div>
+
+<div id="tab-b5-orm-de-la-table-a-l-objet-bloc-5" class="tab-content">
+<h3>5.1. Du littéral à la base de données</h3>
+<p>Au jour 1, <code>catalog/views.py</code> contenait :</p>
+<div class="code-block"><pre><code class="language-python">FORMATIONS = [
+    {'code': 'PY-101', 'nom': 'Django : initiation', 'prix': 1890.0, …},
+    …
+]
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Trois limites, toutes rédhibitoires dès qu'il y a un deuxième utilisateur :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Limite du littéral</th>
+<th>Ce que la base apporte</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tout est <strong>perdu au redémarrage</strong> du serveur</td>
+<td>persistance (fichier <code>db.sqlite3</code>)</td>
+</tr>
+<tr>
+<td>une seule « source de vérité » en mémoire, impossible d'ajouter sans code</td>
+<td>écriture par un admin, un import, un autre service</td>
+</tr>
+<tr>
+<td>aucune <strong>intégrité</strong> (rien n'empêche deux <code>code</code> identiques)</td>
+<td>contraintes (<code>unique</code>, <code>NOT NULL</code>, clés étrangères)</td>
+</tr>
+</tbody>
+</table></div>
+<p>L'<strong>ORM</strong> (Object-Relational Mapping) de Django traduit des expressions Python en requêtes SQL, sans qu'on écrive de SQL :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>En SQL (mental)</th>
+<th>En Python (Django)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SELECT * FROM formation WHERE nouveaute = 1</code></td>
+<td><code>Formation.objects.filter(nouveaute=True)</code></td>
+</tr>
+<tr>
+<td><code>ORDER BY date_debut</code></td>
+<td><code>.order_by('date_debut')</code></td>
+</tr>
+<tr>
+<td><code>WHERE capacite - nb_inscrits &gt; 0</code></td>
+<td><code>.annotate(places=F('capacite') - F('nb_inscrits')).filter(places__gt=0)</code></td>
+</tr>
+<tr>
+<td><code>JOIN</code> / <code>GROUP BY</code></td>
+<td><code>select_related</code>, <code>prefetch_related</code>, <code>Count</code>, <code>Sum</code></td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>💡 <strong>Idée clé</strong> : <code>models.py</code> est la <strong>source de vérité unique</strong> sur le schéma. La base, les migrations, l'admin (jour 3), les formulaires (aujourd'hui), les tests (jour 4) en découlent. Si le schéma doit changer, on change le <strong>modèle</strong> — jamais la base à la main.</p>
+</blockquote>
+<h3>5.2. Schéma du modèle de données — GestiFormation</h3>
+<p><img alt="Schéma des données GestiFormation" src="assets/schema-donnees.svg" /></p>
+<p>Le vocabulaire des relations, tel qu'on le verra écrit dans <code>models.py</code> :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Relation</th>
+<th>Entre</th>
+<th>Déclarée par</th>
+<th>Suppression de la source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1 — N</strong></td>
+<td><code>Formation</code> → <code>Intervention</code></td>
+<td><code>ForeignKey</code> dans <code>Intervention</code></td>
+<td><code>CASCADE</code> : les interventions suivent la formation</td>
+</tr>
+<tr>
+<td><strong>1 — N</strong></td>
+<td><code>Client</code> → <code>Contrat</code></td>
+<td><code>ForeignKey</code> dans <code>Contrat</code></td>
+<td><code>PROTECT</code> : on ne supprime pas un client qui a des contrats</td>
+</tr>
+<tr>
+<td><strong>N — M</strong></td>
+<td><code>Formation</code> ↔ <code>Competence</code></td>
+<td><code>ManyToManyField</code> dans <code>Formation</code></td>
+<td>table intermédiaire <code>formation_competences</code></td>
+</tr>
+<tr>
+<td><strong>héritage</strong></td>
+<td><code>Document</code> (abstrait) → <code>Contrat</code></td>
+<td><code>Meta: abstract = True</code></td>
+<td>aucune table pour <code>Document</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>À noter : la relation <strong>Client ↔ Intervention</strong> n'est <strong>pas</strong> encore modélisée. On la laissera volontairement en blanc : le jour 3, elle deviendra le modèle <code>Inscription</code> (avec date, statut, montant) — c'est la démonstration que <strong>ajouter une entité métier, c'est ajouter un modèle</strong>, pas refaire le site.</p>
+<blockquote>
+<p>💡 <strong>Choix pédagogique</strong> : <code>Intervention.nb_inscrits</code> est un <strong>compteur stocké</strong> (et non le <code>COUNT</code> d'une table d'inscriptions) car celle-ci n'existe pas encore. C'est exactement le bon support pour les <strong>F objects</strong> : <code>F('capacite') - F('nb_inscrits')</code>. Le jour 3, le compteur sera maintenu par les vues d'inscription.</p>
+</blockquote>
+<h3>5.3. <code>catalog/models.py</code> — le code de référence</h3>
+<div class="code-block"><pre><code class="language-python">from django.db import models
+from django.db import models
+
+class Competence(models.Model):
+    &quot;&quot;&quot;Compétence visée par une formation (ex. « ORM », « Templates »).&quot;&quot;&quot;
+
+    nom = models.CharField('compétence', max_length=80, unique=True)
+    description = models.TextField('description', blank=True)
+
+    class Meta:
+        verbose_name = 'compétence'
+        ordering = ['nom']
+
+    def __str__(self):
+        return self.nom
+
+# Create your models here.
+class Formation(models.Model):
+    &quot;&quot;&quot;Une formation du catalogue — le « produit » de l'organisme.&quot;&quot;&quot;
+    code = models.CharField('code', max_length=12, unique=True)  # PY-101
+    nom = models.CharField('intitulé', max_length=120)
+
+    # blank vs null: null=False par défaut en base, 
+    # blank=True permet d'avoir un champs de formulaire (python) lié à ce modèle vide
+    # ==&gt; lié à des mécanisme de valeur par défaut 'tout public'
+    public = models.CharField('public visé', max_length=60, blank=True)
+    duree  = models.PositiveSmallIntegerField('durée (jours)')
+    prix  = models.DecimalField('tarif HT (€)', max_digits=10, decimal_places=2)
+
+    # gestion des valeurs par défaut:
+    # default =&gt; calculé en python
+    # db_default =&gt; //      SQL
+    nouveaute = models.BooleanField('nouveauté', default=False)
+    # auto_now_add: datetime.now() lié au 1er .save() ==&gt; CURRENT_TIMESTAMP
+    date_creation = models.DateTimeField('créée le', auto_now_add=True)
+
+    ### relation many-to-many
+    # la table de correspondance est automatiquement créé
+    # maintenant un objet formation a un attribut .competences (collection d'objet competence)
+    competences = models.ManyToManyField(
+        Competence,
+        blank=True,
+        # relation réciproque: un objet comptetence a accès un attribut .formations
+        related_name='formations',
+        verbose_name='compétences',
+    )
+
+    class Meta:
+        &quot;&quot;&quot;
+        Métadonnée de la table
+        &quot;&quot;&quot;
+        # commentaire: le nom de la table est lié au nom de la classe
+        verbose_name = 'formation'
+        # tri par défaut dans une liste en python
+        ordering = ['code']
+
+    def __str__(self):
+        return f'{self.code} - {self.nom}'
+
+
+class Intervention(models.Model):
+    &quot;&quot;&quot;Une intervention : une formation planifiée à des dates, dans une ville, avec une capacité.&quot;&quot;&quot;
+
+    STATUS = [
+        (&quot;A&quot;, &quot;à venir&quot;),
+        (&quot;E&quot;, &quot;En cours&quot;),
+        (&quot;C&quot;, &quot;Clotûrée&quot;),
+    ]
+
+    numero = models.CharField('numéro', max_length=16, unique=True) # PY-101-002
+    date_debut = models.DateField('date de début')
+    date_fin = models.DateField('date de fin')
+    ville = models.CharField('ville', max_length=60, default='Paris')
+    capacite = models.PositiveSmallIntegerField('capacité (places)')
+    nb_inscrits = models.PositiveSmallIntegerField('inscrits', default=0)
+
+    # énumération: injecter une liste de tuple dans choices=
+    statut = models.CharField('statut', max_length=1, default=&quot;A&quot;, choices=STATUS)
+
+
+    ### relation One to Many (une intervention est liée à UNE formation mais une formation est liée à PLUSIEURS intervention)
+    formation = models.ForeignKey(
+        Formation,
+        verbose_name='formation',
+        null=True,
+        # on_delete = SET_NULL: si l'objet reférencée (formation) est supprimée ==&gt; on mais NULL 
+        # dans le champs formation est mis à null ET l'objet intervention est préservée
+        # on_delete = CASCADE: l'inverse, si formation supprimée ==&gt; interventions supprimées
+
+        on_delete=models.SET_NULL,
+        related_name=&quot;interventions&quot;
+    )
+
+    class Meta:
+        verbose_name = 'intervention'
+        ordering = ['date_debut']
+
+    def __str__(self):
+        return self.numero
+
+    ## décorateur property permet d'utiliser un attribut self.places_dispo
+    ## qui est calculé à la volée quand on l'utilise
+    @property
+    def places_dispo(self):
+        return max(self.capacite - self.nb_inscrits, 0)
+
+
+class Client(models.Model):
+    &quot;&quot;&quot;Un client (société ou stagiaire) — créé par le formulaire du bloc 6.&quot;&quot;&quot;
+
+    prenom = models.CharField('prénom', max_length=60)
+    nom = models.CharField('nom', max_length=60)
+    societe = models.CharField('société', max_length=100, blank=True)
+    email = models.EmailField('e-mail', unique=True)
+    telephone = models.CharField('téléphone', max_length=20, blank=True)
+    date_creation = models.DateTimeField('créé le', auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'client'
+        ordering = ['nom', 'prenom']
+
+    def __str__(self):
+        return f'{self.prenom} {self.nom}'
+
+class Document(models.Model):
+    &quot;&quot;&quot;Base **abstraite** : les documents administratifs partagent le même squelette.&quot;&quot;&quot;
+
+    titre = models.CharField('titre', max_length=160)
+    numero = models.CharField('numéro', max_length=32, unique=True)
+    date_creation = models.DateTimeField('créé le', auto_now_add=True)
+    commentaire = models.TextField('commentaire', blank=True)
+
+    class Meta:
+        # ce modèle ne génèrera jamais une table !!!!! ni n'instanciera aucun objet
+        abstract = True
+        verbose_name = 'document'
+        ordering = ['-date_creation']
+
+    def __str__(self):
+        return self.titre
+
+class Contrat(Document):
+    &quot;&quot;&quot;Contrat de formation signé avec un client — hérite de Document (§5.8).&quot;&quot;&quot;
+
+    client = models.ForeignKey(
+        Client,
+        # PROTECT est la contrepartie python de RESTRICT
+        on_delete=models.PROTECT,          # un client avec des contrats ne se supprime pas
+        related_name='contrats',
+        verbose_name='client',
+    )
+    montant_ht = models.DecimalField('montant HT (€)', max_digits=12, decimal_places=2)
+    date_signature = models.DateField('signé le', null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'contrat'
+        # à coupler avec des outils comme |pluralize
+        verbose_name_plural = 'contrats'
+
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>⚠️ <strong>Piège n°9 — <code>blank</code> ≠ <code>null</code></strong> : <code>blank=True</code> concerne la <strong>validation</strong> (le champ peut être vide dans un formulaire) ; <code>null=True</code> concerne la <strong>base</strong> (colonne <code>NULL</code>). Pour un <code>CharField</code>, la règle Django est <code>blank=True</code> <strong>sans</strong> <code>null=True</code> (stocker <code>NULL</code> <em>et</em> <code>''</code> dans la même colonne, c'est deux façons de dire « vide »). <code>null=True</code> a son sens sur les champs optionnels « structuré » : <code>DateField</code>, <code>IntegerField</code>, <code>DecimalField</code>, <code>ForeignKey</code> — voir <code>Contrat.date_signature</code>.</p>
+<p>⚠️ <strong>Piège n°10 — choisir <code>on_delete</code> est une décision métier</strong> :</p>
+</blockquote>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th><code>on_delete</code></th>
+<th>Signification</th>
+<th>Usage dans GestiFormation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CASCADE</code></td>
+<td>supprime les objets liés</td>
+<td><code>Intervention.formation</code> : pas de formation → pas de intervention</td>
+</tr>
+<tr>
+<td><code>PROTECT</code></td>
+<td><strong>empêche</strong> la suppression</td>
+<td><code>Contrat.client</code> : un client qui a signé un contrat ne se supprime pas</td>
+</tr>
+<tr>
+<td><code>RESTRICT</code></td>
+<td>idem, mais via la contrainte SQL</td>
+<td>variante de <code>PROTECT</code></td>
+</tr>
+<tr>
+<td><code>SET_NULL</code></td>
+<td>met la FK à <code>NULL</code> (exige <code>null=True</code>)</td>
+<td>ex. <code>Intervention.formateur</code> quand le formateur part</td>
+</tr>
+</tbody>
+</table></div>
+<p>Oublier <code>on_delete</code> sur une <code>ForeignKey</code> : erreur — depuis Django 2.0 c'est <strong>obligatoire</strong> (avant, défaut silencieux <code>CASCADE</code>). C'est le genre de choix qu'on explique en meeting, pas dans un ticket.</p>
+<h3>5.3.1 — Ce que chaque mot-clé fait dans une classe</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Élément</th>
+<th>Effet</th>
+<th>Où on le revoit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>models.CharField('libellé', …)</code></td>
+<td>1ʳᵉ arg = <strong>libellé</strong> (admin, forms) — en français</td>
+<td>jour 3 (admin), J3 (ModelForm)</td>
+</tr>
+<tr>
+<td><code>max_length</code></td>
+<td>obligatoire sur <code>CharField</code> (taille SQL)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>unique=True</code></td>
+<td>contrainte SQL + index</td>
+<td><code>code</code>, <code>email</code>, <code>numero</code></td>
+</tr>
+<tr>
+<td><code>blank=True</code></td>
+<td>champ optionnel en validation</td>
+<td>§5.3, piège n°9</td>
+</tr>
+<tr>
+<td><code>default=…</code></td>
+<td>valeur par défaut <strong>à l'insertion</strong></td>
+<td><code>default='Paris'</code></td>
+</tr>
+<tr>
+<td><code>auto_now_add=True</code></td>
+<td>horodaté à la création, non éditable</td>
+<td><code>date_creation</code></td>
+</tr>
+<tr>
+<td><code>choices=STATUTS</code></td>
+<td>liste fermée + <code>get_&lt;champ&gt;_display()</code></td>
+<td>admin J3, gabarits</td>
+</tr>
+<tr>
+<td><code>related_name='interventions'</code></td>
+<td>navigation inverse : <code>formation.interventions.all()</code></td>
+<td>§5.6</td>
+</tr>
+<tr>
+<td><code>Meta.ordering</code></td>
+<td>tri par défaut de <strong>tout</strong> QuerySet sans <code>order_by</code></td>
+<td><code>Formation.objects.all()</code> déjà trié par <code>code</code></td>
+</tr>
+<tr>
+<td><code>__str__</code></td>
+<td>affichage de l'objet (admin, <code>repr</code>)</td>
+<td>partout</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>💡 <strong><code>Meta.ordering</code> et le gabarit du jour 1</strong> : la page liste fait <code>{{ formations|length }}</code> puis une boucle. Au J1, l'ordre venait de la liste Python. Ici, il vient de <code>Meta.ordering = ['code']</code> — <strong>et aucune vue n'a à y penser</strong>. C'est l'illustration que la « logique d'affichage de base » vit dans le modèle, pas dans la vue.</p>
+</blockquote>
+<h3>🛠️ Atelier 5·a — Écrire les modèles, migrer, peupler (45 min)</h3>
+<ol>
+<li>Coller <code>catalog/models.py</code> <strong>section par section</strong> (un modèle, un <code>check</code> — on apprend à lire les erreurs) ;</li>
+<li><code>python manage.py makemigrations</code> → lire le fichier <code>catalog/migrations/0001_initial.py</code> <strong>avec le binôme</strong> (qui a créé quoi ?) ;</li>
+<li><code>python manage.py migrate</code> ;</li>
+<li><code>python manage.py sqlmigrate catalog 0001</code> → <strong>lire le vrai SQL généré</strong> (colonne <code>varchar(12)</code>, <code>UNIQUE</code>, <code>DECIMAL(10,2)</code>, FK…) ;</li>
+<li>Coller <code>catalog/seed.py</code>, l'exécuter: <code>python -m catalog.seed</code> ;</li>
+<li><code>python manage.py shell_plus</code> → <code>list(Formation.objects.all())</code>, <code>Intervention.objects.first().formation</code> ;</li>
+<li><code>git add -A &amp;&amp; git commit -m "J2 : modèles Formation/Intervention/Client/Competence/Contrat + seed"</code>.</li>
+</ol>
+<p><strong><code>catalog/seed.py</code> — peupler la base de démonstration</strong> :</p>
+<div class="code-block"><pre><code class="language-python">&quot;&quot;&quot;Peupler la base SQLite de démonstration.
+
+Usage (depuis la racine du projet, après `python manage.py migrate`) :
+    python -m catalog.seed
+
+Idempotent : peut être relancé sans dupliquer les données.
+&quot;&quot;&quot;
+&quot;&quot;&quot;Peupler la base SQLite de démonstration.
+
+Usage (depuis la racine du projet, après `python manage.py migrate`) :
+    python -m catalog.seed
+
+Idempotent : peut être relancé sans dupliquer les données.
+&quot;&quot;&quot;
+from datetime import date
+import os
+from django.db import transaction
+
+# django.core.exceptions.ImproperlyConfigured: 
+# Requested setting INSTALLED_APPS, but settings are not configured. 
+# You must either define the environment variable 
+# DJANGO_SETTINGS_MODULE or call settings.configure() before accessing settings.
+import django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gesti.settings')
+django.setup()
+
+# à importer après avoir utiliser django !!!
+from catalog.models import Client, Competence, Contrat, Formation, Intervention
+
+COMPETENCES = ['Django', 'ORM', 'Templates', 'Formulaires']
+
+# code, nom, public, durée (j), prix HT, nouveauté, compétences
+FORMATIONS = [
+    ('PY-101', 'Django : initiation',        'Développeurs', 3, 1890.00, False, ['Django', 'Templates']),
+    ('PY-102', 'Django : approfondissement', 'Développeurs', 2, 2490.00, False, ['Django', 'ORM']),
+    ('DA-201', 'Data analysis with Python',  'Analystes',    5, 2190.00, True,  ['ORM']),
+]
+
+# numéro, code formation, début, fin, ville, capacité, inscrits, statut
+INTERVENTIONS = [
+    ('PY-101-2612', 'PY-101', date(2026, 12, 1), date(2026, 12, 3),  'Paris', 12, 7, 'A'),
+    ('PY-102-2601', 'PY-102', date(2027, 1, 12), date(2027, 1, 13),  'Lyon',   8, 8, 'A'),  # complet
+    ('DA-201-2611', 'DA-201', date(2026, 11, 9), date(2026, 11, 13), 'Paris', 10, 3, 'E'),
+]
+
+
+def seed_competences():
+    for nom in COMPETENCES:
+        # create ==&gt; INSERT ==&gt; non idempotent
+        # get ==&gt; SELECT mais lève une exc si n'existe pas =&gt; non idempotent
+        # get_or_create ==&gt; retourne ou créer =&gt; idempotent 
+        Competence.objects.get_or_create(nom=nom)
+
+def seed_formations():
+    for code, nom, public, duree, prix, nouveaute, comps in FORMATIONS:
+        formation, _ = Formation.objects.update_or_create(
+            # WHERE
+            code=code,
+            # SET
+            defaults={
+                'nom': nom, 'public': public, 'duree': duree,
+                'prix': prix, 'nouveaute': nouveaute,
+            },
+        )
+        # j'alimente la table de correspondance entre formation &lt;-&gt; competences
+        # avec les ids liés au noms de compétence de la source donnée
+        #    --------------------------------------- WHERE  nom IN (&quot;django&quot;, &quot;ORM&quot;)
+        formation.competences.set(Competence.objects.filter(nom__in=comps))
+
+def seed_interventions():
+    for numero, code, d_debut, d_fin, ville, capacite, inscrits, statut in INTERVENTIONS:
+        Intervention.objects.update_or_create(
+            numero=numero,
+            defaults={
+                'formation': Formation.objects.get(code=code),
+                'date_debut': d_debut, 'date_fin': d_fin, 'ville': ville,
+                'capacite': capacite, 'nb_inscrits': inscrits, 'statut': statut,
+            },
+        )
+
+def seed_clients_contrats():
+    client, _ = Client.objects.get_or_create(
+        email='m.dupont@acme.fr',
+        defaults={'prenom': 'Marie', 'nom': 'Dupont', 'societe': 'Acme'},
+    )
+    Contrat.objects.get_or_create(
+        numero='CT-2026-011',
+        defaults={
+            'titre': 'Contrat PY-102 — Acme',
+            'client': client,
+            'montant_ht': 2490.00,
+            'date_signature': date(2026, 10, 15),
+        },
+    )
+
+# transforme le script en transaction (tout ou rien)
+@transaction.atomic
+def run():
+    seed_competences()
+    seed_formations()
+    seed_interventions()
+    seed_clients_contrats()
+    print(
+        f'Seed OK — {Competence.objects.count()} compétences, '
+        f'{Formation.objects.count()} formations, '
+        f'{Intervention.objects.count()} interventions, '
+        f'{Client.objects.count()} client(s), '
+        f'{Contrat.objects.count()} contrat(s).'
+    )
+
+if __name__ == &quot;__main__&quot;:
+    run()
+
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 <strong><code>get_or_create</code> / <code>update_or_create</code></strong> : le trio d'« upsert » de l'ORM — <code>get_or_create</code> (créer si absent), <code>update_or_create</code> (créer <strong>et</strong> mettre à jour), <code>bulk_create</code> (insérer une liste sans <code>SELECT</code> préalable). Les scripts de seed, de démo et de tests (J4) en vivent.</p>
+<p>⚠️ <strong>Piège n°11 — le M2M n'a pas de <code>default</code></strong> : on ne peut pas écrire <code>formation.competences = ['Django', 'ORM']</code> dans <code>update_or_create</code> — la table intermédiaire est une <strong>autre table</strong>. On passe par <code>.set(…)</code> après, comme dans le seed. C'est la première fois que la structure des tables « perce » dans le code, et c'est la bonne occasion de le voir.</p>
+</blockquote>
+<hr />
+<h3>5.4. Les migrations — le schéma a un historique</h3>
+<p><strong>Définition</strong> : une <em>migration</em> est un <strong>script versionné qui transforme le schéma</strong> (créer une table, ajouter une colonne, poser une contrainte). Le dossier <code>catalog/migrations/</code> est la <strong>mémoire de ce que la base a subi</strong>, dans l'ordre.</p>
+<p>Le cycle, à réciter :</p>
+<div class="code-block"><pre><code>modèle (models.py)  ──makemigrations──▶  fichier 000X_….py  ──migrate──▶  base de données
+        ▲                                        │
+        └────────── on change le modèle ◀────────┘   (git commit des deux)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Commande</th>
+<th>Ce qu'elle fait</th>
+<th>Elle écrit…</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>makemigrations</code></td>
+<td><strong>diff</strong> entre <code>models.py</code> et les migrations existantes → génère le script</td>
+<td><code>catalog/migrations/0001_initial.py</code></td>
+</tr>
+<tr>
+<td><code>migrate</code></td>
+<td><strong>joue</strong> les scripts non encore appliqués, dans l'ordre</td>
+<td><code>db.sqlite3</code> + table <code>django_migrations</code></td>
+</tr>
+<tr>
+<td><code>showmigrations</code></td>
+<td>liste l'historique par app (<code>[X]</code> = appliquée)</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>sqlmigrate catalog 0001</code></td>
+<td><strong>affiche le SQL réel</strong> d'une migration sans l'appliquer</td>
+<td>— (lecture)</td>
+</tr>
+<tr>
+<td><code>migrate catalog zero</code></td>
+<td>dé-apply les migrations de <code>catalog</code> (⚠️ <strong>supprime les tables</strong>)</td>
+<td>— (destructif)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Exemple de <code>0001_initial.py</code></strong> (extrait, lisible tel quel) :</p>
+<div class="code-block"><pre><code class="language-python">class Migration(migrations.Migration):
+    initial = True
+    dependencies = []
+    operations = [
+        migrations.CreateModel(
+            name='Formation',
+            fields=[
+                ('id', models.BigAutoField(auto_primary_key=True, …)),
+                ('code', models.CharField(max_length=12, unique=True)),
+                ('nom', models.CharField(max_length=120)),
+                ('prix', models.DecimalField(decimal_places=2, max_digits=10)),
+                …
+            ],
+            options={'verbose_name': 'formation', 'ordering': ['code']},
+        ),
+        migrations.CreateModel(
+            name='Intervention',
+            fields=[
+                …
+                ('formation', models.ForeignKey(on_delete=models.CASCADE,
+                 to='catalog.formation', …)),
+            ],
+        ),
+        migrations.AddField(
+            model_name='formation',
+            name='competences',
+            field=models.ManyToManyField(blank=True, to='catalog.competence'),
+        ),
+    ]
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Trois choses à faire remarquer :</p>
+<ol>
+<li><strong>l'ordre compte</strong> : <code>CreateModel(Intervention)</code> après <code>CreateModel(Formation)</code> — Django a résolu la dépendance FK ;</li>
+<li><strong>le M2M est un <code>AddField</code></strong> posé <em>après</em> les deux tables (il a besoin de la table intermédiaire) ;</li>
+<li><code>verbose_name</code> et <code>ordering</code> sont <strong>dans la migration</strong> (<code>options=…</code>) — ce n'est pas du décor.</li>
+</ol>
+<blockquote>
+<p>💡 <strong><code>models.py</code> ≠ migration, c'est un contrat à deux temps</strong> : <code>models.py</code> dit <em>ce que le schéma doit être</em>, la migration dit <em>comment on y est arrivé</em>. En production, on ne « met à jour la base », on <strong>applique l'historique</strong> — c'est pour ça que les fichiers de migration sont commités et que <code>db.sqlite3</code> (ou les dumps) sont dans <code>.gitignore</code>.</p>
+<p>⚠️ <strong>Piège n°12 — jamais modifier une migration déjà appliquée</strong> : la « solution » de débutant consiste à éditer <code>0001_initial.py</code> pour coller le nouveau champ. Localement, ça « marche » ; en équipe, la base de A n'a plus le schéma de B. La bonne marche : <strong>nouvelle migration</strong> (<code>makemigrations</code> génère <code>0002_formation_nouveau_champ.py</code>). Seule exception courante : une migration <code>0001</code> avec des données de seed → <code>RunPython</code> (jour 4).</p>
+<p>⚠️ <strong>Piège n°13 — <code>makemigrations</code> sans rien changer</strong> : on change un <code>default</code> « en apparence » ou un libellé, on relance <code>makemigrations</code> → « No changes detected ». Ce n'est pas un bug : le diff est <strong>structurel</strong> (colonne, contrainte, FK), pas sémantique. Si le changement est comportemental (recalculer des valeurs), c'est un <code>RunPython</code>, pas une migration de schéma.</p>
+<p>💡 <strong><code>--fake</code> (à mentionner, pas pratiquer)</strong> : <code>migrate --fake</code> marque une migration comme appliquée <strong>sans exécuter le SQL</strong>. Cas d'usage légitime : la base a déjà le schéma (import, reprise d'un projet) et on veut resynchroniser l'historique. À manipuler seulement en ayant compris <code>django_migrations</code> — sinon on finit avec un historique qui ne correspond à rien.</p>
+</blockquote>
+<hr />
+<h3>5.5. Le QuerySet — la colonne vertébrale de l'ORM</h3>
+<p>Tout part de <code>Modèle.objects</code> — un <strong>manager</strong> qui fabrique des <strong>QuerySets</strong>. Deux propriétés à ancrer d'abord, car elles changent toute la façon de lire le code :</p>
+<ol>
+<li><strong>un QuerySet est paresseux</strong> : <code>Formation.objects.filter(nouveaute=True)</code> <strong>n'exécute aucune requête</strong>. Le SQL part quand on <em>force</em> l'évaluation — <code>list(…)</code>, <code>for … in</code>, <code>len(…)</code>, <code>print(…)</code>, <code>qs[0]</code>… ;</li>
+<li><strong>un QuerySet est immuable</strong> : chaque méthode renvoie <strong>un nouveau QuerySet</strong> ; <code>qs.filter(…)</code> ne modifie pas <code>qs</code>.</li>
+</ol>
+<div class="code-block"><pre><code class="language-python">&gt;&gt;&gt; qs = Formation.objects.all()              # rien part en base
+&gt;&gt;&gt; qs = qs.filter(nouveaute=True)            # un *autre* QuerySet
+&gt;&gt;&gt; qs = qs.order_by('-prix')                 # un *autre* QuerySet
+&gt;&gt;&gt; print(len(qs))                            # ICI, le SQL part (une seule, composée)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<h4>expérimenter avec shell_plus</h4>
+<ul>
+<li>utiliser la console <strong>ipython</strong>: <code>pip install ipython</code></li>
+<li>dans <code>settings.py</code>, précharger les outils pertinents =&gt; <strong>SHELL_PLUS_PRE_IMPORTS</strong></li>
+<li>Le shell Django amélioré (<code>python manage.py shell_plus</code>) charge automatiquement tous les modèles. On peut tester les QuerySets directement :</li>
+</ul>
+<div class="code-block"><pre><code class="language-python">len(connexion.queries) # nb de requêtes SQL exécutées jusqu'ici
+qs = ...
+len(connexion.queries)
+
+str(qs.query) # voir le SQL généré par ce QuerySet
+reset_queries() # réinitialise le compteur de requêtes SQL
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<h4>les lookups</h4>
+<p><strong>Le vocabulaire des lookups</strong> (<code>__…</code>) — l'équivalent Python des <code>WHERE</code> :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Lookup</th>
+<th>SQL</th>
+<th>Exemple</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>__exact</code></td>
+<td><code>=</code> (défaut)</td>
+<td><code>filter(code='PY-101')</code></td>
+</tr>
+<tr>
+<td><code>__iexact</code></td>
+<td><code>= '…'</code> insensible à la casse</td>
+<td><code>filter(code__iexact='py-101')</code></td>
+</tr>
+<tr>
+<td><code>__icontains</code></td>
+<td><code>LIKE '%…%'</code> (insensible)</td>
+<td><code>filter(nom__icontains='django')</code></td>
+</tr>
+<tr>
+<td><code>__in</code></td>
+<td><code>IN (…)</code></td>
+<td><code>filter(code__in=['PY-101', 'DA-201'])</code></td>
+</tr>
+<tr>
+<td><code>__gt / __gte / __lt / __lte</code></td>
+<td><code>&gt; &gt;= &lt; &lt;=</code></td>
+<td><code>filter(prix__gte=2000)</code></td>
+</tr>
+<tr>
+<td><code>__range</code></td>
+<td><code>BETWEEN</code></td>
+<td><code>filter(date_debut__range=['2026-11-01', '2026-12-31'])</code></td>
+</tr>
+<tr>
+<td><code>__isnull</code></td>
+<td><code>IS NULL</code></td>
+<td><code>filter(date_signature__isnull=True)</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Les méthodes qu'on utilisera tous les jours</strong> :</p>
+<div class="code-block"><pre><code class="language-python">Formation.objects.count()                                  # COUNT(*) — ne charge pas les objets
+Formation.objects.filter(nouveaute=True).exists()          # EXISTS — arrêt dès le 1ᵉʳ résultat
+Formation.objects.order_by('duree').first()                # 1er élément ou None (jamais d'exception)
+Formation.objects.get(code='PY-101')                        # exactement un — sinon :
+#   → DoesNotExist (0 résultat)  ou  MultipleObjectsReturned (&gt;1)
+
+Intervention.objects.filter(statut='A').update(ville='Bordeaux')  # UPDATE en masse — PAS d'instance en mémoire
+Intervention.objects.filter(statut='C').delete()                  # DELETE en masse
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>⚠️ <strong>Piège n°14 — <code>.first()</code> vs <code>.get()</code></strong> : <code>.first()</code> renvoie <code>None</code> (pas d'exception) quand c'est vide ; <code>.get()</code> <strong>lève</strong>. Pour « trouver un client par son e-mail » dans une vue, on choisit <code>.get()</code> + gestion <code>DoesNotExist</code> — ou <code>get_object_or_404</code> (cf. §5.5.1), pas <code>if obj is None</code>. L'exception, c'est la contracte du code.</p>
+<p>⚠️ <strong>Piège n°15 — <code>values()</code> / <code>values_list()</code></strong> : ils renverraient des <strong>dicts / tuples</strong>, pas des instances. C'est le bon outil pour une API JSON légère ou un agrégat — mais dans un gabarit, <code>{{ formation.nom }}</code> casserait, car il n'y a plus d'objet. En J2, on les réserve aux besoins explicites.</p>
+<p>💡 <strong><code>exclude()</code> = <code>NOT</code></strong> : <code>Intervention.objects.exclude(statut='C')</code> ≡ <code>filter(statut__in=['A', 'E'])</code>. Préférer <code>exclude</code> quand la liste blanche est longue ou instable.</p>
+</blockquote>
+<h3>5.5.1 — Revoir les pages du jour 1 avec l'ORM</h3>
+<p>C'est le moment de <strong>rebrancher</strong> les vues. Comparer à gauche (J1) / à droite (J2) — le delta est volontairement minuscule :</p>
+<div class="code-block"><pre><code class="language-python"># catalog/views.py — extrait J2
+def liste_formations(request: HttpRequest) -&gt; HttpResponse:
+    &quot;&quot;&quot;
+    liste des formations
+    utilise render, qui injecte le contexte dans un fichier HTML &quot;template&quot;
+    les templates doivent être insérés dans &lt;app&gt;/templates/&lt;app&gt;/&lt;xxxx&gt;.html
+    &quot;&quot;&quot;
+    formations = Formation.objects.all()
+    return render(request, &quot;catalog/liste_formations.html&quot; , {&quot;formations&quot;: formations})
+
+def detail_formation(request: HttpRequest, pk: int) -&gt; HttpResponse:
+    &quot;&quot;&quot;
+    détail d'une formation indexée par un id, par défaut l'indice de la liste
+    &quot;&quot;&quot;
+    # prefetch_related: 1 requête supplémentaire par relation (M2M ou FK inverse), jointure faite en Python
+    formation = get_object_or_404(
+        Formation.objects.prefetch_related(&quot;competences&quot;),
+        pk=pk,
+    )
+    competences = formation.competences.all()
+
+    return render(request, &quot;catalog/detail_formation.html&quot; , {&quot;formation&quot;: formation, &quot;competences&quot;: competences})
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code class="language-python"># J1 — pour mémoire
+def detail_formation(request, pk):
+    try:
+        formation = FORMATIONS[int(pk) - 1]
+    except (ValueError, IndexError):
+        raise Http404(f&quot;Formation inconnue (#{pk}).&quot;)
+    return render(request, 'catalog/detail_formation.html', {'formation': formation})
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><code>get_object_or_404(Formation, pk=pk)</code> remplace le <code>try/except</code> + <code>Http404</code> manuel : c'est le <strong>raccourci Django</strong> pour « trouver ou 404 ». Le jour 3, on verra ses cousins (<code>get_list_or_404</code>) et le jour 4, pourquoi on les préfère à un <code>if not formation</code>.</p>
+<p><strong>Le gabarit, lui, change d'une seule ligne</strong> — celle qui couplait l'affichage à l'index de la liste Python :</p>
+<div class="code-block"><pre><code class="language-diff">- href=&quot;{% url 'catalog:detail-formation' forloop.counter0 %}&quot;
++ href={% url 'catalog:detail-formation' formation.pk %}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>C'est <strong>la</strong> ligne pédagogique de la journée : au J1, on n'avait pas d'identifiant stable (une liste en mémoire) ; on a « triché » avec l'index de boucle. Avec l'ORM, chaque formation a un <code>pk</code> — l'URL pointe sur <strong>l'objet</strong>, pas sur sa position. Tout le reste du gabarit (blocs, filtres, boucle <code>{% empty %}</code>) est <strong>inchangé</strong>.</p>
+<blockquote>
+<p>💡 <strong><code>request</code> est toujours passé à <code>render()</code></strong> (règle J1) — et c'est exactement ce qui permet, demain, aux formulaires de lire <code>request.POST</code>. On ne change rien, on a déjà payé la facturer.</p>
+</blockquote>
+<hr />
+<h3>5.6. Traverser les relations — et le Problème des N + 1 requêtes qui vient avec</h3>
+<p>Une fois les objets créés, l'ORM les <strong>navigue</strong> : les relations déclarées dans <code>models.py</code> deviennent des attributs Python.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Navigation</th>
+<th>Code</th>
+<th>SQL cachée</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>côté N → côté 1 (via la FK)</td>
+<td><code>intervention.formation</code></td>
+<td>lecture de la colonne <code>formation_id</code> + accès à l'objet</td>
+</tr>
+<tr>
+<td>côté 1 → côté N (<code>related_name</code>)</td>
+<td><code>formation.interventions.all()</code></td>
+<td><code>SELECT … WHERE formation_id = 3</code></td>
+</tr>
+<tr>
+<td><code>ManyToManyField</code></td>
+<td><code>formation.competences.all()</code></td>
+<td><code>JOIN formation_competences</code></td>
+</tr>
+<tr>
+<td>inverse du M2M</td>
+<td><code>competence.formations.all()</code></td>
+<td>idem, l'autre côté</td>
+</tr>
+<tr>
+<td><strong>filtrer à travers</strong></td>
+<td><code>Intervention.objects.filter(formation__code='PY-101')</code></td>
+<td><code>JOIN catalog_formation ON …</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Le double-underscore <code>__</code> = « à travers la relation ».</strong> Il enchaîne : <code>Client.objects.filter(contrats__montant_ht__gte=2000)</code> lit <em>« les clients qui ont au moins un contrat de ≥ 2 000 € »</em> — une phrase métier en une expression.</p>
+<p><strong>La fiche détail gagne ses « interventions à venir »</strong> (livrable du jour) — le contexte change, le gabarit s'étend d'un bloc :</p>
+<div class="code-block"><pre><code class="language-python"># catalog/views.py — extrait J2
+interventions = formation.interventions.filter(statut=&quot;A&quot;).order_by('date_debut')
+
+return render(request, &quot;catalog/detail_formation.html&quot; , {
+    &quot;formation&quot;: formation, 
+    &quot;competences&quot;: competences,
+    &quot;interventions&quot;: interventions
+})
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code class="language-html">{# catalog/detail_formation.html — section ajoutée avant le footer d'action #}
+&lt;section class=&quot;interventions&quot;&gt;
+    &lt;h2&gt;Interventions à venir&lt;/h2&gt;
+    {% for intervention in interventions %}
+        &lt;p&gt;
+            &lt;code&gt;{{ intervention.numero }}&lt;/code&gt; —
+            du {{ intervention.date_debut|date:&quot;d/m/Y&quot; }} au {{ intervention.date_fin|date:&quot;d/m/Y&quot; }}
+            à {{ intervention.ville }}
+            ({{ intervention.places_dispo }} places restantes)
+        &lt;/p&gt;
+    {% empty %}
+        &lt;p class=&quot;vide&quot;&gt;Aucune intervention planifiée pour cette formation.&lt;/p&gt;
+    {% endfor %}
+&lt;/section&gt;
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 <strong><code>date_debut</code> est un <code>date</code> du stdlib</strong> — le filtre <code>|date:"d/m/Y"</code> du jour 1 s'applique tel quel. Les types Python des champs (<code>DateField</code> → <code>datetime.date</code>, <code>DecimalField</code> → <code>decimal.Decimal</code>) sont ceux qui s'affichent dans le gabarit : <code>{{ intervention.prix|floatformat:2 }}</code> continue de marcher.</p>
+</blockquote>
+<p><strong>Le Problème des N + 1 requêtes — le premier vrai coût de la base.</strong> Ce bloc d'un gabarit « interventions d'une formation » :</p>
+<div class="code-block"><pre><code class="language-python">for intervention in formation.interventions.all():   # 1 requête
+    print(intervention.ville)                    # 0 requête supplémentaire
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Par contre, si le gabarit fait <code>{{ intervention.formation.nom }}</code> <strong>dans la boucle</strong> :</p>
+<div class="code-block"><pre><code class="language-python">for intervention in Intervention.objects.all():      # 1 requête : les interventions
+    print(intervention.formation.nom)           # + 1 requête par itération !
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>N interventions → <strong>1 + N requêtes</strong>. Le navigateur ne voit rien, mais chaque itération fait un aller-retour base. C'est le défaut n°1 des applications Django qui « ralentissent sans raison ».</p>
+<p><strong>Les deux correctifs</strong> :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th><code>select_related</code></th>
+<th><code>prefetch_related</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pour</td>
+<td><code>ForeignKey</code> (côté N → 1)</td>
+<td><code>related_name</code> (1 → N), <code>ManyToManyField</code></td>
+</tr>
+<tr>
+<td>Mécanisme</td>
+<td><strong>1</strong> SQL avec <code>JOIN</code></td>
+<td><strong>2</strong> SQL, assemblage en Python (en mémoire)</td>
+</tr>
+<tr>
+<td>Exemple GestiFormation</td>
+<td><code>Intervention.objects.select_related('formation')</code></td>
+<td><code>Formation.objects.prefetch_related('competences', 'interventions')</code></td>
+</tr>
+<tr>
+<td>Limite</td>
+<td>une seule table à la fois (enchaînable : <code>select_related('formation', …)</code>)</td>
+<td>aucun JOIN — c'est pour ça que ça marche sur le M2M</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>⚠️ <strong>Piège n°16 — confondre les deux</strong> : <code>select_related('competences')</code> sur une <code>Formation</code> ne marche pas — le M2M n'a <strong>pas</strong> de colonne à joindre, c'est la table intermédiaire. Symétriquement, <code>prefetch_related('formation')</code> sur <code>Intervention</code> « passe » mais génère 2 requêtes là où 1 suffirait. La règle à retenir : <strong><code>select_related</code> = FK, <code>prefetch_related</code> = la liste (inverse ou M2M)</strong>.</p>
+<p>💡 <strong>Mesurer avant d'optimiser.</strong> En dev, le bas de la page de debug de Django affiche les requêtes exécutées — c'est là qu'on « voit » le Problème des N + 1 requêtes (30 lignes de <code>SELECT * FROM catalog_intervention …</code> identiques). En shell : <code>from django.db import connection; print(len(connection.queries))</code> avant / après le bloc suspect.</p>
+</blockquote>
+<hr />
+<h3>5.7. F objects et <code>annotate</code> — la logique calculée <strong>dans</strong> la base</h3>
+<p><code>Intervention.places_dispo</code> est calculé en Python. Mais la valeur est recalculée <strong>N fois côté Python, après le chargement des lignes</strong>, et on ne peut <strong>ni filtrer, ni trier</strong> dessus. Le <strong>F object</strong> (<code>django.db.models.F</code>) est une <strong>promesse de valeur</strong> : <em>« utilise la valeur de cette colonne au moment où le SQL est construite »</em>.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Sans F</th>
+<th>Avec F</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>comparer <strong>deux colonnes</strong> de la même ligne</td>
+<td>impossible sans charger l'objet</td>
+<td><code>filter(capacite__gt=F('nb_inscrits'))</code></td>
+</tr>
+<tr>
+<td>un champ <strong>calculé</strong> (filtrable, triable)</td>
+<td>propriété Python, hors SQL</td>
+<td><code>.annotate(places=F('capacite') - F('nb_inscrits'))</code></td>
+</tr>
+<tr>
+<td><strong>incrémenter</strong> sans race condition</td>
+<td><code>update(nb_inscrits=s.nb_inscrits + 1)</code> — lit puis écrit, deux instants</td>
+<td><code>update(nb_inscrits=F('nb_inscrits') + 1)</code> — <strong>atome SQL</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>L'exemple de la journée</strong> — « interventions ouvertes, les plus pleines d'abord » :</p>
+<div class="code-block"><pre><code class="language-python">from django.db.models import F
+
+# ne pas prendre places_dispo sinon conflit avec la @property
+# la requête avec F sera plus performante que de calculer places_dispo en Python avec un volume de données importants
+Intervention.objects.annotate(places=(F('capacite') - F('nb_inscrits'))).filter(statut='A').filter(places__gt=0).order_by('places')
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Ce que la base reçoit, en une passe :</p>
+<div class="code-block"><pre><code class="language-sql">SELECT …, (capacite - nb_inscrits) AS places
+FROM catalog_intervention
+JOIN catalog_formation ON (catalog_intervention.formation_id = catalog_formation.id)
+WHERE statut = 'A' AND (capacite - nb_inscrits) &gt; 0
+ORDER BY places;
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>L'attribut annoté existe <strong>sur les instances de ce QuerySet</strong> : <code>intervention.places</code> s'affiche dans le gabarit, et <code>intervention.filter(…)</code> / <code>.order_by('places')</code> restent possibles — car <code>places</code> est une <strong>vraie colonne calculée</strong>, pas un <code>@property</code>.</p>
+<p>Le F traverse aussi les relations (<code>F('formation__code')</code>) et s'écrit dans <code>values()</code>, <code>extra()</code>, les agrégats. Les agrégats eux-mêmes (<code>Count</code>, <code>Sum</code>, <code>Avg</code>, <code>Max</code>) arrivent le jour 4 avec les tests — le jour 3, la ligne d'inscription fera exactement :</p>
+<div class="code-block"><pre><code class="language-python">Intervention.objects.filter(pk=intervention.pk).update(nb_inscrits=F('nb_inscrits') + 1)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 <strong>Pourquoi cette ligne plutôt que <code>intervention.nb_inscrits += 1 ; intervention.save()</code></strong> : la seconde version <strong>lit</strong> la valeur (en mémoire), <strong>l'incrémente en Python</strong>, <strong>réécrit</strong>. Deux stagiaires (ou deux nœuds) qui inscrivent en même temps écrasent l'un l'autre — c'est une <em>race condition</em>. La version F est <strong>une seule instruction SQL</strong>, que la base exécute de façon atomique. C'est le premier « réflexe pro » du cours : <strong>toute mise à jour dérivée d'une valeur lue passe par F</strong>.</p>
+<p>⚠️ <strong>Piège n°17 — l'attribut annoté n'existe que sur le QuerySet qui l'a ajouté</strong> : <code>Intervention.objects.filter(places__gt=0)</code> <strong>sans</strong> l'<code>annotate</code> → <code>FieldError: Cannot resolve keyword 'places'</code> ; et <code>Intervention.objects.first().places</code> → <code>AttributeError</code>. L'annotation est une propriété du <strong>QuerySet</strong>, pas de la table.</p>
+<p>⚠️ <strong>Piège n°18 — les <code>@property</code> ne vont pas dans le SQL</strong> : <code>filter(places_dispo__gt=0)</code> échoue — l'ORM ne connaît que des <strong>champs</strong> et des <strong>annotations</strong>, jamais du code Python. Si un calcul doit être filtrable/triable, il devient une annotation (ou une colonne, si c'est permanent).</p>
+</blockquote>
+<h3>🛠️ Atelier 5·b — Requêtes, relations, F objects (45 min)</h3>
+<p><strong>Consignes</strong> : dans <code>python manage.py shell_plus</code>, répondre aux 8 questions <strong>avant de recharger la page</strong> (le binaire doit pouvoir les reformuler).</p>
+<div class="code-block"><pre><code class="language-python">from datetime import date
+from django.db.models import F
+
+# Q1 — Les 3 formations, tri par code (Meta.ordering fait le travail)
+Formation.objects.all()
+
+# Q2 — La formation PY-101 et ses interventions à venir (relation directe)
+# .get ==&gt; filter(sur une clé unique).first()
+f = Formation.objects.get(code='PY-101')
+f.interventions.filter(statut='A')
+
+# Q3 — Les interventions de la formation PY-102 (inverse + lookup)
+Intervention.objects.filter(formation__code='PY-102')
+
+# Q4 — Clients qui ont un contrat de ≥ 2000 € (traversée)
+Client.objects.filter(contrats__montant_ht__gte=2000)
+
+# Q5 — Interventions ouvertes, les plus pleines d'abord (F + annotate)
+????
+
+# Q6 — « COMPLET » en SQL (comparaison de deux colonnes — impossible sans F)
+Intervention.objects.filter(capacite__lte=F('nb_inscrits'))
+
+# Q7 — Le Problème des N + 1 requêtes : combien de requêtes pour les villes, avec et sans select_related ?
+from django.db import connection
+for s in Intervention.objects.all(): s.formation.nom
+len(connection.queries)
+
+# Q8 — L'incrément atomique (à relire demain pour les inscriptions)
+Intervention.objects.get(numero='PY-101-2612').update(nb_inscrits=F('nb_inscrits') + 1)
+
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><strong>Checklist de fin d'atelier</strong></p>
+<ul>
+<li>[ ] les 8 questions répondues, le binôme capable de les <strong>reformuler</strong> sans regard ;</li>
+<li>[ ] <code>select_related</code> sur <code>Intervention</code> → <strong>1</strong> requête en base (vérifiée avec <code>connection.queries</code>) ;</li>
+<li>[ ] la vue <code>detail_formation</code> passe sur l'ORM <strong>sans changer l'URL</strong> ;</li>
+<li>[ ] le bloc « Interventions à venir » est affiché sur <code>http://127.0.0.1:8000/formations/1/</code> ;</li>
+<li>[ ] le stagiaire sait dire pourquoi <code>.filter(places__gt=0)</code> exige l'<code>annotate</code> ;</li>
+<li>[ ] <code>git add -A &amp;&amp; git commit -m "J2 : vues ORM + interventions à venir + F objects"</code> fait.</li>
+</ul>
+<hr />
+<h3>5.8. Héritage de modèle — <code>Document</code> → <code>Contrat</code></h3>
+<p><code>Contrat(Document)</code> était déjà dans <code>models.py</code> ; voici ce que fait concrètement <code>abstract = True</code>.</p>
+<p><strong>Définition</strong> : une classe abstraite est un <strong>squelette partagé</strong> — ses champs et ses méthodes sont <strong>recopiés dans chaque classe enfant</strong>, mais <strong>aucune table <code>catalog_document</code> n'est créée</strong>.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th><code>Document</code> (abstrait)</th>
+<th><code>Contrat</code> (enfant)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Table en base</td>
+<td><strong>aucune</strong></td>
+<td><code>catalog_contrat</code> (toutes les colonnes, héritées + propres)</td>
+</tr>
+<tr>
+<td><code>Document.objects</code></td>
+<td>❌ n'existe pas (pas de manager)</td>
+<td><code>Contrat.objects</code> ✅</td>
+</tr>
+<tr>
+<td>Migration</td>
+<td>aucune propre</td>
+<td>sa table apparaît dans <code>0001_initial.py</code></td>
+</tr>
+<tr>
+<td>Méthodes / <code>__str__</code> / <code>Meta.ordering</code></td>
+<td>hérités</td>
+<td>hérités</td>
+</tr>
+</tbody>
+</table></div>
+<div class="code-block"><pre><code>            Document  (abstrait — pas de table)
+           /    titre, numero, date_creation, commentaire
+          ▼
+       Contrat
+       + client (FK → Client, PROTECT)
+       + montant_ht, date_signature
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Le <code>sqlmigrate</code> du bloc 5·a montrait déjà la conséquence :</p>
+<div class="code-block"><pre><code class="language-sql">CREATE TABLE catalog_contrat (
+    id                integer PRIMARY KEY,
+    titre             varchar(160) NOT NULL,
+    numero            varchar(32) UNIQUE NOT NULL,
+    date_creation     datetime NOT NULL,
+    commentaire       text NOT NULL,
+    client_id         integer NOT NULL REFERENCES catalog_client (id),
+    montant_ht        decimal(12, 2) NOT NULL,
+    date_signature    date DEFAULT NULL
+);
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><strong>Lecture à faire faire</strong> : les 4 colonnes héritées (<code>titre</code>, <code>numero</code>, <code>date_creation</code>, <code>commentaire</code>) sont <strong>dans la table <code>Contrat</code></strong> — l'abstraction est une affaire de <strong>Python</strong>, la base ne connaît que des tables plates. C'est l'exact opposé d'un héritage « base de données » (table parente + <code>parent_id</code>) ; Django propose aussi un héritage <strong>concret</strong> (multi-table inheritance, une table par classe + pointeur) — on ne l'enseigne pas ici, mais il existe et se discute en réunion d'archi.</p>
+<p><strong>Pourquoi c'est le bon outil dans GestiFormation</strong> : le jour 5, l'organisme émet des <strong>factures</strong>. Le jour 5, la ligne sera :</p>
+<div class="code-block"><pre><code class="language-python">class Facture(Document):
+    client = models.ForeignKey(Client, on_delete=models.PROTECT, related_name='factures')
+    numero_facture = ...   # (déjà portés par `numero` de Document, en l'état)
+    montant_ht = models.DecimalField(max_digits=12, decimal_places=2)
+    date_echeance = models.DateField(null=True, blank=True)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>— <strong>une migration de 3 colonnes</strong>, un admin (J3) qui se génère comme le précédent, et <strong>zéro changement</strong> sur <code>Contrat</code>. L'héritage abstrait, c'est <em>« un nouveau type de document métier, sans toucher aux anciens »</em>.</p>
+<blockquote>
+<p>⚠️ <strong>Piège n°19 — <code>abstract</code> oublié</strong> : sans <code>abstract = True</code>, Django crée bien la table <code>catalog_document</code>, un manager <code>Document.objects</code>, et une migration en plus. Le code « marche » — c'est le genre de défaut qui se découvre à la revue de <code>sqlmigrate</code>. À l'inverse, <code>Document.objects</code> sur une classe <strong>bien</strong> abstraite → <code>AttributeError</code> : c'est l'erreur attendue, pas un bug.</p>
+<p>💡 <strong>Ce qui est hérité, précisément</strong> : champs, méthodes (y compris <code>__str__</code>), <code>Meta</code> (sauf <code>db_table</code>, que l'enfant peut surcharger), les contraintes déclarées. Ce qui ne l'est <strong>pas</strong> : les relations inverses (chaque enfant gène les siennes), le manager (re-déclaré par enfant). En cas de doute : « l'abstraction est recopiée dans l'enfant à l'écriture du modèle » — tout le reste se pense par enfant.</p>
+</blockquote>
+<h3>🛠️ Atelier 5·c — L'héritage, en 20 lignes (30 min)</h3>
+<p><strong>Consignes</strong> : vérifier, puis démontrer — l'héritage abstrait doit être <strong>visible</strong> (SQL) et <strong>invisible</strong> (Python).</p>
+<div class="code-block"><pre><code class="language-python"># 1 — La table hérite les colonnes (lecture SQL)
+#    $ python manage.py sqlmigrate catalog 0001 | grep -A 10 catalog_contrat
+
+# 2 — Document n'a ni table ni manager
+&gt;&gt;&gt; from catalog.models import Document
+&gt;&gt;&gt; Document.objects
+AttributeError: Manager isn't available...  # ou « abstract model »
+
+# 3 — Mais un Contrat EST un document : les 4 champs hérités sont écrits
+&gt;&gt;&gt; from catalog.models import Contrat
+&gt;&gt;&gt; c = Contrat.objects.get(numero='CT-2026-011')
+&gt;&gt;&gt; (c.titre, c.numero, c.client.nom, c.montant_ht)
+('Contrat PY-102 — Acme', 'CT-2026-011', 'Dupont', Decimal('2490.00'))
+
+# 4 — Créer un nouveau document sans migration : la classe suffit
+&gt;&gt;&gt; Contrat.objects.create(
+...     titre='Contrat DA-201 — Acme', numero='CT-2026-012',
+...     client=c.client, montant_ht=2190.00)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><strong>Checklist de fin d'atelier</strong></p>
+<ul>
+<li>[ ] <code>sqlmigrate</code> montre <code>titre</code>, <code>numero</code>, <code>date_creation</code>, <code>commentaire</code> <strong>dans</strong> <code>catalog_contrat</code> ;</li>
+<li>[ ] <code>Document.objects</code> lève <code>AttributeError</code> — et le binôme sait <strong>pourquoi</strong> ;</li>
+<li>[ ] un 2ᵉ contrat créé sans aucune migration supplémentaire ;</li>
+<li>[ ] le stagiaire sait citer ce qui est hérité (champs, <code>Meta</code>, <code>__str__</code>) et ce qui ne l'est pas (table, manager, relations inverses) ;</li>
+<li>[ ] <code>python manage.py check</code> passe, commit <code>J2 : héritage Document → Contrat</code> fait.</li>
+</ul>
+<hr />
+</div>
+
+<div id="tab-b6-formulaires-le-serveur-ne-croit-personne-bloc-6-120-min" class="tab-content">
+<h3>6.1. Pourquoi la validation côté serveur</h3>
+<p>Le navigateur peut tout faire : JS coupé, requête retouchée dans les devtools, <code>curl</code> à la place du formulaire. Les règles de validité <strong>doivent</strong> donc vivre dans <strong>un seul endroit, côté serveur</strong> :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Côté client (HTML5/JS)</th>
+<th>Côté serveur (<code>forms.Form</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>confort d'usage (feedback immédiat)</td>
+<td><strong>autorité</strong> — seule décision qui compte</td>
+</tr>
+<tr>
+<td>évite l'aller-retour inutile</td>
+<td>rejoue les règles pour <strong>chaque</strong> requête, même les malveillantes</td>
+</tr>
+<tr>
+<td>contournable par construction</td>
+<td><code>is_valid()</code> ou rien n'est écrit</td>
+</tr>
+</tbody>
+</table></div>
+<p>Le formulaire de la journée, « <strong>Nouveau client</strong> », est l'occasion d'énoncer le principe qui gouvernera les jours 3–5 :</p>
+<blockquote>
+<p><strong>On n'écrira dans la base qu'après <code>form.is_valid()</code> — et uniquement avec <code>form.cleaned_data</code>.</strong></p>
+</blockquote>
+<h3>6.2. <code>forms.Form</code> et les champs — un champ = une règle + une boîte</h3>
+<p>Un <strong>champ</strong> de formulaire déclare trois choses à la fois : le <strong>type</strong> attendu (et sa conversion), la <strong>contrainte</strong> (longueur, format, requis) et le <strong>widget</strong> (la <code>&lt;input&gt;</code> qui l'affichera).</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Champ <code>forms.</code></th>
+<th>Widget HTML par défaut</th>
+<th>À retenir</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CharField</code></td>
+<td><code>&lt;input type="text"&gt;</code></td>
+<td><code>max_length</code> = contrainte <strong>Python</strong> (pas de taille SQL ici — <code>forms.Form</code> ne connaît pas la base)</td>
+</tr>
+<tr>
+<td><code>EmailField</code></td>
+<td><code>&lt;input type="email"&gt;</code></td>
+<td>valide le format (<code>a@b.c</code>) — <strong>pas</strong> l'existence du compte</td>
+</tr>
+<tr>
+<td><code>IntegerField</code></td>
+<td><code>&lt;input type="number"&gt;</code></td>
+<td>convertit <code>'42'</code> → <code>42</code> ; lève si non numérique</td>
+</tr>
+<tr>
+<td><code>DecimalField</code></td>
+<td><code>&lt;input type="text"&gt;</code></td>
+<td><code>max_digits</code> / <code>decimal_places</code></td>
+</tr>
+<tr>
+<td><code>DateField</code></td>
+<td><code>&lt;input type="text"&gt;</code></td>
+<td><code>input_formats</code> pour l'attendre au format voulu</td>
+</tr>
+<tr>
+<td><code>ChoiceField</code></td>
+<td><code>&lt;select&gt;</code></td>
+<td><code>choices=</code> liste fermée — comme <code>models.Choices</code></td>
+</tr>
+<tr>
+<td><code>BooleanField</code></td>
+<td><code>&lt;input type="checkbox"&gt;</code></td>
+<td>⚠️ non coché ≠ <code>False</code>, c'est <strong>absent</strong></td>
+</tr>
+<tr>
+<td><code>TextField</code></td>
+<td><code>&lt;textarea&gt;</code></td>
+<td>multi-lignes, sans <code>max_length</code> imposé</td>
+</tr>
+</tbody>
+</table></div>
+<p>Le <strong>libellé est toujours le 1ᵉʳ argument positionnel</strong> — la même règle que dans <code>models.py</code>, et pour la même raison : admin, gabarits, messages d'erreur.</p>
+<p><strong><code>catalog/forms.py</code> — le formulaire de référence</strong> :</p>
+<div class="code-block"><pre><code class="language-python">from django import forms
+from django.core.exceptions import ValidationError
+from .models import Client
+import re
+
+class NouveauClientForm(forms.Form):
+
+    prenom = forms.CharField(label=&quot;Prénom&quot;, max_length=60,
+                             widget=forms.TextInput(attrs={'placeholder': 'Entrez votre prénom ici...'}))
+    nom = forms.CharField(label=&quot;Prénom&quot;, max_length=60)
+    societe   = forms.CharField(label='Société', max_length=100, required=False)
+    email     = forms.EmailField(label='E-mail') # pas nécessairement unique !!!
+    telephone = forms.CharField(label='Téléphone', max_length=20, required=False)
+
+    # --------------- méthodes de validation de champs individuel ----------------
+    # forme_générique = def clean_&lt;field&gt;(self):
+    #                       ....
+    #                       raise ValidationError(&quot;msg&quot;)
+
+    def clean_telephone(self) -&gt; str:
+        &quot;&quot;&quot;
+        validation METIER du champs téléphone à partir de cleaned_data
+        cleaned_data données déjà analysée par django (detection d'injections ...)
+        &quot;&quot;&quot;
+        valeur = self.cleaned_data.get('telephone', '')
+        if valeur and not re.fullmatch(r&quot;[\d\s+]{8,20}&quot;, valeur):
+            raise ValidationError(&quot;Format invalide - chiffres, espace et + attendu.&quot;)
+        return valeur
+
+    def clean_email(self) -&gt; str:
+        valeur = self.cleaned_data.get('email')
+        if valeur and Client.objects.filter(email__iexact=valeur).exists():
+            raise ValidationError(&quot;Un client existe déjà avec cet e-mail.&quot;)
+
+    # -------------- validation globale: nettoyage cross - champs -----------------------
+
+    def clean(self):
+        data = self.cleaned_data
+        prenom, nom = self.cleaned_data.get('prenom'), self.cleaned_data.get('nom')
+        if prenom and nom and prenom.lower() == 'marie' and nom.lower() == 'dupont' \
+                and not data.get('societe'):
+
+            # add_error permet de cibler le champs en erreur dans le cas de validation cross-champs
+            self.add_error('societe', 'Marie Dupont est connue avec une société — la rappeler.')
+        return data
+
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Trois niveaux de validation, à nommer l'un après l'autre :</p>
+<ol>
+<li><strong><code>clean_&lt;champ&gt;()</code></strong> — après la conversion et la validation générique du champ, <strong>avant</strong> <code>cleaned_data</code> du champ suivant ; lever <code>ValidationError</code> avec un message ;</li>
+<li><strong><code>clean()</code></strong> — quand <strong>tous</strong> les champs individuels sont passés ; <code>self.add_error('champ', msg)</code> pour pointer un champ, <code>self.add_error(None, msg)</code> pour une erreur <strong>de formulaire</strong> (<code>non_field_errors</code>) ;</li>
+<li><strong><code>non_field_errors</code></strong> — les erreurs « globales » s'affichent en tête de formulaire, pas à côté d'un champ.</li>
+</ol>
+<blockquote>
+<p>💡 <strong><code>clean_email</code> interroge la base</strong> : c'est normal, c'est le moment de la <strong>validation croisée</strong> (unicité, existence d'une FK). Le jour 3, les <strong>ModelForms</strong> feront cette vérification <strong>automatiquement</strong> pour <code>unique=True</code> — le jour 2, on la code en main pour <strong>voir ce qu'ils font</strong>.</p>
+</blockquote>
+<h3>6.3. Le cycle de vie — <code>is_valid()</code> fait tout</h3>
+<p><img alt="Cycle de vie du formulaire" src="assets/cycle-formulaire.svg" /></p>
+<div class="code-block"><pre><code>GET  /clients/nouveau/            POST /clients/nouveau/
+────────────────────────          ────────────────────────────
+form = NouveauClientForm()        form = NouveauClientForm(request.POST)
+(gabarit vierge)                  form.is_valid()
+     │                                │
+     ▼                                ├─ False → le formulaire est rendu **re-rempli**
+form.html                   │            avec form.errors
+     │                              └─ True  →  Client.objects.create(**form.cleaned_data)
+     ▼                                        → redirect('catalog:clients')  (302)
+navigateur
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Méthode / attribut</th>
+<th>État</th>
+<th>Valeur</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>form.data</code></td>
+<td>toujours</td>
+<td><strong>les valeurs brutes</strong> (<code>'  MARIE  '</code>, <code>'ab@'</code>, <code>''</code>) — dicts de strings</td>
+</tr>
+<tr>
+<td><code>form.is_valid()</code></td>
+<td>—</td>
+<td><code>True</code> / <code>False</code> — <strong>une fois</strong> ; le 2ᵉ appel renvoie le même résultat</td>
+</tr>
+<tr>
+<td><code>form.errors</code></td>
+<td>après <code>is_valid()</code></td>
+<td><code>{champ: [messages]}</code> — vide si valide</td>
+</tr>
+<tr>
+<td><code>form.non_field_errors</code></td>
+<td>après <code>is_valid()</code></td>
+<td>les erreurs de <code>clean()</code> sans champ</td>
+</tr>
+<tr>
+<td><code>form.cleaned_data</code></td>
+<td><strong>uniquement si valide</strong></td>
+<td>les valeurs <strong>converties + validées</strong> (<code>'42'</code>→<code>42</code>, e-mail normalisé)</td>
+</tr>
+</tbody>
+</table></div>
+<div class="code-block"><pre><code class="language-python">def nouveau_client(request):
+    if request.method == 'POST':
+        form = NouveauClientForm(request.POST)
+        if form.is_valid():
+            Client.objects.create(**form.cleaned_data)
+            return redirect('catalog:clients')
+    else:
+        form = NouveauClientForm()          # formulaire vierge
+    return render(request, 'catalog/form.html', {'form': form})
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Trois choses à pointer du doigt dans ces 10 lignes :</p>
+<ol>
+<li><strong><code>request.method</code> d'abord</strong> — la même URL répond au <code>GET</code> (afficher) et au <code>POST</code> (valider + créer). C'est le <strong>pattern de la journée</strong>, qui sera le squelette de toutes les vues d'écriture de la semaine ;</li>
+<li><strong><code>create(**form.cleaned_data)</code></strong> — les 5 champs du formulaire sont exactement les 5 colonnes du modèle <code>Client</code> : c'est <strong>la</strong> ligne qui justifiera, le jour 3, d'automatiser ce couplage avec un <strong>ModelForm</strong> ;</li>
+<li><strong><code>return redirect(…)</code></strong> — on ne <strong>ré-affiche pas</strong> un <code>POST</code> réussi (re-cliquer sur « Envoyer » ne doit pas créer un doublon) ; on renvoie un <strong>302</strong> vers la liste : le <em>pattern POST/redirect/GET</em>.</li>
+</ol>
+<p><strong>CSRF — le token à ne jamais oublier.</strong> Un formulaire <code>method="post"</code> <strong>doit</strong> contenir <code>{% csrf_token %}</code> ; le middleware <code>CsrfViewMiddleware</code> vérifie que la requête vient <strong>d'une page que le navigateur a lui-même reçue</strong> (le token est signé + lié à la intervention). Sans token → <strong><code>403 Forbidden</code></strong>, pas d'erreur Python.</p>
+<blockquote>
+<p>⚠️ <strong>Piège n°20 — le formulaire POST sans <code>{% csrf_token %}</code></strong> : la page s'affiche (le <code>GET</code> passe), l'envoi <strong>échoue en 403</strong> sans traceback. Message à ancrer : « 403 sur un formulaire = le token manque » (ou le domaine hors <code>ALLOWED_HOSTS</code>, cas plus rare). À l'inverse, un formulaire <strong><code>GET</code></strong> (recherche) n'en a <strong>pas besoin</strong> — il ne modifie rien.</p>
+</blockquote>
+<h3>6.4. Brancher : URLs, gabarit, page de liste</h3>
+<p><strong>Les URLs</strong> (dans <code>catalog/urls.py</code>, <strong>après</strong> <code>formations/…</code> et <strong>avant</strong> rien de plus générique) :</p>
+<div class="code-block"><pre><code class="language-python">path('clients/',              views.liste_clients,   name='clients'),
+path('clients/nouveau/',      views.nouveau_client,  name='nouveau-client'),
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>⚠️ Rappel J1 (piège n°2) : <code>clients/&lt;int:pk&gt;/</code> placé <strong>avant</strong> <code>clients/nouveau/</code> avalerait « nouveau » comme pk — le plus spécifique d'abord.</p>
+</blockquote>
+<p><strong><code>catalog/templates/catalog/form.html</code></strong> — le formulaire est <strong>rendu par Django</strong> : on ne réécrit pas les <code>&lt;input&gt;</code> :</p>
+<div class="code-block"><pre><code class="language-html">{% extends &quot;catalog/base.html&quot; %}
+
+{% block titre %}Nouveau Formulaire - {{ block.super }}{% endblock titre %}
+
+{% block contenu %}
+&lt;section class=&quot;formulaire&quot;&gt;
+    &lt;p class=&quot;retour&quot;&gt;&lt;a href=&quot;{% url &quot;catalog:clients&quot; %}&quot;&gt;&amp;larr; Retour aux clients&lt;/a&gt;&lt;/p&gt;
+    &lt;h1&gt;Nouveau client&lt;/h1&gt;
+
+    &lt;form method=&quot;post&quot; class=&quot;form&quot;&gt;
+        {# tout formulaire en POST DOIT utiliser un jeton CSRF #}
+        {% csrf_token %}
+
+        {# erreurs non liées à aucun widget ==&gt; dans clean() avec self.add_error(None, ...) #}
+        {% if form.non_field_errors %}
+        &lt;ul class=&quot;erreurs&quot;&gt;
+            {% for error in form.non_field_errors %}
+                &lt;li&gt;{{ error }}&lt;/li&gt;
+            {% endfor %}&lt;/ul&gt;
+        {% endif %}
+
+        {% for field in form %}
+        &lt;div class=&quot;champ {{ field.name }} {% if field.errors %}champ-erreur{% endif %}&quot;&gt;
+            {{ field.label_tag }}
+            {{ field }}
+            {% if field.help_text %}&lt;small class=&quot;aide&quot;&gt;{{ field.help_text }}&lt;/small&gt;{% endif %}
+            {% for error in field.errors %}&lt;span class=&quot;erreur&quot;&gt;{{ error }}&lt;/span&gt;{% endfor %}
+        &lt;/div&gt;
+        {% endfor %}
+
+        &lt;button type=&quot;submit&quot; class=&quot;btn&quot;&gt;Enregistrer le client&lt;/button&gt;
+    &lt;/form&gt;
+&lt;/section&gt;
+{% endblock contenu %}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Rendu dans le navigateur (extraits) — c'est <strong>ce que Django génère</strong> à partir de la classe :</p>
+<div class="code-block"><pre><code class="language-html">&lt;div class=&quot;champ email&quot;&gt;
+    &lt;label for=&quot;id_email&quot;&gt;E-mail&lt;/label&gt;
+    &lt;input type=&quot;email&quot; name=&quot;email&quot; required id=&quot;id_email&quot;&gt;
+&lt;/div&gt;
+&lt;div class=&quot;champ societe&quot;&gt;
+    &lt;label for=&quot;id_societe&quot;&gt;Société&lt;/label&gt;
+    &lt;input type=&quot;text&quot; name=&quot;societe&quot; maxlength=&quot;100&quot; id=&quot;id_societe&quot;&gt;
+&lt;/div&gt;
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>— notez : <strong><code>required</code></strong> sur les champs obligatoires, <strong>absent</strong> sur <code>societe</code> (<code>required=False</code>) ; l'<code>id</code> préfixé <code>id_</code> pour ne jamais entrer en collision ; le <code>maxlength</code> porté depuis la contrainte du champ. C'est l'argument, en image, pour ne <strong>jamais</strong> écrire les <code>&lt;input&gt;</code> à la main.</p>
+<p><strong>La page liste — une recherche en <code>GET</code>, pas en <code>POST</code></strong> :</p>
+<div class="code-block"><pre><code class="language-python"># catalog/views.py — extrait J2
+from django.db.models import Q
+
+    # q vient d'un queryPAram adossée à l'url en GET: domain/xxxx?q=blabla%20blibli
+    q = request.GET.get('q', '').strip()
+    if q:
+        clients = Client.objects.filter(
+            # Q permet d'utiliser les opérateur logiques dans filter: |, &amp;, ~
+            Q(prenom__icontains=q) |
+            Q(nom__icontains=q) |
+            Q(societe__icontains=q) |
+            Q(email__icontains=q)
+        )
+    else:
+        clients = Client.objects.all()
+    return render(request, 'catalog/liste_clients.html', {
+        &quot;clients&quot;: clients
+    })
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Deux nouveautés à faire nommer :</p>
+<ul>
+<li><strong><code>request.GET</code></strong> — la recherche arrive <strong>dans l'URL</strong> (<code>/clients/?q=dupont</code>) : c'est lisible, partageable, ré-éxécutables sans re-soumission — donc un <code>GET</code> ; la création est un <code>POST</code> car elle <strong>modifie</strong> l'état. Règle simple : <em>lire = GET, écrire = POST</em> ;</li>
+<li><strong><code>Q</code> et <code>|</code></strong> — les conditions se combinent <strong>en Python</strong> : <code>Q(...) | Q(...)</code> est un <code>OR</code> SQL, <code>Q(...) &amp; Q(...)</code> un <code>AND</code> SQL. Sans <code>Q</code>, un <code>filter(a=1, b=2)</code> est un <code>AND</code> implicite — le <code>OR</code> est l'exception, il se déclare.</li>
+</ul>
+<div class="code-block"><pre><code class="language-html">{# catalog/templates/catalog/liste_clients.html #}
+{% extends &quot;catalog/base.html&quot; %}
+
+{% block titre %}Clients — GestiFormation{% endblock %}
+
+{% block contenu %}
+&lt;section class=&quot;clients&quot;&gt;
+    &lt;h1&gt;Clients&lt;/h1&gt;
+
+    &lt;form method=&quot;get&quot; class=&quot;recherche&quot;&gt;
+        &lt;input type=&quot;search&quot; name=&quot;q&quot; value=&quot;{{ q }}&quot; placeholder=&quot;Nom, société, e-mail…&quot;&gt;
+        &lt;button type=&quot;submit&quot; class=&quot;btn&quot;&gt;Rechercher&lt;/button&gt;
+    &lt;/form&gt;
+    {# ⚠️ pas de {% csrf_token %} : c'est un GET #}
+
+    &lt;table class=&quot;tableau&quot;&gt;
+        &lt;thead&gt;&lt;tr&gt;&lt;th&gt;Nom&lt;/th&gt;&lt;th&gt;Société&lt;/th&gt;&lt;th&gt;E-mail&lt;/th&gt;&lt;th&gt;Tél.&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+        &lt;tbody&gt;
+        {% for c in clients %}
+            &lt;tr&gt;
+                &lt;td&gt;{{ c.nom }} {{ c.prenom }}&lt;/td&gt;
+                &lt;td&gt;{{ c.societe|default:&quot;—&quot; }}&lt;/td&gt;
+                &lt;td&gt;{{ c.email }}&lt;/td&gt;
+                &lt;td&gt;{{ c.telephone|default:&quot;—&quot; }}&lt;/td&gt;
+            &lt;/tr&gt;
+        {% empty %}
+            &lt;tr&gt;&lt;td colspan=&quot;4&quot; class=&quot;vide&quot;&gt;
+                {% if q %}Aucun client pour « {{ q }}».{% else %}Aucun client — créez le premier.{% endif %}
+            &lt;/td&gt;&lt;/tr&gt;
+        {% endfor %}
+        &lt;/tbody&gt;
+    &lt;/table&gt;
+
+    &lt;p&gt;&lt;a class=&quot;btn&quot; href=&quot;{% url 'catalog:nouveau-client' %}&quot;&gt;+ Nouveau client&lt;/a&gt;&lt;/p&gt;
+&lt;/section&gt;
+{% endblock %}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 <strong><code>value="{{ q }}"</code></strong> — le champ recherche se re-remplit avec la valeur en cours, ce qui est l'équivalent « GET » de re-livrer un formulaire POST valide avec ses erreurs. C'est le même réflexe : <strong>l'état utilisateur survit à la re-requête</strong>.</p>
+<p>⚠️ <strong>Piège n°21 — <code>cleaned_data</code> sans <code>is_valid()</code></strong> : <code>form.cleaned_data</code> <strong>avant</strong> (ou si) <code>is_valid()</code> est <code>False</code> → <code>AttributeError</code>, ou des données <strong>non validées</strong> silencieusement. L'ordre est une contracte : <code>is_valid()</code> d'abord, <strong>ensuite</strong> <code>cleaned_data</code> ou <code>errors</code>.</p>
+</blockquote>
+<h3>🛠️ Atelier 6 — Le formulaire « Nouveau client » (60 min)</h3>
+<p><strong>Consignes</strong> : créer <code>forms.py</code>, les 2 vues, les 2 URLs et les 2 gabarits, puis <strong>tester chaque cas de la checklist dans le navigateur</strong> (pas dans le shell — l'interface est le livrable).</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Action</th>
+<th>Résultat attendu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>ouvrir <code>/clients/</code></td>
+<td>tableau avec Marie Dupont (seed), champ recherche vide</td>
+</tr>
+<tr>
+<td>2</td>
+<td>chercher <code>q=dup</code></td>
+<td>1 ligne ; <code>q=zzz</code> → « Aucun client pour « zzz » »</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>/clients/nouveau/</code> — tout envoyer vide</td>
+<td>4 erreurs de champ, <strong>pas</strong> de crash, formulaire re-rempli</td>
+</tr>
+<tr>
+<td>4</td>
+<td>e-mail <code>m.dupont@acme.fr</code></td>
+<td>« Un client existe déjà avec cette adresse » (la <code>clean_email</code>)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>téléphone <code>abc</code></td>
+<td>« Format invalide » (la <code>clean_telephone</code>)</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>prenom=Marie</code>, <code>nom=Dupont</code>, société vide</td>
+<td>erreur <strong>de champ</strong> <code>societe</code> (le <code>clean()</code>)</td>
+</tr>
+<tr>
+<td>7</td>
+<td>un client complet</td>
+<td><strong>redirection</strong> <code>/clients/</code> — le nouveau client est en tête</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>re-cliquer sur « Retour arrière » puis « Envoyer »</strong></td>
+<td><strong>pas</strong> de doublon (le 302 fait son travail)</td>
+</tr>
+<tr>
+<td>9</td>
+<td>ouvrir le réseau (F12) : la requête <code>POST</code> porte un <code>csrfmiddlewaretoken</code></td>
+<td>le token est dans le corps, pas seulement dans l'URL</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Checklist de fin d'atelier</strong></p>
+<ul>
+<li>[ ] les 9 cas de la table passés, le binôme capable de dire <strong>pourquoi</strong> le cas 8 ne duplique pas ;</li>
+<li>[ ] <code>catalog/forms.py</code> contient <strong>au moins</strong> un <code>clean_&lt;champ&gt;</code> et un <code>clean()</code> ;</li>
+<li>[ ] le gabarit n'écrira <strong>aucun</strong> <code>&lt;input&gt;</code> à la main (rendu par <code>{% for field in form %}</code>) ;</li>
+<li>[ ] la recherche est un <strong><code>GET</code></strong> (token CSRF absent du formulaire) et la création un <strong><code>POST</code></strong> (token présent) ;</li>
+<li>[ ] les 3 pages du jour 1 toujours accessibles, <strong>mêmes URLs</strong> — le site n'est pas cassé ;</li>
+<li>[ ] <code>git add -A &amp;&amp; git commit -m "J2 : formulaire Nouveau client + liste/recherche clients"</code> fait.</li>
+</ul>
+<blockquote>
+<p>💡 <strong>Critère de réussite de la journée</strong> (à énoncer devant le binôme) : « Je sais dire, pour la requête POST du formulaire, <strong>où</strong> chaque validation a eu lieu (champ, <code>clean_telephone</code>, <code>clean_email</code>, <code>clean()</code>), <strong>quand</strong> (avant/après <code>is_valid()</code>), et <strong>pourquoi</strong> rien n'a été écrit dans la base sur le cas 5. »</p>
+</blockquote>
+<hr />
+</div>
+
+<div id="tab-synthese-de-fin-de-journee" class="tab-content">
+<h3>Ce qui est en place</h3>
+<div class="code-block"><pre><code>~/projets/gestiformation/
+├── .venv/                      # venv actif
+├── db.sqlite3                  # ← NOUVEAU — dans .gitignore
+├── manage.py
+├── gesti/
+│   ├── settings.py
+│   └── urls.py                 # inchangé depuis J1
+└── catalog/
+    ├── models.py               # ← NOUVEAU : 5 classes (4 tables + Document abstrait)
+    ├── forms.py                # ← NOUVEAU : NouveauClientForm (3 niveaux de validation)
+    ├── seed.py                 # ← NOUVEAU : python manage.py shell &lt; catalog/seed.py
+    ├── migrations/
+    │   ├── __init__.py
+    │   └── 0001_initial.py     # ← NOUVEAU — commité, c'est la mémoire du schéma
+    ├── views.py                # ORM : liste, détail (+ interventions à venir), clients, nouveau_client
+    ├── urls.py                 # + /clients/, /clients/nouveau/
+    ├── admin.py                # vide — demain
+    ├── static/css/base.css     # + .formulaire, .champ-erreur, .recherche
+    └── templates/catalog/
+        ├── base.html           # nav + lien « Clients »
+        ├── liste_formations.html   # 1 ligne changée : forloop.counter0 → formation.pk
+        ├── detail_formation.html   # + bloc « Interventions à venir »
+        ├── form.html    # ← NOUVEAU
+        ├── liste_clients.html  # ← NOUVEAU
+        ├── 404.html            # inchangés
+        └── 500.html
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<h3>Les réflexes installés</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Réflexe</th>
+<th>Pourquoi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>changer le <strong>modèle</strong>, jamais la base à la main</td>
+<td>la migration est l'historique ; le modèle, le contrat</td>
+</tr>
+<tr>
+<td><code>python manage.py sqlmigrate &lt;app&gt; 0001</code> après chaque <code>makemigrations</code></td>
+<td>lire le SQL réel — la base n'est pas une boîte noire</td>
+</tr>
+<tr>
+<td><code>filter()</code> / <code>exclude()</code> / <code>get_object_or_404</code> avant <code>first()</code> + <code>if</code></td>
+<td>les exceptions sont la contracte du code</td>
+</tr>
+<tr>
+<td><code>select_related</code> pour une FK, <code>prefetch_related</code> pour une liste</td>
+<td>tuer le Problème des N + 1 requêtes avant qu'il ne coûte</td>
+</tr>
+<tr>
+<td>toute écriture dérivée d'une valeur lue → <strong><code>F</code></strong></td>
+<td><code>update(nb_inscrits=F('nb_inscrits') + 1)</code> est atomique</td>
+</tr>
+<tr>
+<td><code>is_valid()</code> <strong>avant</strong> <code>cleaned_data</code> ; <code>create(**cleaned_data)</code></td>
+<td>seule la donnée validée entre en base</td>
+</tr>
+<tr>
+<td><code>{% csrf_token %}</code> sur <strong>chaque</strong> <code>POST</code> ; jamais sur un <code>GET</code></td>
+<td>403 silencieux sinon</td>
+</tr>
+<tr>
+<td>POST réussi → <code>redirect(…)</code> (302), jamais de re-rendu</td>
+<td>le re-cliquage ne duplique rien</td>
+</tr>
+</tbody>
+</table></div>
+<h3>Pièges vus aujourd'hui (à récapituler oralement)</h3>
+<ol>
+<li><code>blank=True</code> ≠ <code>null=True</code> — validation vs base ;</li>
+<li><code>on_delete</code> est une décision <strong>métier</strong>, pas un réglage ;</li>
+<li>le <code>ManyToManyField</code> n'a pas de <code>default</code> — c'est une <strong>autre table</strong> (<code>.set(…)</code> après) ;</li>
+<li><strong>jamais</strong> éditer une migration appliquée → nouvelle migration ;</li>
+<li><code>makemigrations</code> « No changes detected » sur un simple <code>default</code> — le diff est structurel ;</li>
+<li><code>.first()</code> (→ <code>None</code>) vs <code>.get()</code> (→ exception) — choisir, pas laisser passer ;</li>
+<li><code>values()</code> / <code>values_list()</code> = dicts/tuples, <strong>pas</strong> des instances de modèle ;</li>
+<li><code>select_related</code> ≠ <code>prefetch_related</code> — FK vs liste, JOIN vs 2 requêtes ;</li>
+<li>l'annotation n'existe que sur le QuerySet qui l'a ajoutée ;</li>
+<li>un <code>@property</code> ne peut être ni filtré, ni trié, ni incrémenté — c'est du Python ;</li>
+<li><code>abstract</code> oublié → table <code>catalog_document</code> + migration inutile ;</li>
+<li>formulaire <code>POST</code> sans <code>{% csrf_token %}</code> → 403 sans traceback ;</li>
+<li><code>cleaned_data</code> sans <code>is_valid()</code> → <code>AttributeError</code> ou donnée non validée.</li>
+</ol>
+<h3>Preview du jour 3 — blocs 7, 8 &amp; 9</h3>
+<p>Demain, le formulaire « Nouveau client » devient un <strong>ModelForm</strong> (les <code>clean_*</code> d'aujourd'hui, automatisés), l'<strong>admin</strong> s'écrit sur les 5 modèles (avec <code>PROTECT</code> qui se voit enfin), et <strong>l'authentification</strong> arrive : <code>Inscription</code> — le modèle manquant du schéma d'hier — s'alimente par login, et les permissions séparent <em>stagiaire</em> / <em>formateur</em> / <em>admin</em>.</p>
+<blockquote>
+<p>💡 <strong>Message de clôture</strong> : « Le site du jour 1 est <strong>le même site</strong> : mêmes URLs, mêmes gabarits — mais ses données vivent désormais dans une base que l'on versionne, que l'on peut interroger, et que l'on écrit <strong>uniquement</strong> par des formulaires validés. C'est là que Django commence à payer. »</p>
+</blockquote>
+<hr />
+</div>
+
+<div id="tab-annexe-commandes-du-jour-cheat-sheet" class="tab-content">
+<div class="code-block"><pre><code class="language-bash"># Migrations (dans l'ordre, tous les jours)
+python manage.py makemigrations        # diff models.py → 000X_….py
+python manage.py sqlmigrate catalog 0001   # lire le SQL réel, sans appliquer
+python manage.py migrate               # appliquer l'historique
+python manage.py showmigrations        # [X] = appliquée
+python manage.py migrate catalog zero  # ⚠️ SUPPRIME les tables de catalog
+
+# Seed &amp; shell
+python manage.py shell &lt; catalog/seed.py
+python manage.py shell                 # puis : Formation.objects.all()
+
+# Requêtes en shell (à réciter)
+python manage.py shell -c &quot;from catalog.models import S; print(S.objects.filter(statut='A').count())&quot;
+
+# Git
+git add -A &amp;&amp; git commit -m &quot;J2 : modèles + migrations + seed&quot;
+git add -A &amp;&amp; git commit -m &quot;J2 : vues ORM + interventions à venir&quot;
+git add -A &amp;&amp; git commit -m &quot;J2 : formulaire Nouveau client + liste/recherche&quot;
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+</div>
+  </div>
+</div>
+
+<script>
+// ─── THEME ──────────────────────────────────────────────────────────────────
+(function () {
+  const root = document.documentElement;
+  const stored = localStorage.getItem('dawan-theme');
+  if (stored) root.setAttribute('data-theme', stored);
+  updateToggleLabel();
+})();
+
+function updateToggleLabel() {
+  const current = document.documentElement.getAttribute('data-theme') ||
+    (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  document.getElementById('theme-icon').textContent = current === 'dark' ? '🌙' : '☀️';
+  document.getElementById('theme-label').textContent = current === 'dark' ? 'Sombre' : 'Clair';
+}
+
+function toggleTheme() {
+  const root = document.documentElement;
+  const current = root.getAttribute('data-theme') ||
+    (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  const next = current === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('dawan-theme', next);
+  updateToggleLabel();
+}
+
+// ─── TABS ───────────────────────────────────────────────────────────────────
+function showTab(id) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.side-nav button').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+  document.querySelector('.content').scrollTo({ top: 0, behavior: 'instant' });
+}
+
+// ─── COPY CODE ──────────────────────────────────────────────────────────────
+function copyCode(btn) {
+  const pre = btn.previousElementSibling;
+  navigator.clipboard.writeText(pre.textContent).then(() => {
+    btn.textContent = 'Copié !'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copier'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+</body>
+</html>

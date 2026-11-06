@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 430" role="img" aria-label="Négociation de la langue d'une requête : préfixe d'URL, cookie, Accept-Language, LANGUAGE_CODE">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#475569"/>
+    </marker>
+    <marker id="arr-ok" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#0f766e"/>
+    </marker>
+  </defs>
+  <rect width="1080" height="430" fill="#ffffff"/>
+  <text x="540" y="30" text-anchor="middle" font-family="system-ui, sans-serif" font-size="18" font-weight="600" fill="#1f2937">Quelle langue pour cette requête ? — LocaleMiddleware, le premier qui répond gagne</text>
+
+  <!-- requête -->
+  <g font-family="system-ui, sans-serif">
+    <rect x="30" y="150" width="170" height="90" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text x="115" y="180" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2937">Requête</text>
+    <text x="115" y="202" text-anchor="middle" font-size="10.5" fill="#6b7280">GET /formations/</text>
+    <text x="115" y="218" text-anchor="middle" font-size="10.5" fill="#6b7280">Accept-Language: en</text>
+  </g>
+  <line x1="202" y1="195" x2="262" y2="195" stroke="#475569" stroke-width="2" marker-end="url(#arr)"/>
+
+  <!-- cascade -->
+  <g font-family="system-ui, sans-serif">
+    <rect x="265" y="60" width="450" height="64" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="283" y="86" font-size="13" font-weight="600" fill="#1f2937">1 · Préfixe de l'URL</text>
+    <text x="283" y="106" font-size="11" fill="#475569">/en/formations/  →  « en »     (i18n_patterns)</text>
+
+    <rect x="265" y="138" width="450" height="64" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="283" y="164" font-size="13" font-weight="600" fill="#1f2937">2 · Cookie « django_language »</text>
+    <text x="283" y="184" font-size="11" fill="#475569">posé par la vue set_language quand l'utilisateur choisit</text>
+
+    <rect x="265" y="216" width="450" height="64" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="283" y="242" font-size="13" font-weight="600" fill="#1f2937">3 · En-tête Accept-Language du navigateur</text>
+    <text x="283" y="262" font-size="11" fill="#475569">filtré sur LANGUAGES : seules « fr » et « en » sont retenues</text>
+
+    <rect x="265" y="294" width="450" height="64" rx="10" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text x="283" y="320" font-size="13" font-weight="600" fill="#1f2937">4 · LANGUAGE_CODE</text>
+    <text x="283" y="340" font-size="11" fill="#475569">la langue par défaut du projet : « fr »</text>
+  </g>
+
+  <!-- flèches de cascade -->
+  <g stroke="#94a3b8" stroke-width="1.5" fill="none" stroke-dasharray="4 4">
+    <line x1="490" y1="125" x2="490" y2="136" marker-end="url(#arr)"/>
+    <line x1="490" y1="203" x2="490" y2="214" marker-end="url(#arr)"/>
+    <line x1="490" y1="281" x2="490" y2="292" marker-end="url(#arr)"/>
+  </g>
+  <g font-family="system-ui, sans-serif" font-size="10.5" fill="#94a3b8">
+    <text x="498" y="133">sinon</text>
+    <text x="498" y="211">sinon</text>
+    <text x="498" y="289">sinon</text>
+  </g>
+
+  <!-- résultat -->
+  <g stroke="#0f766e" stroke-width="2" fill="none">
+    <line x1="717" y1="92" x2="790" y2="180" marker-end="url(#arr-ok)"/>
+    <line x1="717" y1="170" x2="790" y2="190" marker-end="url(#arr-ok)"/>
+    <line x1="717" y1="248" x2="790" y2="205" marker-end="url(#arr-ok)"/>
+    <line x1="717" y1="326" x2="790" y2="215" marker-end="url(#arr-ok)"/>
+  </g>
+  <g font-family="system-ui, sans-serif">
+    <rect x="793" y="125" width="260" height="150" rx="10" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.5"/>
+    <text x="923" y="154" text-anchor="middle" font-size="14" font-weight="600" fill="#1f2937">translation.activate(lang)</text>
+    <g font-size="11" fill="#475569" text-anchor="middle">
+      <text x="923" y="180">request.LANGUAGE_CODE</text>
+      <text x="923" y="198">gabarits : {% translate %}</text>
+      <text x="923" y="216">formats : dates, nombres</text>
+      <text x="923" y="234">en-tête Content-Language</text>
+    </g>
+    <text x="923" y="260" text-anchor="middle" font-size="10.5" fill="#6b7280">désactivée en fin de requête</text>
+  </g>
+
+  <!-- notes -->
+  <g font-family="system-ui, sans-serif" font-size="11.5" fill="#475569">
+    <rect x="30" y="380" width="1020" height="38" rx="6" fill="#f8fafc" stroke="#cbd5e1"/>
+    <text x="44" y="404">Depuis Django 4.0, la langue n'est plus mémorisée dans la session : elle vit dans le préfixe d'URL et le cookie. Sans préfixe (« / »), la redirection vers /fr/ ou /en/ est faite par le middleware.</text>
+  </g>
+</svg>

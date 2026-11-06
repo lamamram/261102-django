@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Support interactif de formation Django - Initiation et Approfondissement : 01 — Découvrir Django et construire les premières pages de GestiFormation">
+<title>01 — Découvrir Django et construire les premières pages de GestiFormation</title>
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --surface2: #1c2128; --border: #30363d;
+  --primary: #f0883e; --primary2: #ffa657;
+  --success: #3fb950; --warning: #d29922; --danger: #f85149;
+  --text: #e6edf3; --text-muted: #8b949e; --code-bg: #010409; --radius: 10px;
+  --topbar-h: 3.25rem;
+}
+:root[data-theme="light"] {
+  --bg: #ffffff; --surface: #f6f8fa; --surface2: #eaeef2; --border: #d0d7de;
+  --primary: #bc4c00; --primary2: #953800;
+  --success: #1a7f37; --warning: #9a6700; --danger: #cf222e;
+  --text: #1f2328; --text-muted: #656d76; --code-bg: #f6f8fa;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #ffffff; --surface: #f6f8fa; --surface2: #eaeef2; --border: #d0d7de;
+    --primary: #bc4c00; --primary2: #953800;
+    --success: #1a7f37; --warning: #9a6700; --danger: #cf222e;
+    --text: #1f2328; --text-muted: #656d76; --code-bg: #f6f8fa;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.7; transition: background .2s, color .2s; }
+
+/* TOPBAR — fixe, ne bouge jamais au scroll */
+.topbar {
+  position: sticky; top: 0; z-index: 200; height: var(--topbar-h);
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: .9rem; padding: 0 1rem;
+}
+.topbar .badge {
+  flex: 0 0 auto; background: var(--primary); color: #0d1117;
+  font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 20px; white-space: nowrap;
+}
+.topbar a.chapter-title {
+  flex: 1 1 auto; min-width: 0; display: flex; align-items: baseline; gap: .5rem;
+  text-decoration: none; color: var(--text); font-weight: 700; font-size: .92rem;
+  overflow: hidden;
+}
+.topbar a.chapter-title:hover { color: var(--primary); }
+.topbar a.chapter-title .num { color: var(--primary); flex: 0 0 auto; }
+.topbar a.chapter-title .txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar-links { flex: 0 0 auto; display: flex; align-items: center; gap: .5rem; }
+.topbar-link {
+  white-space: nowrap; padding: .4rem .8rem; border: 1px solid var(--border); border-radius: 20px;
+  font-size: .8rem; font-weight: 600; color: var(--text-muted); text-decoration: none; transition: all .2s;
+}
+.topbar-link:hover { color: var(--primary); border-color: var(--primary); }
+.theme-toggle {
+  flex: 0 0 auto; background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  padding: .4rem .7rem; border-radius: 20px; font-size: .8rem; cursor: pointer;
+  display: inline-flex; align-items: center; gap: .35rem;
+}
+.theme-toggle:hover { border-color: var(--primary); }
+
+/* LAYOUT — sidebar gauche + contenu */
+.layout { display: flex; align-items: flex-start; }
+.sidebar {
+  flex: 0 0 280px; width: 280px;
+  position: sticky; top: var(--topbar-h);
+  height: calc(100vh - var(--topbar-h));
+  overflow-y: auto; border-right: 1px solid var(--border); background: var(--surface);
+  padding: 1.25rem 1rem 2rem;
+}
+.objectifs {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: .8rem 1rem; margin-bottom: 1.25rem;
+}
+.objectifs-label { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--primary); }
+.objectifs ul { margin: .4rem 0 0 1.1rem; }
+.objectifs li { font-size: .82rem; color: var(--text-muted); margin-bottom: .3rem; line-height: 1.4; }
+.side-nav { display: flex; flex-direction: column; gap: .1rem; }
+.side-nav button {
+  text-align: left; background: none; border: none; border-left: 3px solid transparent;
+  color: var(--text-muted); padding: .55rem .7rem; font-size: .87rem; font-weight: 500;
+  cursor: pointer; border-radius: 0 6px 6px 0; transition: all .15s;
+}
+.side-nav button:hover { color: var(--text); background: var(--surface2); }
+.side-nav button.active { color: var(--primary); border-left-color: var(--primary); background: var(--surface2); font-weight: 600; }
+.side-nav-sep { height: 1px; background: var(--border); margin: .6rem 0; }
+
+.content { flex: 1 1 auto; min-width: 0; }
+.tab-content { display: none; padding: 2rem 2.5rem 4rem; max-width: 1100px; margin: 0 auto; }
+.tab-content.active { display: block; }
+
+/* SECTIONS */
+h2 { font-size: 1.25rem; color: var(--primary2); margin: 1.8rem 0 .8rem; border-left: 3px solid var(--primary); padding-left: .75rem; }
+h3 { font-size: 1.05rem; color: var(--text); margin: 1.4rem 0 .6rem; }
+p { margin-bottom: .9rem; }
+ul, ol { padding-left: 1.4rem; margin-bottom: .9rem; }
+li { margin-bottom: .35rem; }
+
+/* RESSOURCES — liste sous forme de cartes plutôt que de puces */
+#tab-ressources ul { list-style: none; padding-left: 0; display: flex; flex-direction: column; gap: .5rem; }
+#tab-ressources li {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: .75rem 1rem; margin-bottom: 0;
+}
+#tab-ressources li a { color: var(--primary2); font-weight: 600; text-decoration: none; }
+#tab-ressources li a:hover { text-decoration: underline; }
+
+/* AIDE — divulgation progressive pas-à-pas */
+details.aide { margin-top: 1.5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+details.aide summary {
+  cursor: pointer; padding: .8rem 1.1rem; font-weight: 600; color: var(--primary);
+  list-style: none; display: flex; align-items: center; gap: .5rem;
+}
+details.aide summary::-webkit-details-marker { display: none; }
+details.aide summary::before { content: "▶"; font-size: .7rem; transition: transform .15s; }
+details.aide[open] summary::before { transform: rotate(90deg); }
+details.aide .aide-body { padding: 0 1.1rem 1.1rem; border-top: 1px solid var(--border); margin-top: .2rem; padding-top: 1rem; }
+img { max-width: 100%; height: auto; display: block; margin: 1rem auto; }
+
+/* EXERCICE — un bloc par atelier, avec son aide pas-à-pas attachée juste en dessous */
+.exercice { padding: 1.3rem 0; border-top: 1px solid var(--border); }
+.exercice:first-of-type { border-top: none; padding-top: 0; }
+.exercice h3 { margin: 0 0 .8rem; color: var(--primary2); }
+
+/* CALLOUTS */
+.callout { border-radius: var(--radius); padding: .9rem 1.1rem; margin: 1.2rem 0; border-left: 4px solid; background: var(--surface2); }
+.callout.note   { border-color: var(--primary); }
+.callout.tip    { border-color: var(--success); }
+.callout.warn   { border-color: var(--warning); }
+.callout.danger { border-color: var(--danger); }
+.callout p:last-child { margin-bottom: 0; }
+.callout-title { font-weight: 700; font-size: .82rem; text-transform: uppercase; letter-spacing: .07em; margin-bottom: .4rem; }
+.callout.note   .callout-title { color: var(--primary); }
+.callout.tip    .callout-title { color: var(--success); }
+.callout.warn   .callout-title { color: var(--warning); }
+.callout.danger .callout-title { color: var(--danger); }
+
+/* TABLES */
+.table-wrap { overflow-x: auto; margin: 1rem 0; }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th { background: var(--surface2); color: var(--primary2); text-align: left; padding: .6rem .9rem; font-weight: 600; border: 1px solid var(--border); }
+td { padding: .55rem .9rem; border: 1px solid var(--border); vertical-align: top; }
+tr:hover td { background: var(--surface2); }
+
+/* CODE */
+.code-block { position: relative; margin: 1rem 0; }
+pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1rem 1rem 1.2rem; overflow-x: auto; }
+code { font-family: 'Consolas', 'Cascadia Code', monospace; font-size: .88rem; color: var(--primary2); }
+p code, li code, td code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 5px; padding: .05rem .35rem; }
+.copy-btn {
+  position: absolute; top: .5rem; right: .5rem;
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted);
+  padding: .25rem .6rem; font-size: .75rem; border-radius: 5px; cursor: pointer; transition: all .2s;
+}
+.copy-btn:hover { background: var(--primary); color: #0d1117; }
+.copy-btn.copied { background: var(--success); color: #0d1117; }
+
+/* QUIZ */
+.quiz-question { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem; margin-bottom: 1.2rem; }
+.quiz-question h4 { color: var(--primary2); margin-bottom: .9rem; font-size: .98rem; }
+.quiz-options { display: flex; flex-direction: column; gap: .5rem; }
+.quiz-option {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: .6rem .9rem; cursor: pointer;
+  font-size: .9rem; transition: all .2s; text-align: left; color: var(--text);
+}
+.quiz-option:hover:not(:disabled) { border-color: var(--primary); }
+.quiz-option.correct { border-color: var(--success); color: var(--success); }
+.quiz-option.wrong   { border-color: var(--danger);  color: var(--danger);  }
+.quiz-option:disabled { cursor: default; }
+.quiz-feedback { margin-top: .6rem; font-size: .87rem; color: var(--text-muted); font-style: italic; }
+.quiz-score {
+  background: var(--surface2); border: 1px solid var(--primary);
+  border-radius: var(--radius); padding: 1.5rem; text-align: center; margin-top: 1.5rem; display: none;
+}
+.quiz-score .score-num { font-size: 2.5rem; font-weight: 700; color: var(--primary); }
+.quiz-score p { color: var(--text-muted); margin-top: .4rem; }
+.btn-restart { background: var(--primary); color: #0d1117; border: none; padding: .6rem 1.4rem; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 1rem; font-size: .9rem; }
+.btn-restart:hover { background: var(--primary2); }
+
+/* RESPONSIVE — sidebar devient une barre horizontale sous 900px */
+@media (max-width: 900px) {
+  .layout { flex-direction: column; }
+  .sidebar {
+    position: static; width: 100%; height: auto; max-height: 40vh;
+    border-right: none; border-bottom: 1px solid var(--border);
+  }
+  .side-nav { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; gap: .3rem; }
+  .side-nav button { border-left: none; border-bottom: 3px solid transparent; white-space: nowrap; border-radius: 6px 6px 0 0; }
+  .side-nav button.active { border-left-color: transparent; border-bottom-color: var(--primary); }
+  .side-nav-sep { display: none; }
+  .tab-content { padding: 1.5rem 1.2rem 3rem; }
+  .topbar a.chapter-title { font-size: .82rem; }
+}
+</style>
+<link rel="stylesheet" href="assets/course-common.css">
+<script src="assets/course-common.js" defer></script>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="badge">Django - Initiation et Approfondissement</span>
+  <a class="chapter-title" href="index.html" title="Retour à l'accueil de la formation">
+    <span class="num">01</span><span class="txt">Découvrir Django et construire les premières pages de GestiFormation</span>
+  </a>
+  <div class="topbar-links">
+    
+    <a class="topbar-link" href="index.html">Sommaire</a>
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Basculer entre thème clair et sombre">
+      <span id="theme-icon">🌙</span> <span id="theme-label">Sombre</span>
+    </button>
+  </div>
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="objectifs"><span class="objectifs-label">Objectifs</span><ul><li>installer et configurer un environnement de développement Django (venv, dépendances)</li><li>décrire l&#x27;architecture MVT et le cycle de vie d&#x27;une requête HTTP</li><li>structurer un projet Django (projet / applications) et comprendre `settings.py`</li><li>déclarer des URL patterns (simples, convertisseurs, expressions régulières), nommés et inversables</li><li>écrire des vues fonctionnelles qui produisent des réponses HTTP</li><li>construire un jeu de pages avec Django Templates, héritage, filtres, balises, fichiers statiques.</li></ul></div>
+    <nav class="side-nav" id="main-nav">
+      <button class="active" onclick="showTab('objectifs-pedagogiques')">Objectifs pédagogiques</button>
+  <button class="" onclick="showTab('organisation-de-la-journee')">Organisation de la journée</button>
+  <button class="" onclick="showTab('b1-decouvrir-django-bloc-1-75-min')">B1 — Découvrir Django (bloc 1) · 75 min</button>
+  <button class="" onclick="showTab('b2-structure-d-un-site-django-bloc-2-45-min')">B2 — Structure d&#x27;un site Django (bloc 2) · 45 min</button>
+  <button class="" onclick="showTab('b3-urls-et-vues-bloc-3-90-min')">B3 — URLs et vues (bloc 3) · 90 min</button>
+  <button class="" onclick="showTab('b4-templates-bloc-4-135-min')">B4 — Templates (bloc 4) · 135 min</button>
+  <button class="" onclick="showTab('synthese-de-fin-de-journee')">Synthèse de fin de journée</button>
+  <button class="" onclick="showTab('annexe-commandes-du-jour-cheat-sheet')">Annexe — Commandes du jour (cheat-sheet)</button>
+    </nav>
+  </aside>
+  <div class="content">
+    <div id="tab-objectifs-pedagogiques" class="tab-content active">
+<p>À la fin de la journée, les participants sont capables de :</p>
+<ul>
+<li>installer et configurer un environnement de développement Django (venv, dépendances) ;</li>
+<li>décrire l'architecture MVT et le cycle de vie d'une requête HTTP ;</li>
+<li>structurer un projet Django (projet / applications) et comprendre <code>settings.py</code> ;</li>
+<li>déclarer des URL patterns (simples, convertisseurs, expressions régulières), nommés et inversables ;</li>
+<li>écrire des vues fonctionnelles qui produisent des réponses HTTP ;</li>
+<li>construire un jeu de pages avec Django Templates : héritage, filtres, balises, fichiers statiques.</li>
+</ul>
+<h3>Livrable de la journée</h3>
+<p>Un site fonctionnel <strong>GestiFormation</strong> avec :</p>
+<ul>
+<li>une page d'accueil, un catalogue de formations et un détail de formation ;</li>
+<li>une page 404 personnalisée ;</li>
+<li>un thème CSS commun via un gabarit de base ;</li>
+<li>un serveur de développement actif avec rechargement automatique.</li>
+</ul>
+<blockquote>
+<p>💡 <strong>Choix pédagogique</strong> : les données du catalogue sont des littéraux Python pour le jour 1 (bloc 3 Dawan : « renvoyer du contenu simple »). Le jour 2, les mêmes pages seront branchées sur l'ORM sans changer URL ni gabarits — c'est la meilleure démonstration du découplage MVT.</p>
+</blockquote>
+</div>
+
+<div id="tab-organisation-de-la-journee" class="tab-content">
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Heure</th>
+<th>Séquence</th>
+<th>Blocs programme</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>09h00 – 09h15</td>
+<td>Accueil, tour de table, vérification du matériel</td>
+<td>—</td>
+</tr>
+<tr>
+<td>09h15 – 10h30</td>
+<td><strong>B1</strong> — Découvrir Django, installation</td>
+<td>Bloc 1</td>
+</tr>
+<tr>
+<td>10h30 – 10h45</td>
+<td>Pause</td>
+<td></td>
+</tr>
+<tr>
+<td>10h45 – 11h30</td>
+<td><strong>B2</strong> — Structure d'un site Django</td>
+<td>Bloc 2</td>
+</tr>
+<tr>
+<td>11h30 – 13h00</td>
+<td><strong>B3</strong> — URLs &amp; vues + atelier</td>
+<td>Bloc 3</td>
+</tr>
+<tr>
+<td>13h00 – 14h00</td>
+<td>Déjeuner</td>
+<td></td>
+</tr>
+<tr>
+<td>14h00 – 16h15</td>
+<td><strong>B4</strong> — Templates + atelier</td>
+<td>Bloc 4</td>
+</tr>
+<tr>
+<td>16h15 – 16h30</td>
+<td>Pause</td>
+<td></td>
+</tr>
+<tr>
+<td>16h30 – 17h00</td>
+<td>Démonstrations, synthèse, preview du jour 2</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+</div>
+
+<div id="tab-b1-decouvrir-django-bloc-1-75-min" class="tab-content">
+<h3>1.1. Qu'est-ce que Django ?</h3>
+<p>Django est un framework web <strong>Python, open source, « batteries incluses »</strong>, né en 2003 dans la rédaction de <em>LWN</em> (Adrian Holovaty, Simon Willison). Son credo : <strong>convention over configuration</strong> — Django choisit pour vous, et documente comment faire déchoixir.</p>
+<p>Ce qui est fourni « out of the box » :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Brique</th>
+<th>Rôle</th>
+<th>Jour de la formation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>URL router</td>
+<td>routage des URL vers les vues</td>
+<td>J1</td>
+</tr>
+<tr>
+<td>Templates</td>
+<td>rendu HTML côté serveur</td>
+<td>J1</td>
+</tr>
+<tr>
+<td>ORM + migrations</td>
+<td>accès aux données, évolution du schéma</td>
+<td>J2</td>
+</tr>
+<tr>
+<td>Forms / ModelForms</td>
+<td>formulaires, validation, anti-CSRF</td>
+<td>J2–J3</td>
+</tr>
+<tr>
+<td>Admin</td>
+<td>interface d'administration auto-générée</td>
+<td>J3</td>
+</tr>
+<tr>
+<td>Auth</td>
+<td>utilisateurs, groupes, permissions, sessions</td>
+<td>J3</td>
+</tr>
+<tr>
+<td>i18n</td>
+<td>traduction des interfaces</td>
+<td>J4</td>
+</tr>
+<tr>
+<td>E-mails, signals, middlewares</td>
+<td>mécanismes avancés</td>
+<td>J5</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Versions.</strong> Django suit un cycle de sorties annuelles avec une version <strong>LTS</strong> (Long Term Support, support ~4 ans) tous les deux ans.</p>
+<blockquote>
+<p>💡 <strong>Règle de formation</strong> : on se forme sur une <strong>LTS</strong>. Ici, <strong>Django 5.2 LTS</strong>. Les stagiaires retrouveront la même logique sur les versions récentes ; la LTS est aussi ce qu'on déconseille en production pour des sites internes.</p>
+</blockquote>
+<p><strong>Documentation.</strong> <code>docs.djangoproject.com</code> est la référence — c'est même l'une des meilleures documentations du monde Python. Habitude à installer dès le jour 1 : <strong>quand on doute, on lit la doc, pas Stack Overflow.</strong></p>
+<h3>1.2. L'écosystème des frameworks web Python</h3>
+<p>Le stagiaire développeur Python a déjà croisé Flask ou FastAPI. Situer Django évite le questionnement pendant toute la semaine :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Framework</th>
+<th>Positionnement</th>
+<th>Point fort</th>
+<th>Quand le choisir</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Django</strong></td>
+<td>complet, prescriptif</td>
+<td>ORM, admin, auth, sécurité</td>
+<td>applications web complètes (admin, formulaires, comptes)</td>
+</tr>
+<tr>
+<td><strong>Flask</strong></td>
+<td>micro-framework, modulaire</td>
+<td>légèreté, liberté</td>
+<td>petites apps, API internes, protos</td>
+</tr>
+<tr>
+<td><strong>FastAPI</strong></td>
+<td>moderne, async, typé</td>
+<td>performances, OpenAPI auto</td>
+<td>API JSON, microservices, ML</td>
+</tr>
+<tr>
+<td><strong>Pyramid</strong></td>
+<td>flexible, indifférent aux briques</td>
+<td>longévité, modularité</td>
+<td>gros systèmes legacy</td>
+</tr>
+<tr>
+<td><strong>Starlette</strong></td>
+<td>micro async</td>
+<td>asynchrone pur</td>
+<td>bases de FastAPI, API temps réel</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>💡 Argument à donner : <strong>Django n'est pas « plus lent que Flask » en raison de ses briques — il fait plus de choses</strong>. Pour une app d'administration métier (notre cas), Flask exigerait de réécrire l'admin, l'auth, les forms… c'est-à-dire de réinventer Django.</p>
+</blockquote>
+<h3>1.3. MVC, MVT : le schéma de fonctionnement</h3>
+<p>Les stagiaires connaissent MVC (Model-View-Controller). Django s'en inspire mais <strong>renomme les briques</strong> — source classique de confusion.</p>
+<p><img alt="Architecture MVT de Django" src="assets/mvt.svg" /></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>MVC (classique)</th>
+<th>Django</th>
+<th>Contenu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Model</td>
+<td><strong>Model</strong></td>
+<td>classes Python décrivant les données + ORM</td>
+</tr>
+<tr>
+<td>Controller</td>
+<td><strong>View</strong> (vue)</td>
+<td>fonction/classe qui reçoit la requête, traite, répond</td>
+</tr>
+<tr>
+<td>View (vue)</td>
+<td><strong>Template</strong> (gabarit)</td>
+<td>le document HTML rendu</td>
+</tr>
+</tbody>
+</table></div>
+<p>Moyen mnémotechnique : <strong>Django View = « le cerveau »</strong>, Template = « la bouche », Model = « la mémoire ». (Et la « vue » du stagiaire, c'est le template — on s'y fait.)</p>
+<p>Le cycle de vie détaillé d'une requête sous le serveur de développement :</p>
+<p><img alt="Cycle de vie d'une requête" src="assets/cycle-requete.svg" /></p>
+<p>Points à faire démontrer (pas seulement expliquer) :</p>
+<ul>
+<li><code>runserver</code> est un vrai serveur WSGI minimaliste, <strong>pas</strong> un contournement : la chaîne est identique à la production, moins le serveur applicatif (Gunicorn/uvicorn — J5) ;</li>
+<li>les <strong>middlewares</strong> sont traversés en aller-retour ; on les verra agir concrètement le jour 3 (sessions, auth) et le jour 5 (CORS, compression) ;</li>
+<li><strong>une requête = une réponse</strong>, aucune mémoire d'une page à l'autre (étatless) : l'état vit dans la session (cookie) et la base — idée centrale à faire absorber.</li>
+</ul>
+<h3>1.4. Installation et environnement</h3>
+<p><strong>Matériel type</strong> : Linux/macOS ou Windows (WSL2 recommandé) ; VS Code ou PyCharm.</p>
+<p><strong>Extensions VS Code utiles</strong> (à installer au fil du besoin, pas tout d'un coup) : <em>Python</em>, <em>Pylance</em>, <em>Django</em> (surlignage des tags <code>{% %}</code>), <em>Ruff</em> (lint).</p>
+<blockquote>
+<p>⚠️ Piège Windows : utiliser <code>python</code> (pas <code>py</code>) si un ancien Python 32 bits est dans le PATH ; vérifier <code>python --version</code> avant de créer le venv.</p>
+</blockquote>
+<h3>🛠️ Atelier 1 — Environnement de développement (30 min)</h3>
+<p><strong>Consignes</strong> : créer un environnement de travail pour GestiFormation, sans encore créer le projet (ce sera l'atelier du bloc 2).</p>
+<div class="code-block"><pre><code class="language-bash"># 0. Vérifier Python (≥ 3.11 recommandé)
+python --version
+
+# 1. Répertoire de travail
+mkdir -p ~/projets/gestiformation &amp;&amp; cd ~/projets/gestiformation
+
+# 2. Environnement virtuel
+python -m venv .venv
+
+# 3. L'activer
+source .venv/bin/activate          # bash / zsh (Linux, macOS)
+# .venv\Scripts\activate           # Windows (cmd)
+# .venv\Scripts\Activate.ps1       # Windows (PowerShell)
+
+# 4. Installer Django (LTS) et vérifier
+pip install &quot;Django&gt;=5.2,&lt;6.0&quot;
+django-admin --version             # → Django 5.2.x
+
+# 5. Geler les dépendances (fichier à committer)
+pip freeze &gt; requirements.txt
+
+# 6. Hygiène git minimale
+git init
+printf '.venv/\n__pycache__/\n*.pyc\n.env\n' &gt; .gitignore
+git add -A &amp;&amp; git commit -m &quot;Bootstrap environnement GestiFormation&quot;
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><strong>Checklist de fin d'atelier</strong></p>
+<ul>
+<li>[ ] <code>django-admin --version</code> affiche Django 5.2.x <strong>dans le venv actif</strong> ;</li>
+<li>[ ] <code>requirements.txt</code> contient Django ;</li>
+<li>[ ] dépôt git initialisé avec <code>.gitignore</code> correct ;</li>
+<li>[ ] le stagiaire sait réactiver le venv dans un nouveau terminal.</li>
+</ul>
+<blockquote>
+<p>⚠️ Si <code>django-admin</code> n'est pas trouvé après activation : le venv n'est pas activé (<code>which django-admin</code> doit pointer dans <code>.venv</code>).</p>
+</blockquote>
+<p><strong>Le serveur de développement.</strong> Première rencontre avec <code>runserver</code> (on créera le projet juste après) :</p>
+<div class="code-block"><pre><code class="language-bash">python manage.py runserver
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>À faire démontrer au tableau, <strong>en direct</strong> :</p>
+<ul>
+<li>l'autoreloader : modifier un fichier <code>.py</code> → le serveur se redémarre tout seul ;</li>
+<li><code>DEBUG=True</code> : les erreurs s'affichent <strong>dans le navigateur</strong> avec trace complète — un luxe de développement, jamais en production ;</li>
+<li><code>ALLOWED_HOSTS</code> : le serveur refuse les hôtes inconnus, même en dev (l'erreur est explicite, elle servira d'exemple) ;</li>
+<li>l'URL <code>http://127.0.0.1:8000/</code> : le serveur répond <code>DisallowedHost</code> ou une page vide selon le projet — normal, aucune URL n'est encore déclarée.</li>
+</ul>
+<blockquote>
+<p>💡 <strong>Réflexe pro à installer</strong> : <code>Ctrl+C</code> arrête le serveur proprement. <code>runserver</code> n'est <strong>jamais</strong> un serveur de production (limité à un thread, <code>DEBUG</code> ouvert, pas de sécurité durcie). Nous en reparlerons le jour 5.</p>
+</blockquote>
+<p><strong>Autres commandes à faire connaître</strong> (la CLI <code>manage.py</code> est la porte d'entrée de Django) :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Commande</th>
+<th>Effet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>python manage.py check</code></td>
+<td>vérifie la cohérence du projet (à lancer <strong>après chaque changement de settings</strong>)</td>
+</tr>
+<tr>
+<td><code>python manage.py showurls</code> (via <code>django-extensions</code>)</td>
+<td>liste les URL patterns actives</td>
+</tr>
+<tr>
+<td><code>python manage.py shell</code></td>
+<td>shell Python préchargé du projet (parfait pour expérimenter)</td>
+</tr>
+<tr>
+<td><code>python manage.py test</code></td>
+<td>lanceur de tests (jour 4)</td>
+</tr>
+<tr>
+<td><code>pip install django-extensions</code></td>
+<td>boîtes à outils très utile en dev (<code>show_urls</code>, <code>shell_plus</code>…)</td>
+</tr>
+<tr>
+<td><code>pip install django-debug-toolbar</code></td>
+<td>interface de debug dans le navigateur (barre latérale avec requêtes SQL, temps de réponse, etc.)</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>💡 Optionnel mais apprécié : <code>pip install django-extensions</code> puis ajouter <code>"django_extensions"</code> dans <code>INSTALLED_APPS</code>. La commande <code>show_urls</code> (liste des URLs + vues) devient un réflexe de debug.</p>
+</blockquote>
+<hr />
+</div>
+
+<div id="tab-b2-structure-d-un-site-django-bloc-2-45-min" class="tab-content">
+<h3>2.1. Projet ≠ application</h3>
+<p>La distinction qui structure tout Django, et tout notre support :</p>
+<ul>
+<li><strong>un projet</strong> = un site web complet : configuration (<code>settings.py</code>), racine du routage, point d'entrée WSGI/ASGI. C'est le <em>contenant</em>.</li>
+<li><strong>une application (app)</strong> = un module métier <strong>réutilisable</strong> : modèles, vues, gabarits, admin, tests sur <strong>un seul domaine</strong>. C'est la <em>brique</em>.</li>
+</ul>
+<blockquote>
+<p>💡 Exemple à donner : l'app <code>catalog</code> du GestiFormation pourrait, théoriquement, être branchée dans le site d'une autre boîte qui vend aussi des formations. C'est le test de réutilisabilité : <strong>une app ne connaît pas le projet, le projet connaît les apps.</strong></p>
+</blockquote>
+<p>Pour GestiFormation, prévoyons dès aujourd'hui <strong>deux apps</strong> (la seconde naîtra le jour 2) :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>App</th>
+<th>Domaine</th>
+<th>Jour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>catalog</code></td>
+<td>formations, sessions, compétences</td>
+<td>J1–J2</td>
+</tr>
+<tr>
+<td><code>inscriptions</code></td>
+<td>inscriptions, factures, documents</td>
+<td>J2–J3</td>
+</tr>
+</tbody>
+</table></div>
+<h3>2.2. Anatomie du projet</h3>
+<p><img alt="Structure d'un projet Django" src="assets/structure-app.svg" /></p>
+<p><strong><code>manage.py</code></strong> — point d'entrée CLI du projet. Tout passe par <code>python manage.py &lt;commande&gt;</code>.</p>
+<p><strong><code>settings.py</code></strong> — le tableau de bord du site. Les éléments que nous toucherons pendant la semaine :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Clé</th>
+<th>Rôle</th>
+<th>Jour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SECRET_KEY</code></td>
+<td>signe cookies, sessions, tokens — <strong>jamais</strong> dans le git</td>
+<td>J1 (notion)</td>
+</tr>
+<tr>
+<td><code>DEBUG</code></td>
+<td>mode développement (erreurs dans le navigateur)</td>
+<td>J1</td>
+</tr>
+<tr>
+<td><code>ALLOWED_HOSTS</code></td>
+<td>hôtes autorisés</td>
+<td>J1 (notion), J5 (production)</td>
+</tr>
+<tr>
+<td><code>INSTALLED_APPS</code></td>
+<td>les apps du site (les nôtres <strong>et</strong> les apps Django)</td>
+<td>J1</td>
+</tr>
+<tr>
+<td><code>MIDDLEWARE</code></td>
+<td>la chaîne de middlewares</td>
+<td>J1 (notion), J3–J5 (pratique)</td>
+</tr>
+<tr>
+<td><code>TEMPLATES</code></td>
+<td>moteur de gabarits, <code>APP_DIRS=True</code> = chercher dans <code>&lt;app&gt;/templates/</code></td>
+<td>J1</td>
+</tr>
+<tr>
+<td><code>STATIC_URL</code></td>
+<td>préfixe des fichiers statiques</td>
+<td>J1</td>
+</tr>
+<tr>
+<td><code>DATABASES</code></td>
+<td>base (SQLite par défaut — parfait pour la semaine)</td>
+<td>J2</td>
+</tr>
+<tr>
+<td><code>DEFAULT_AUTO_FIELD</code></td>
+<td>type des PK auto-incrémentées</td>
+<td>J2</td>
+</tr>
+<tr>
+<td><code>LANGUAGE_CODE</code> / <code>USE_I18N</code></td>
+<td>langue, traduction</td>
+<td>J4</td>
+</tr>
+<tr>
+<td><code>EMAIL_BACKEND</code> / <code>EMAIL_HOST</code></td>
+<td>envoi de mails</td>
+<td>J5</td>
+</tr>
+<tr>
+<td><code>STATICFILES_STORAGE</code></td>
+<td>service des statics en prod</td>
+<td>J5</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong><code>urls.py</code> (du projet)</strong> — racine du routage ; on y greffe les apps avec <code>include()</code>.
+<strong><code>wsgi.py</code> / <code>asgi.py</code></strong> — le point d'entrée que le serveur applicatif (Gunicorn, uvicorn…) appelle en production. Le <code>runserver</code> fait la même chose en dev.</p>
+<h3>🛠️ Atelier 2 — Créer le projet et l'app <code>catalog</code> (20 min)</h3>
+<div class="code-block"><pre><code class="language-bash"># dans ~/projets/gestiformation, venv activé
+django-admin startproject gesti .     # package « gesti », racine du repo
+python manage.py startapp catalog     # application métier
+python manage.py check                # → System check identified no issues (0 silenced)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Puis, dans <code>gesti/settings.py</code>, déclarer l'app :</p>
+<div class="code-block"><pre><code class="language-python">INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    # --- nos applications métier (ordre peu important, lisibilité oui) ---
+    'catalog.apps.CatalogConfig',
+    # outils de développement
+    'django_extensions',
+    'debug_toolbar',
+]
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Vérifier, puis lancer le serveur et ouvrir <code>http://127.0.0.1:8000/</code> :</p>
+<div class="code-block"><pre><code class="language-bash">python manage.py check
+python manage.py runserver
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>⚠️ <strong>Piège classique n°1</strong> : app oubliée dans <code>INSTALLED_APPS</code> → <code>ImproperlyConfigured</code> ou gabarits introuvables, sans message explicite. Réflexe : après tout ajout de configuration, <code>python manage.py check</code>.</p>
+<p>💡 <code>startapp</code> crée un squelette (<code>apps.py</code>, <code>models.py</code>, <code>views.py</code>, <code>urls.py</code>, <code>tests.py</code>, <code>admin.py</code>). C'est <strong>du code Python standard</strong> — les stagiaires peuvent l'ouvrir, l'expliquer entre eux avant qu'on le fasse.</p>
+</blockquote>
+<hr />
+</div>
+
+<div id="tab-b3-urls-et-vues-bloc-3-90-min" class="tab-content">
+<h3>3.1. Le routeur : URL patterns</h3>
+<p>Une <strong>URLconf</strong> est une liste ordonnée de <code>(pattern, vue)</code> : Django parcourt la liste et <strong>la première correspondance gagne</strong>.</p>
+<p>Trois styles de pattern, tous au programme Dawan (« simples et par expressions régulières ») :</p>
+<div class="code-block"><pre><code class="language-python">from django.contrib import admin
+from django.urls import path, re_path
+# ne fonctionne pas depuis la racine
+# import views
+from . import views 
+
+# espace de nom des urls de cette app à appeler dans les templates et/ou les vues
+app_name = &quot;catalog&quot;
+
+urlpatterns = [
+    # ces chemins sont la continuation de la partie du gesti/urls.py
+    # un vue est un CALLABLE (fonction ou classe)
+    path('', views.accueil, name='accueil'),
+    path('formations/', views.liste_formations, name=&quot;liste-formations&quot;),
+
+    # l'attribut name fait le lien entre l'url et son invocation dans un template et/ou dans une vue
+    path('formations/&lt;int:pk&gt;', views.detail_formation, name=&quot;detail-formation&quot;),
+
+
+
+    # exemple de route matchée par une regex
+
+    # django réutilise le mécnisme de nommage de groupe de capture du module 
+    # re en python (?P&lt;name&gt;) pour dynamiser l'identifiant
+
+    # non-obstant, la valeur capturée est une str !!!
+
+    # re_path utilise re.match ==&gt; capture au début de la cible
+    # ==&gt; écrire des regex stricte : ^&lt;regex&gt;$
+    # re_path(&quot;^formations/(?P&lt;pk&gt;[0-9]{,2})$&quot;, views.detail_formation)
+]
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><strong>Point clé — les convertisseurs :</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Accepte</th>
+<th>Exemple qui passe</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&lt;pk&gt;</code></td>
+<td>toute chaîne (sauf <code>/</code>)</td>
+<td><code>42</code>, <code>abc</code>, <code>4a</code></td>
+</tr>
+<tr>
+<td><code>&lt;int:pk&gt;</code></td>
+<td>entiers seulement</td>
+<td><code>42</code></td>
+</tr>
+<tr>
+<td><code>&lt;slug:pk&gt;</code></td>
+<td>caractères alphanum. + <code>-</code> + <code>_</code></td>
+<td><code>django-initiation</code></td>
+</tr>
+<tr>
+<td><code>&lt;uuid:pk&gt;</code></td>
+<td>UUID canonique</td>
+<td><code>9f86d081-…</code></td>
+</tr>
+<tr>
+<td><code>&lt;str:pk&gt;</code></td>
+<td>n'importe quoi, même <code>/</code></td>
+<td>⚠️ rarement voulu</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>⚠️ <strong>Piège classique n°2</strong> : l'ordre des patterns. <code>path('formations/&lt;pk&gt;/', …)</code> placé <strong>avant</strong> <code>path('formations/nouveautes/', …)</code> avalera l'URL « nouveautés » avec <code>pk='nouveautes'</code>. Règle : <strong>du plus spécifique au plus générique</strong>.</p>
+</blockquote>
+<p><strong>Éponymie (namespace).</strong> <code>app_name = 'catalog'</code> + <code>name='…'</code> sur chaque pattern → les URLs de l'app sont adressées partout comme <code>catalog:detail-formation</code>. Bénéfices immédiats :</p>
+<ul>
+<li>on peut renommer l'URL <strong>sans casser le code</strong> (les gabarits et vues utilisent le nom, jamais le chemin) ;</li>
+<li>deux apps peuvent avoir un pattern du même <code>name</code> sans collision ;</li>
+<li><code>python manage.py show_urls</code> (via <code>django-extensions</code>) liste les patterns nommés — indispensable en debug.</li>
+</ul>
+<h3>3.2. Les URLs du projet (racine)</h3>
+<div class="code-block"><pre><code class="language-python">from django.contrib import admin
+from django.urls import path, include
+# pas d'import relatif ni absolu car le dossier racine n'est PAS un package
+# import catalog.urls 
+
+urlpatterns = [
+    # ce chemin permet de consulter les urls de 
+    # l'application admin déjà installé dans settings INSTALLED_APPS
+    path('admin/', admin.site.urls),
+    # TO-DO: générer la liste urls de l'application catalog
+    # =&gt; catalog/urls.py
+    path('', include('catalog.urls')),
+]
+
+# gestion != d'urlpatterns
+# pour le voir ==&gt; DEBUG = False
+handler404 = 'catalog.views.page_introuvable'
+handler500 = 'catalog.views.interne'
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 <code>include()</code> : permet d'inclure les patterns d'une app EXTERNE dans le routeur du projet.
+💡 <code>include()</code> : on ne « monte » que la préfixe. Les patterns de <code>catalog/urls.py</code> vivent sous <code>''</code> ici — mais si on incluait sous <code>path('fr/', include('catalog.urls'))</code>, tout le catalogue basculerait sous <code>/fr/…</code> <strong>sans toucher à une seule URL de l'app</strong>. C'est l'une des plus belles propriétés du découpage apps/projets.</p>
+</blockquote>
+<h3>3.3. Les vues fonctionnelles</h3>
+<p>Une <strong>vue</strong> est une fonction Python <code>(request, *args, **kwargs) → réponse HTTP</code>.</p>
+<div class="code-block"><pre><code class="language-python">from django.shortcuts import render
+from django.http import HttpRequest, HttpResponse
+
+# --- données fictives pour le jour 1 (elles seront remplacées par l'ORM le jour 2) ---
+FORMATIONS = [
+    {'code': 'PY-101', 'nom': 'Django : initiation',
+     'prix': 1890.0, 'duree': 3, 'public': 'Développeurs', 'nouveaute': False},
+    {'code': 'PY-102', 'nom': 'Django : approfondissement',
+     'prix': 2490.0, 'duree': 1, 'public': '', 'nouveaute': False},
+    {'code': 'DA-201', 'nom': 'Data analysis with Python',
+     'prix': 2190.0, 'duree': 5, 'public': 'Analystes', 'nouveaute': True},
+]
+
+# Create your views here.
+def accueil(request: HttpRequest) -&gt; HttpResponse:
+    &quot;&quot;&quot;
+    Page d'accueil - réponse brute
+    demande un objet request de type HttpRequest
+    et retourne un objet HttpResponse
+    &quot;&quot;&quot;
+    return HttpResponse(
+        &quot;&quot;&quot;&lt;h1&gt;GestiFormation&lt;/h1&gt;
+    &lt;p&gt;Gestion d'un organisme de formation : catalogue, sessions, inscriptions.&lt;/p&gt;
+    &lt;a href=&quot;/formations/&quot;&gt;Voir le catalogue&lt;/a&gt;&quot;&quot;&quot;,
+        content_type=&quot;text/html&quot;,
+        status=200)
+
+def liste_formations(request: HttpRequest) -&gt; HttpResponse:
+    &quot;&quot;&quot;
+    liste des formations
+    utilise render, qui injecte le contexte dans un fichier HTML &quot;template&quot;
+    les templates doivent être insérés dans &lt;app&gt;/templates/&lt;app&gt;/&lt;xxxx&gt;.html
+    &quot;&quot;&quot;
+    return render(request, &quot;catalog/liste_formations.html&quot; , {&quot;formations&quot;: FORMATIONS})
+
+def detail_formation(request: HttpRequest, pk: int) -&gt; HttpResponse:
+    &quot;&quot;&quot;
+    détail d'une formation indexée par un id, par défaut l'indice de la liste
+    &quot;&quot;&quot;
+    return render(request, &quot;catalog/detail_formation.html&quot; , {&quot;formation&quot;: FORMATIONS[int(pk) - 1]})
+
+def page_introuvable(request, exception):
+    &quot;&quot;&quot;
+    page rendue par le handler404 du projet
+    le handler 404 demande un 2ème paramètre exception dans la vue
+    &quot;&quot;&quot;
+    return render(request, &quot;catalog/404.html&quot;, status=404)
+
+def interne(request):
+    return render(request, &quot;catalog/500.html&quot;, status=500)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><strong>L'objet <code>request</code></strong> — ce qu'on y trouve (le stagiaire peut l'inspecter dans le shell ou dans une vue de debug) :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Attribut</th>
+<th>Contenu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>request.method</code></td>
+<td><code>'GET'</code>, <code>'POST'</code>, …</td>
+</tr>
+<tr>
+<td><code>request.path</code></td>
+<td>l'URL normalisée (sans la query string)</td>
+</tr>
+<tr>
+<td><code>request.GET</code></td>
+<td>dictionnaire-like de la query string</td>
+</tr>
+<tr>
+<td><code>request.POST</code></td>
+<td>dictionnaire-like du corps POST (formulaires — J2)</td>
+</tr>
+<tr>
+<td><code>request.headers</code></td>
+<td>en-têtes HTTP (<code>User-Agent</code>, <code>Referer</code>, …)</td>
+</tr>
+<tr>
+<td><code>request.META</code></td>
+<td>variables d'environnement du serveur (<code>REMOTE_ADDR</code>, …)</td>
+</tr>
+<tr>
+<td><code>request.user</code></td>
+<td>l'utilisateur courant (J3 — <code>AnonymousUser</code> tant que non connecté)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>La réponse</strong> — les trois types que nous croiserons cette semaine :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Usage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HttpResponse(html, content_type=…, status=…)</code></td>
+<td>réponse brute</td>
+</tr>
+<tr>
+<td><code>JsonResponse(obj)</code></td>
+<td>réponse JSON (jour 5, API)</td>
+</tr>
+<tr>
+<td><code>render(request, template, context)</code></td>
+<td><strong>le</strong> raccourci le plus utilisé : gabarit + contexte + request</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>⚠️ Toujours passer <code>request</code> à <code>render()</code> — c'est ce qui permet aux middlewares (CSRF, messages) de fonctionner dans le gabarit.</p>
+</blockquote>
+<p><strong>HTTP en 5 minutes</strong> (à projeter pendant l'atelier, pas avant) :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Élément</th>
+<th>Valeurs utiles ici</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Méthodes</td>
+<td><code>GET</code> (lecture), <code>POST</code> (création/mutation), <code>PUT</code> (remplacement), <code>DELETE</code></td>
+</tr>
+<tr>
+<td>Codes</td>
+<td><code>200</code> OK · <code>301/302</code> redirection · <code>404</code> introuvable · <code>400</code> requête invalide · <code>500</code> erreur serveur</td>
+</tr>
+<tr>
+<td>En-têtes</td>
+<td><code>Content-Type</code>, <code>Location</code> (redirect), <code>Set-Cookie</code> (sessions)</td>
+</tr>
+</tbody>
+</table></div>
+<h3>🛠️ Atelier 3 — Vues du catalogue (45 min)</h3>
+<p><strong>Consignes</strong> : faire marcher les 3 vues avec les données littérales ci-dessus. On ne construit <strong>pas encore</strong> les gabarits (bloc 4) — pour vérifier, utiliser <code>HttpResponse</code> brut sur la liste :</p>
+<p><strong>Progression attendue</strong> :</p>
+<ol>
+<li><code>accueil</code> → <code>HttpResponse</code> brut → ouvrir <code>http://127.0.0.1:8000/</code> ;</li>
+<li>ajouter <code>liste_formations</code> + son pattern → <code>http://127.0.0.1:8000/formations/</code> ;</li>
+<li>ajouter <code>detail_formation</code> + son pattern avec <code>&lt;int:pk&gt;</code> → <code>http://127.0.0.1:8000/formations/2/</code> ;</li>
+<li>taper <code>http://127.0.0.1:8000/formations/99/</code> → <strong>la page 500 brute</strong> de Django (pas la nôtre — c'est normal, les gabarits n'existent pas encore) ;</li>
+<li>tester le pattern regex (<code>/formations/12345/</code> → 404, car <code>[0-9]{1,4}</code>).</li>
+</ol>
+<p><strong>Checklist</strong></p>
+<ul>
+<li>[ ] <code>python manage.py check</code> → 0 issue ;</li>
+<li>[ ] <code>http://127.0.0.1:8000/</code> → page d'accueil ;</li>
+<li>[ ] <code>http://127.0.0.1:8000/formations/</code> → liste HTML brute ;</li>
+<li>[ ] <code>http://127.0.0.1:8000/formations/1/</code> et <code>/2/</code> → détail ;</li>
+<li>[ ] <code>http://127.0.0.1:8000/formations/99/</code> → 404 ;</li>
+<li>[ ] le stagiaire peut expliquer pourquoi <code>pk</code> arrive dans <code>detail_formation</code> (le pattern le capture, le routeur le passe en <code>**kwargs</code>).</li>
+</ul>
+<blockquote>
+<p>⚠️ <strong>Piège classique n°3</strong> : <code>formations/&lt;int:pk&gt;/</code> sans barre finale → l'utilisateur tape <code>http://…/formations</code> (sans <code>/</code>) → <strong>404 au lieu de redirection</strong>. C'est le rôle de <code>APPEND_SLASH = True</code> (défaut Django) de corriger automatiquement ; comprendre le mécanisme évite 90 % des « pourquoi ça marche sur une URL mais pas sur l'autre ».</p>
+<p>💡 <strong>Vérification du découplage URL</strong> : demander à un binôme de changer l'URL publique de <code>detail-formation</code> (ex. <code>path('formations/&lt;int:pk&gt;/', …)</code> → <code>path('catalogue/&lt;int:pk&gt;/', …)</code>) — <strong>le code des vues ne change pas d'une ligne</strong>. C'est l'effet de l'éponymie.</p>
+</blockquote>
+<hr />
+</div>
+
+<div id="tab-b4-templates-bloc-4-135-min" class="tab-content">
+<h3>4.1. Pourquoi des gabarits ?</h3>
+<p>Séparer la <strong>logique</strong> (les vues) du <strong>préésentationnel</strong> (le HTML). Concrètement :</p>
+<ul>
+<li>le designer peut toucher au HTML sans toucher au Python ;</li>
+<li>la vue peut évoluer (ORM, API, cache) sans toucher au HTML ;</li>
+<li>le HTML est <strong>reusable</strong> : un <code>&lt;template&gt;</code> de « carte formation » sert dans la liste, le détail, un e-mail (J5).</li>
+</ul>
+<p>Le moteur Django (configuré dans <code>TEMPLATES</code>, <code>APP_DIRS=True</code>) cherche les gabarits <strong>dans chaque app installée</strong> sous <code>&lt;app&gt;/templates/&lt;app&gt;/</code>. C'est ce qui nous donne automatiquement <code>catalog/templates/catalog/*.html</code> sans configuration.</p>
+<blockquote>
+<p>💡 <strong><code>DIRS</code> vs <code>APP_DIRS</code></strong> : <code>DIRS</code> = chemins absolus <strong>du projet</strong> (partageables entre apps) ; <code>APP_DIRS</code> = <code>templates/&lt;app&gt;/</code> <strong>dans chaque app</strong>. Pour GestiFormation, on n'utilise que <code>APP_DIRS</code> : chaque app est autonome.</p>
+<p>⚠️ <strong>Conséquence directe — comment on nomme les gabarits</strong> : avec <code>APP_DIRS</code>, un gabarit est référencé <strong>relativement au dossier <code>templates/</code> de l'app</strong>, donc avec le préfixe du sous-dossier. Le fichier <code>catalog/templates/catalog/base.html</code> s'appelle <code>catalog/base.html</code> — dans <code>render()</code> <strong>et</strong> dans <code>{% extends %}</code>. Écrire <code>{% extends "base.html" %}</code> provoque un <code>TemplateDoesNotExist</code> (Django cherche <code>catalog/templates/base.html</code>). C'est l'erreur n°1 des stagiaires en templates ; le règle d'or : <strong>le nom du gabarit = son chemin après <code>templates/</code></strong>.</p>
+</blockquote>
+<h3>4.2. Le contexte et l'expression</h3>
+<p><code>render(request, template, context)</code> passe un <strong>dictionnaire</strong> au gabarit. Dans le gabarit, on lit les clés avec <code>{{ nom_de_clé }}</code>.</p>
+<p>La résolution du point (<code>.</code>) dans les expressions suit un ordre précis :</p>
+<ol>
+<li><strong>clé de dictionnaire</strong> : <code>{{ formation.code }}</code> si <code>formation</code> est un dict ;</li>
+<li><strong>attribut</strong> : <code>{{ formation.nom }}</code> si c'est une instance ;</li>
+<li><strong>méthode sans argument</strong> : <code>{{ now }}</code> → <code>now()</code> ;</li>
+<li><strong>index de liste</strong> : <code>{{ formations.0.nom }}</code> (astuce peu connue, très utile en debug).</li>
+</ol>
+<blockquote>
+<p>⚠️ <strong>Piège classique n°4</strong> : <code>{{ ma_variable }}</code> n'affiche <strong>rien</strong> (ni <code>None</code>, ni <code>''</code>) si la variable n'existe pas dans le contexte. Django <strong>ne lève jamais d'exception</strong> sur un contexte manquant (sauf <code>string_if_invalid</code>). Réflexe debug : vérifier le <code>context</code> passé par la vue avant de suspecter le gabarit.</p>
+</blockquote>
+<h3>4.3. Filtres — les plus utiles de la semaine</h3>
+<p>Syntaxe : <code>{{ valeur|filtre }}</code>, chaînables <code>{{ v|f1|f2 }}</code>.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Filtre</th>
+<th>Effet</th>
+<th>Exemple GestiFormation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>upper</code> / <code>lower</code> / <code>title</code></td>
+<td>casse</td>
+<td><code>{{ formation.code|upper }}</code></td>
+</tr>
+<tr>
+<td><code>length</code></td>
+<td>longueur (str, liste, dict)</td>
+<td><code>{{ formations|length }} formations</code></td>
+</tr>
+<tr>
+<td><code>first</code> / <code>last</code></td>
+<td>premier / dernier élément</td>
+<td><code>{{ competences|first }}</code></td>
+</tr>
+<tr>
+<td><code>floatformat:2</code></td>
+<td>format décimal</td>
+<td><code>{{ formation.prix|floatformat:2 }} €</code></td>
+</tr>
+<tr>
+<td><code>date:"d/m/Y"</code></td>
+<td>format date</td>
+<td><code>{{ session.debut|date:"d/m/Y" }}</code></td>
+</tr>
+<tr>
+<td><code>time:"H:i"</code></td>
+<td>format heure</td>
+<td><code>{{ session.heure_debut|time:"H:i" }}</code></td>
+</tr>
+<tr>
+<td><code>default:"txt"</code></td>
+<td>valeur par défaut</td>
+<td><code>{{ formation.public|default:"Tous publics" }}</code></td>
+</tr>
+<tr>
+<td><code>join:", "</code></td>
+<td>jointure de liste</td>
+<td><code>{{ competences|join:", " }}</code></td>
+</tr>
+<tr>
+<td><code>slice:":3"</code></td>
+<td>tranche de liste</td>
+<td><code>{{ formations|slice:":3" }}</code> (3 premières)</td>
+</tr>
+<tr>
+<td><code>get_item:"cle"</code> (Django 5+)</td>
+<td>accès à une clé dans un dict</td>
+<td><code>{{ meta|get_item:"ville" }}</code></td>
+</tr>
+<tr>
+<td><code>linebreaks</code></td>
+<td>texte → HTML (paragraphes)</td>
+<td><code>{{ formation.resume|linebreaks }}</code></td>
+</tr>
+<tr>
+<td><code>safe</code></td>
+<td><strong>ne pas échapper</strong> le HTML</td>
+<td><code>{{ html_brut|safe }}</code> ⚠️ danger XSS</td>
+</tr>
+<tr>
+<td><code>escape</code></td>
+<td>échapper (défaut implicite)</td>
+<td><code>{{ texte|escape }}</code></td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>⚠️ <strong>Sécurité par défaut</strong> : Django <strong>échappe automatiquement</strong> tout ce qui passe dans <code>{{ }}</code> (protection XSS). <code>|safe</code> désactive cette protection — ne l'utiliser <strong>que</strong> sur du HTML qu'on a soi-même produit (pas du contenu utilisateur).</p>
+</blockquote>
+<h3>4.4. Balises — le jeu de construction</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Balise</th>
+<th>Usage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{% if %} / {% elif %} / {% else %} / {% endif %}</code></td>
+<td>conditions</td>
+</tr>
+<tr>
+<td><code>{% for x in seq %} … {% empty %} … {% endfor %}</code></td>
+<td>boucles ; <code>{% empty %}</code> si séquence vide</td>
+</tr>
+<tr>
+<td><code>{% extends "catalog/base.html" %}</code></td>
+<td>héritage (gabarit parent)</td>
+</tr>
+<tr>
+<td><code>{% block nom %} … {% endblock %}</code></td>
+<td>emplacement surchargeable</td>
+</tr>
+<tr>
+<td><code>{% super %}</code></td>
+<td>inclure le contenu du block parent</td>
+</tr>
+<tr>
+<td><code>{% include "partiel.html" %}</code></td>
+<td>insérer un sous-gabarit (avec contexte courant)</td>
+</tr>
+<tr>
+<td><code>{% url 'catalog:nom' args %}</code></td>
+<td>URL inversée (toujours, jamais de URL en dur)</td>
+</tr>
+<tr>
+<td><code>{% load static %}</code> puis <code>{% static "css/base.css" %}</code></td>
+<td>URL des fichiers statiques</td>
+</tr>
+<tr>
+<td><code>{% now "d/m/Y" %}</code></td>
+<td>date du jour au rendu</td>
+</tr>
+<tr>
+<td><code>{% csrf_token %}</code></td>
+<td>token anti-CSRF — <strong>obligatoire</strong> sur chaque <code>&lt;form method="post"&gt;</code> (J2–J3)</td>
+</tr>
+<tr>
+<td><code>{% if user.is_authenticated %}</code></td>
+<td>test d'authentification (J3)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong><code>forloop</code></strong> — variables disponibles dans <code>{% for %}</code> :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Valeur</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>forloop.counter</code></td>
+<td>index 1-based</td>
+</tr>
+<tr>
+<td><code>forloop.counter0</code></td>
+<td>index 0-based</td>
+</tr>
+<tr>
+<td><code>forloop.revcounter</code></td>
+<td>depuis la fin</td>
+</tr>
+<tr>
+<td><code>forloop.first</code> / <code>forloop.last</code></td>
+<td>booléen</td>
+</tr>
+<tr>
+<td><code>forloop.parentloop</code></td>
+<td>boucle parente (boucles imbriquées)</td>
+</tr>
+</tbody>
+</table></div>
+<h3>4.5. Héritage de gabarits — le cœur du bloc 4</h3>
+<p>Le pattern : <strong>un gabarit de base</strong> (layout, nav, footer, CSS) + <strong>des gabarits enfants</strong> qui n'écrivent que leur contenu.</p>
+<div class="code-block"><pre><code>catalog/templates/catalog/
+├── base.html              ← layout global (héritage)
+├── liste_formations.html  ← {% extends &quot;catalog/base.html&quot; %}
+├── detail_formation.html  ← {% extends &quot;catalog/base.html&quot; %}
+├── 404.html               ← page d'erreur (hérite aussi de catalog/base.html)
+└── 500.html               ← erreur interne (visible en prod seulement)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 <strong>Conseil formateur</strong> : faire écrire <code>base.html</code> <strong>en dernier</strong> (après liste + détail), pas en premier. Les stagiaires découvrent l'héritage quand ils ont <strong>besoin</strong> de dédupliquer, pas avant — l'abstraction arrive après la duplication, pas l'inverse.</p>
+</blockquote>
+<h3>4.6. Fichiers statiques</h3>
+<p><code>STATIC_URL = 'static/'</code> (défaut). Les fichiers sont servis par <code>runserver</code> en dev (via <code>django.contrib.staticfiles</code>).</p>
+<blockquote>
+<p>⚠️ <strong>Piège classique n°5</strong> : oublier <code>{% load static %}</code> dans le gabarit qui utilise <code>{% static %}</code> → la balise est inconnue, l'URL est rendue littérale (<code>{% static %}</code> affiché tel quel dans le HTML).</p>
+</blockquote>
+<p><strong>Production (jour 5)</strong> : <code>runserver</code> <strong>ne sert pas</strong> les statics quand <code>DEBUG=False</code>. On utilisera <strong>WhiteNoise</strong> (middleware, <code>STATICFILES_STORAGE</code>) ou un CDN — à préparer le jour 5.</p>
+<h3>🛠️ Atelier 4 — Construire l'interface (75 min)</h3>
+<p><strong>Consignes</strong> : créer les gabarits et le CSS qui rendent les 3 pages + la 404.</p>
+<hr />
+<h4>4.6.1 — <code>catalog/templates/catalog/base.html</code></h4>
+<div class="code-block"><pre><code class="language-html">{% load static %}
+&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;fr&quot;&gt;
+&lt;head&gt;
+    &lt;meta charset=&quot;utf-8&quot;&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+    {# le contenu du block spécifié dans le template écrasera la valeur par défaut qui est ici GestiFormation #}
+    &lt;title&gt;{% block titre %}GestiFormation{% endblock titre %}&lt;/title&gt;
+
+    {# 1. le chemin css/base.css est constant quel que soit l'environnement #}
+    {# 2. {% static %} sait comment trouver cette ressource #}
+    {# 3. {% load static %} utilise STATIC_URL pour fabriquer l'url absolu vers cette ressource quel que soit l'environnement #}
+    &lt;link rel=&quot;stylesheet&quot; href=&quot;{% static 'css/base.css' %}&quot;&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;header class=&quot;entete&quot;&gt;
+        &lt;nav class=&quot;nav&quot;&gt;
+            &lt;a class=&quot;logo&quot; href=&quot;&quot;&gt;GestiFormation&lt;/a&gt;
+            &lt;ul&gt;
+                &lt;li&gt;&lt;a href=&quot;{% url 'catalog:liste-formations' %}&quot;&gt;Catalogue&lt;/a&gt;&lt;/li&gt;
+                &lt;li&gt;???? — &lt;a href=&quot;#&quot;&gt;Déconnexion&lt;/a&gt;&lt;/li&gt;
+                &lt;li&gt;&lt;a href=&quot;#&quot;&gt;Connexion&lt;/a&gt;&lt;/li&gt;
+            &lt;/ul&gt;
+        &lt;/nav&gt;
+    &lt;/header&gt;
+
+    &lt;main class=&quot;contenu&quot;&gt;
+        {% block contenu %}{% endblock contenu %}
+    &lt;/main&gt;
+
+    &lt;footer class=&quot;pied&quot;&gt;
+        &lt;p&gt;{% now &quot;d/m/Y&quot; %} — GestiFormation, site de démonstration&lt;/p&gt;
+    &lt;/footer&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 Le block <code>titre</code> est surchargé par chaque page — c'est l'exemple minimal d'héritage utile (au-delà de <code>{% block contenu %}</code>).</p>
+</blockquote>
+<hr />
+<h4>4.6.2 — <code>catalog/templates/catalog/liste_formations.html</code></h4>
+<div class="code-block"><pre><code class="language-html">{% extends &quot;catalog/base.html&quot; %}
+
+{% block titre %}Catalogue - GestiFormation{% endblock titre %}
+
+{% block contenu %}
+&lt;section class=&quot;catalogue&quot;&gt;
+    &lt;h1&gt;Catalogue des formations&lt;/h1&gt;
+    {# on utilise des FILTRES pour utiliser des transformation sur les variables du templates #}
+    &lt;p class=&quot;chiffre&quot;&gt;{{ formations|length }} formation{{ formations|length|pluralize }} au catalogue.&lt;/p&gt;
+
+    &lt;table class=&quot;tableau&quot;&gt;
+        &lt;thead&gt;
+            &lt;tr&gt;
+                &lt;th&gt;#&lt;/th&gt;
+                &lt;th&gt;Code&lt;/th&gt;
+                &lt;th&gt;Intitulé&lt;/th&gt;
+                &lt;th&gt;Public&lt;/th&gt;
+                &lt;th&gt;Durée&lt;/th&gt;
+                &lt;th class=&quot;prix-col&quot;&gt;Tarif HT&lt;/th&gt;
+            &lt;/tr&gt;
+        &lt;/thead&gt;
+        &lt;tbody&gt;
+        {% for formation in formations %}
+            &lt;tr&gt;
+                {# forloop est une variable locale au for pour manipuler les itérations #}
+                {# forloop.counter est le pendant de enumerate en python #}
+                &lt;td&gt;{{ forloop.counter }}&lt;/td&gt;
+                &lt;td&gt;&lt;code&gt; {{ formation.code }} &lt;/code&gt;&lt;/td&gt;
+                &lt;td&gt;
+                    {# catalog:xxxx  est lié à la variable app_name=&quot;catalog&quot; de urls.py #}
+                    &lt;a class=&quot;lien-nom&quot;
+                       href=&quot;{% url 'catalog:detail-formation' forloop.counter %}&quot;&gt;
+                       {{ formation.nom|title }}
+                    &lt;/a&gt;
+                    {% if formation.nouveaute %}
+                        &lt;span class=&quot;badge badge-nouveau&quot;&gt;Nouveau&lt;/span&gt;
+                    {% endif %}
+                &lt;/td&gt;
+                &lt;td&gt;{{ formation.public|default:&quot;Tout publics&quot; }}&lt;/td&gt;
+                &lt;td&gt;
+                    {{ formation.duree }} jour{{ formation.duree|pluralize }}
+                &lt;/td&gt;
+                &lt;td class=&quot;prix-col&quot;&gt; {{ formation.prix|floatformat:2 }} €&lt;/td&gt;
+            &lt;/tr&gt;
+        {# empty sera affichée si la structure à itérer est vide #}
+        {% empty %}
+            &lt;tr&gt;&lt;td colspan=&quot;6&quot; class=&quot;vide&quot;&gt;Aucune formation publiée pour le moment.&lt;/td&gt;&lt;/tr&gt;
+        {% endfor %}
+        &lt;/tbody&gt;
+    &lt;/table&gt;
+&lt;/section&gt;
+{% endblock contenu %}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>⚠️ <strong>Piège</strong> : <code>forloop.counter0</code> (0-based) pour l'index dans l'URL, <code>forloop.counter</code> (1-based) pour l'affichage. Les mélanger décale toutes les URLs d'un cran.</p>
+<p>💡 <strong>Le <code>{% empty %}</code></strong> est la clause « liste vide » du <code>{% for %}</code> — à utiliser systématiquement, c'est le reflet du <code>try/except</code> Python.</p>
+</blockquote>
+<hr />
+<h4>4.6.3 — <code>catalog/templates/catalog/detail_formation.html</code></h4>
+<div class="code-block"><pre><code class="language-html">{% extends &quot;catalog/base.html&quot; %}
+
+{% block titre %}{{ formation.nom }} - GestiFormation{% endblock titre %}
+
+{% block contenu %}
+&lt;article class=&quot;formation&quot;&gt;
+    &lt;p class=&quot;retour&quot;&gt;&lt;a href=&quot;{% url 'catalog:liste-formations' %}&quot;&gt;&amp;larr; Retour au catalogue&lt;/a&gt;&lt;/p&gt;
+
+    &lt;header class=&quot;entete-formation&quot;&gt;
+        &lt;h1&gt;{{ formation.nom|title }}&lt;/h1&gt;
+        {% if formation.nouveaute %}&lt;span class=&quot;badge badge-nouveau&quot;&gt;Nouveau&lt;/span&gt;{% endif %}
+    &lt;/header&gt;
+
+    {# include permet de réutiliser un sous élement de template appelé 'partial' #}
+    {% include &quot;catalog/partial_formation.html&quot; with formation=formation %}
+
+    &lt;section class=&quot;objectifs&quot;&gt;
+        &lt;h2&gt;Objectifs pédagogiques&lt;/h2&gt;
+        &lt;ul&gt;
+            &lt;li&gt;Modéliser et développer une application web complète avec Django ;&lt;/li&gt;
+            &lt;li&gt;Maîtriser le cycle MVT, l'ORM, les formulaires et l'admin ;&lt;/li&gt;
+            &lt;li&gt;Préparer le déploiement d'une application en production.&lt;/li&gt;
+        &lt;/ul&gt;
+    &lt;/section&gt;
+
+    &lt;section class=&quot;competences&quot;&gt;
+        &lt;h2&gt;Compétences visées&lt;/h2&gt;
+        &lt;p&gt;
+        &lt;/p&gt;
+    &lt;/section&gt;
+
+    &lt;footer class=&quot;action&quot;&gt;
+        &lt;!-- J2 : formulaire d'inscription (ModelForm) --&gt;
+        &lt;a class=&quot;btn&quot; href=&quot;#&quot;&gt;S'inscrire à cette formation&lt;/a&gt;
+    &lt;/footer&gt;
+&lt;/article&gt;
+{% endblock contenu %}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 <strong>À faire remarquer</strong> : <code>formation.competences</code> n'existe pas encore dans les données littérales — Django affiche <strong>rien</strong> (pas d'erreur). Ajouter <code>'competences': ['ORM', 'MVT', 'Templates']</code> à l'une des formations pour voir la boucle fonctionner.</p>
+</blockquote>
+<hr />
+<h4>4.6.4 — <code>catalog/templates/catalog/404.html</code></h4>
+<div class="code-block"><pre><code class="language-html">{% extends &quot;catalog/base.html&quot; %}
+
+{# block.super affiche la valeur du bloc sur le gabarit hérité #}
+{% block titre %}Page introuvable - {{ block.super }}{% endblock titre %}
+
+{% block contenu %}
+&lt;div class=&quot;erreur&quot;&gt;
+    &lt;h1&gt;404 — page introuvable&lt;/h1&gt;
+    &lt;p&gt;La page demandée n'existe pas ou a été déplacée.&lt;/p&gt;
+    &lt;a class=&quot;btn&quot; href=&quot;{% url &quot;catalog:accueil&quot; %}&quot;&gt;Retour à l'accueil&lt;/a&gt;
+&lt;/div&gt;
+{% endblock contenu %}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 <strong>À faire démontrer</strong> : taper <code>http://127.0.0.1:8000/une-url-inexistante/</code> → <strong>notre</strong> page 404 (pas celle de Django), car <code>handler404</code> est déclaré dans <code>gesti/urls.py</code>.</p>
+</blockquote>
+<hr />
+<h4>4.6.5 — <code>catalog/templates/catalog/500.html</code></h4>
+<div class="code-block"><pre><code class="language-html">{% extends &quot;catalog/base.html&quot; %}
+
+{% block titre %}Erreur interne — {{ block.super }}{% endblock %}
+
+{% block contenu %}
+&lt;div class=&quot;erreur&quot;&gt;
+    &lt;h1&gt;500 — erreur interne&lt;/h1&gt;
+    &lt;p&gt;Une erreur est survenue côté serveur. L'équipe a été prévenue.&lt;/p&gt;
+    &lt;a class=&quot;btn&quot; href=&quot;{% url 'catalog:accueil' %}&quot;&gt;Retour à l'accueil&lt;/a&gt;
+&lt;/div&gt;
+{% endblock %}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>⚠️ <strong>Deux particularités à faire connaître</strong> :
+1. <code>handler500</code> impose une signature <strong><code>def interne(request):</code></strong> — sans <code>exception</code> (vérifié par <code>manage.py check</code>, erreur <code>urls.E007</code> si on s'y trompe) ;
+2. la page 500 personnalisée n'est affichée qu'en <strong>production</strong> (<code>DEBUG=False</code>) : avec <code>DEBUG=True</code>, Django affiche sa page d'erreur détaillée. On peut donc la créer sans pouvoir la « voir » au bureau.</p>
+</blockquote>
+<hr />
+<h4>4.6.6 — <code>catalog/static/css/base.css</code></h4>
+<div class="code-block"><pre><code class="language-css">:root {
+    --fond: #f8fafc;
+    --encre: #1f2937;
+    --encre-douce: #6b7280;
+    --primaire: #4f46e5;
+    --primaire-fonce: #3730a3;
+    --bordure: #e2e8f0;
+    --blanc: #ffffff;
+    --succes: #0f766e;
+    --alerte: #d97706;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, &quot;Segoe UI&quot;, sans-serif;
+    color: var(--encre);
+    background: var(--fond);
+    line-height: 1.6;
+}
+
+/* ————— En-tête ————— */
+.entete {
+    background: var(--primaire);
+    color: var(--blanc);
+    padding: 0.75rem 1.5rem;
+}
+.nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+.logo {
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--blanc);
+    text-decoration: none;
+}
+.nav ul {
+    display: flex;
+    gap: 1.25rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.nav a { color: var(--blanc); text-decoration: none; opacity: 0.9; }
+.nav a:hover { opacity: 1; text-decoration: underline; }
+
+/* ————— Contenu ————— */
+.contenu {
+    max-width: 1100px;
+    margin: 2rem auto;
+    padding: 0 1.5rem;
+}
+h1 { font-size: 1.75rem; margin-bottom: 0.5rem; }
+h2 { font-size: 1.25rem; margin-top: 2rem; }
+.chiffre { color: var(--encre-douce); margin-bottom: 1.5rem; }
+
+/* ————— Tableau ————— */
+.tableau {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--blanc);
+    border: 1px solid var(--bordure);
+    border-radius: 8px;
+    overflow: hidden;
+}
+.tableau th, .tableau td {
+    padding: 0.65rem 0.9rem;
+    text-align: left;
+    border-bottom: 1px solid var(--bordure);
+}
+.tableau th {
+    background: #eef2ff;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--encre-douce);
+}
+.tableau tr:last-child td { border-bottom: none; }
+.tableau tr:hover td { background: #f1f5f9; }
+.prix-col { font-variant-numeric: tabular-nums; text-align: right; }
+.vide { text-align: center; color: var(--encre-douce); padding: 2rem; }
+
+/* ————— Liens &amp; badges ————— */
+.lien-nom { font-weight: 600; color: var(--primaire); text-decoration: none; }
+.lien-nom:hover { text-decoration: underline; }
+code {
+    background: #eef2ff;
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+.badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.15em 0.5em;
+    border-radius: 999px;
+    vertical-align: middle;
+    margin-left: 0.4rem;
+}
+.badge-nouveau { background: #d1fae5; color: var(--succes); }
+
+/* ————— Fiche détail ————— */
+.retour { margin-bottom: 1rem; }
+.retour a { color: var(--encre-douce); text-decoration: none; }
+.retour a:hover { color: var(--primaire); }
+.entete-formation { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.fiche {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    background: var(--blanc);
+    border: 1px solid var(--bordure);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin: 1.5rem 0;
+}
+.fiche dt {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--encre-douce);
+    margin-bottom: 0.2rem;
+}
+.fiche dd { margin: 0; font-size: 1rem; }
+.tarif { font-size: 1.3rem; font-weight: 700; color: var(--primaire); }
+
+/* ————— Compétences ————— */
+.competence {
+    display: inline-block;
+    background: #eef2ff;
+    color: var(--primaire-fonce);
+    padding: 0.25em 0.7em;
+    border-radius: 6px;
+    font-size: 0.88rem;
+    margin: 0.15rem 0.1rem;
+}
+
+/* ————— Bouton ————— */
+.btn {
+    display: inline-block;
+    background: var(--primaire);
+    color: var(--blanc);
+    padding: 0.7rem 1.6rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.15s;
+}
+.btn:hover { background: var(--primaire-fonce); }
+
+/* ————— Erreur 404 ————— */
+.erreur { text-align: center; padding: 4rem 1rem; }
+.erreur h1 { font-size: 3rem; color: var(--primaire); }
+.erreur a { margin-top: 1.5rem; }
+
+/* ————— Pied de page ————— */
+.pied {
+    text-align: center;
+    color: var(--encre-douce);
+    font-size: 0.85rem;
+    padding: 1.5rem;
+    border-top: 1px solid var(--bordure);
+    margin-top: 3rem;
+}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>⚠️ <strong>Piège</strong> : le dossier s'appelle <strong><code>static</code></strong> (pas <code>css/</code> ou <code>assets/</code>) et est <strong>à la racine de l'app</strong> (<code>catalog/static/css/base.css</code>), pas dans <code>templates/</code>.</p>
+</blockquote>
+<p><strong>Checklist de fin d'atelier</strong></p>
+<ul>
+<li>[ ] <code>http://127.0.0.1:8000/</code> → page d'accueil stylée (en-tête, pied, CSS chargés) ;</li>
+<li>[ ] <code>http://127.0.0.1:8000/formations/</code> → tableau avec badge « Nouveau » sur la formation 3 ;</li>
+<li>[ ] <code>http://127.0.0.1:8000/formations/3/</code> → fiche détaillée, lien retour fonctionnel ;</li>
+<li>[ ] <code>http://127.0.0.1:8000/inexistante/</code> → <strong>notre</strong> page 404 (pas celle de Django) ;</li>
+<li>[ ] le stagiaire peut expliquer : pourquoi <code>{% url 'catalog:…' %}</code> et non une URL en dur ;</li>
+<li>[ ] le stagiaire peut identifier 3 filtres utilisés et leur effet ;</li>
+<li>[ ] <code>git add -A &amp;&amp; git commit -m "J1 : site GestiFormation — 3 pages, thème, 404"</code> fait.</li>
+</ul>
+<hr />
+</div>
+
+<div id="tab-synthese-de-fin-de-journee" class="tab-content">
+<h3>Ce qui est en place</h3>
+<div class="code-block"><pre><code>~/projets/gestiformation/
+├── .venv/                     # venv actif
+├── .gitignore                 # .venv/, __pycache__/, .env
+├── requirements.txt           # Django 5.2.x
+├── manage.py
+├── gesti/
+│   ├── __init__.py
+│   ├── settings.py            # INSTALLED_APPS += catalog
+│   ├── urls.py                # /admin/, / → catalog, handler404/500
+│   ├── asgi.py
+│   └── wsgi.py
+└── catalog/
+    ├── __init__.py
+    ├── apps.py
+    ├── models.py              # vide — rempli le jour 2
+    ├── views.py               # accueil, liste, detail, 404, 500
+    ├── urls.py                # 5 patterns nommés (dont 1 regex)
+    ├── admin.py               # vide — jour 3
+    ├── tests.py               # vide — jour 4
+    ├── static/css/base.css
+    └── templates/catalog/
+        ├── base.html
+        ├── liste_formations.html
+        ├── detail_formation.html
+        ├── 404.html
+        └── 500.html
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<h3>Les réflexes installés</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Réflexe</th>
+<th>Pourquoi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>python manage.py check</code> après chaque changement de settings</td>
+<td>détecte les incohérences sans lancer le serveur</td>
+</tr>
+<tr>
+<td><code>{% url 'app:nom' %}</code> et jamais d'URL en dur dans le HTML</td>
+<td>renommer une URL ne casse rien</td>
+</tr>
+<tr>
+<td><code>python manage.py show_urls</code> (django-extensions)</td>
+<td>debug routage en 2 secondes</td>
+</tr>
+<tr>
+<td><code>{% load static %}</code> dans tout gabarit qui utilise <code>{% static %}</code></td>
+<td>évite l'URL littérale</td>
+</tr>
+<tr>
+<td><code>|floatformat:2</code> pour les montants, <code>|default:"…"`` pour les optionnels | affichage soigné sans</code>if` dans la vue</td>
+<td></td>
+</tr>
+<tr>
+<td>Commit git à chaque étape fonctionnelle</td>
+<td>l'historique raconte l'avancement du projet</td>
+</tr>
+</tbody>
+</table></div>
+<h3>Pièges vus aujourd'hui (à récapituler oralement)</h3>
+<ol>
+<li>App oubliée dans <code>INSTALLED_APPS</code> → <code>ImproperlyConfigured</code> flou ;</li>
+<li>Ordre des patterns : le plus spécifique <strong>avant</strong> le plus générique ;</li>
+<li><code>forloop.counter</code> (1-based) vs <code>forloop.counter0</code> (0-based) ;</li>
+<li><code>{% load static %}</code> oublié → URL littérale dans le HTML ;</li>
+<li><code>{{ variable }}</code> n'affiche rien si absente du contexte (pas d'exception) ;</li>
+<li><code>|safe</code> désactive l'échappement XSS — ne pas utiliser sur du contenu utilisateur ;</li>
+<li><code>{% extends "base.html" %}</code> alors que le gabarit est dans <code>catalog/templates/catalog/</code> → <code>TemplateDoesNotExist</code> : le nom = le chemin après <code>templates/</code> (<code>catalog/base.html</code>) ;</li>
+<li>page 404 « qui ne marche pas » : avec <code>DEBUG=True</code>, Django affiche sa page de debug et <strong>ignore <code>handler404</code></strong> — à vérifier avec <code>DEBUG=False</code>.</li>
+</ol>
+<h3>Preview du jour 2 — blocs 5 &amp; 6</h3>
+<p>Le jour 2, les données littérales de <code>catalog/views.py</code> disparaissent au profit de l'ORM :</p>
+<ul>
+<li>définition des modèles <code>Formation</code>, <code>Session</code>, <code>Client</code> (relations <code>ForeignKey</code>, <code>ManyToMany</code>) ;</li>
+<li><code>makemigrations</code> / <code>migrate</code> — la base SQLite est créée et peuplée ;</li>
+<li>remplacement des listes Python par des requêtes ORM (<code>select_related</code>, <code>prefetch_related</code>) ;</li>
+<li>introduction de <strong>F objects</strong> (trier les sessions par capacité restante) et <strong>héritage de modèle</strong> (Document → Contrat) ;</li>
+<li>premiers <strong>forms</strong> (validation côté serveur) en amont des ModelForms du jour 3.</li>
+</ul>
+<blockquote>
+<p>💡 <strong>Message de clôture</strong> : « Les 3 pages que vous voyez ne changeront <strong>ni d'URL, ni de gabarit</strong> quand on branchera l'ORM. C'est exactement le découplage que Django promettait. »</p>
+</blockquote>
+<hr />
+</div>
+
+<div id="tab-annexe-commandes-du-jour-cheat-sheet" class="tab-content">
+<div class="code-block"><pre><code class="language-bash"># Environnement
+python -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install &quot;Django&gt;=5.2,&lt;6.0&quot; django-extensions
+pip freeze &gt; requirements.txt
+
+# Projet &amp; app
+django-admin startproject gesti .
+python manage.py startapp catalog
+
+# Serveur &amp; debug
+python manage.py check
+python manage.py runserver
+python manage.py runserver 0.0.0.0:8000   # accessible depuis le réseau local
+python manage.py shell                     # shell préchargé du projet
+
+# Git
+git init &amp;&amp; git add -A &amp;&amp; git commit -m &quot;Bootstrap&quot;
+git add -A &amp;&amp; git commit -m &quot;J1 : site GestiFormation&quot;
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+</div>
+  </div>
+</div>
+
+<script>
+// ─── THEME ──────────────────────────────────────────────────────────────────
+(function () {
+  const root = document.documentElement;
+  const stored = localStorage.getItem('dawan-theme');
+  if (stored) root.setAttribute('data-theme', stored);
+  updateToggleLabel();
+})();
+
+function updateToggleLabel() {
+  const current = document.documentElement.getAttribute('data-theme') ||
+    (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  document.getElementById('theme-icon').textContent = current === 'dark' ? '🌙' : '☀️';
+  document.getElementById('theme-label').textContent = current === 'dark' ? 'Sombre' : 'Clair';
+}
+
+function toggleTheme() {
+  const root = document.documentElement;
+  const current = root.getAttribute('data-theme') ||
+    (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  const next = current === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('dawan-theme', next);
+  updateToggleLabel();
+}
+
+// ─── TABS ───────────────────────────────────────────────────────────────────
+function showTab(id) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.side-nav button').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+  document.querySelector('.content').scrollTo({ top: 0, behavior: 'instant' });
+}
+
+// ─── COPY CODE ──────────────────────────────────────────────────────────────
+function copyCode(btn) {
+  const pre = btn.previousElementSibling;
+  navigator.clipboard.writeText(pre.textContent).then(() => {
+    btn.textContent = 'Copié !'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copier'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+</body>
+</html>

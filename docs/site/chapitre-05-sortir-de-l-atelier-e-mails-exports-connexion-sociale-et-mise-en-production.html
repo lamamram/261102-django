@@ -1,0 +1,2418 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Support interactif de formation Django - Initiation et Approfondissement : 05 — Sortir de l&#x27;atelier - e-mails, exports, connexion sociale et mise en production">
+<title>05 — Sortir de l&#x27;atelier - e-mails, exports, connexion sociale et mise en production</title>
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --surface2: #1c2128; --border: #30363d;
+  --primary: #f0883e; --primary2: #ffa657;
+  --success: #3fb950; --warning: #d29922; --danger: #f85149;
+  --text: #e6edf3; --text-muted: #8b949e; --code-bg: #010409; --radius: 10px;
+  --topbar-h: 3.25rem;
+}
+:root[data-theme="light"] {
+  --bg: #ffffff; --surface: #f6f8fa; --surface2: #eaeef2; --border: #d0d7de;
+  --primary: #bc4c00; --primary2: #953800;
+  --success: #1a7f37; --warning: #9a6700; --danger: #cf222e;
+  --text: #1f2328; --text-muted: #656d76; --code-bg: #f6f8fa;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #ffffff; --surface: #f6f8fa; --surface2: #eaeef2; --border: #d0d7de;
+    --primary: #bc4c00; --primary2: #953800;
+    --success: #1a7f37; --warning: #9a6700; --danger: #cf222e;
+    --text: #1f2328; --text-muted: #656d76; --code-bg: #f6f8fa;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.7; transition: background .2s, color .2s; }
+
+/* TOPBAR — fixe, ne bouge jamais au scroll */
+.topbar {
+  position: sticky; top: 0; z-index: 200; height: var(--topbar-h);
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: .9rem; padding: 0 1rem;
+}
+.topbar .badge {
+  flex: 0 0 auto; background: var(--primary); color: #0d1117;
+  font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 20px; white-space: nowrap;
+}
+.topbar a.chapter-title {
+  flex: 1 1 auto; min-width: 0; display: flex; align-items: baseline; gap: .5rem;
+  text-decoration: none; color: var(--text); font-weight: 700; font-size: .92rem;
+  overflow: hidden;
+}
+.topbar a.chapter-title:hover { color: var(--primary); }
+.topbar a.chapter-title .num { color: var(--primary); flex: 0 0 auto; }
+.topbar a.chapter-title .txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar-links { flex: 0 0 auto; display: flex; align-items: center; gap: .5rem; }
+.topbar-link {
+  white-space: nowrap; padding: .4rem .8rem; border: 1px solid var(--border); border-radius: 20px;
+  font-size: .8rem; font-weight: 600; color: var(--text-muted); text-decoration: none; transition: all .2s;
+}
+.topbar-link:hover { color: var(--primary); border-color: var(--primary); }
+.theme-toggle {
+  flex: 0 0 auto; background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  padding: .4rem .7rem; border-radius: 20px; font-size: .8rem; cursor: pointer;
+  display: inline-flex; align-items: center; gap: .35rem;
+}
+.theme-toggle:hover { border-color: var(--primary); }
+
+/* LAYOUT — sidebar gauche + contenu */
+.layout { display: flex; align-items: flex-start; }
+.sidebar {
+  flex: 0 0 280px; width: 280px;
+  position: sticky; top: var(--topbar-h);
+  height: calc(100vh - var(--topbar-h));
+  overflow-y: auto; border-right: 1px solid var(--border); background: var(--surface);
+  padding: 1.25rem 1rem 2rem;
+}
+.objectifs {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: .8rem 1rem; margin-bottom: 1.25rem;
+}
+.objectifs-label { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--primary); }
+.objectifs ul { margin: .4rem 0 0 1.1rem; }
+.objectifs li { font-size: .82rem; color: var(--text-muted); margin-bottom: .3rem; line-height: 1.4; }
+.side-nav { display: flex; flex-direction: column; gap: .1rem; }
+.side-nav button {
+  text-align: left; background: none; border: none; border-left: 3px solid transparent;
+  color: var(--text-muted); padding: .55rem .7rem; font-size: .87rem; font-weight: 500;
+  cursor: pointer; border-radius: 0 6px 6px 0; transition: all .15s;
+}
+.side-nav button:hover { color: var(--text); background: var(--surface2); }
+.side-nav button.active { color: var(--primary); border-left-color: var(--primary); background: var(--surface2); font-weight: 600; }
+.side-nav-sep { height: 1px; background: var(--border); margin: .6rem 0; }
+
+.content { flex: 1 1 auto; min-width: 0; }
+.tab-content { display: none; padding: 2rem 2.5rem 4rem; max-width: 1100px; margin: 0 auto; }
+.tab-content.active { display: block; }
+
+/* SECTIONS */
+h2 { font-size: 1.25rem; color: var(--primary2); margin: 1.8rem 0 .8rem; border-left: 3px solid var(--primary); padding-left: .75rem; }
+h3 { font-size: 1.05rem; color: var(--text); margin: 1.4rem 0 .6rem; }
+p { margin-bottom: .9rem; }
+ul, ol { padding-left: 1.4rem; margin-bottom: .9rem; }
+li { margin-bottom: .35rem; }
+
+/* RESSOURCES — liste sous forme de cartes plutôt que de puces */
+#tab-ressources ul { list-style: none; padding-left: 0; display: flex; flex-direction: column; gap: .5rem; }
+#tab-ressources li {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: .75rem 1rem; margin-bottom: 0;
+}
+#tab-ressources li a { color: var(--primary2); font-weight: 600; text-decoration: none; }
+#tab-ressources li a:hover { text-decoration: underline; }
+
+/* AIDE — divulgation progressive pas-à-pas */
+details.aide { margin-top: 1.5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+details.aide summary {
+  cursor: pointer; padding: .8rem 1.1rem; font-weight: 600; color: var(--primary);
+  list-style: none; display: flex; align-items: center; gap: .5rem;
+}
+details.aide summary::-webkit-details-marker { display: none; }
+details.aide summary::before { content: "▶"; font-size: .7rem; transition: transform .15s; }
+details.aide[open] summary::before { transform: rotate(90deg); }
+details.aide .aide-body { padding: 0 1.1rem 1.1rem; border-top: 1px solid var(--border); margin-top: .2rem; padding-top: 1rem; }
+img { max-width: 100%; height: auto; display: block; margin: 1rem auto; }
+
+/* EXERCICE — un bloc par atelier, avec son aide pas-à-pas attachée juste en dessous */
+.exercice { padding: 1.3rem 0; border-top: 1px solid var(--border); }
+.exercice:first-of-type { border-top: none; padding-top: 0; }
+.exercice h3 { margin: 0 0 .8rem; color: var(--primary2); }
+
+/* CALLOUTS */
+.callout { border-radius: var(--radius); padding: .9rem 1.1rem; margin: 1.2rem 0; border-left: 4px solid; background: var(--surface2); }
+.callout.note   { border-color: var(--primary); }
+.callout.tip    { border-color: var(--success); }
+.callout.warn   { border-color: var(--warning); }
+.callout.danger { border-color: var(--danger); }
+.callout p:last-child { margin-bottom: 0; }
+.callout-title { font-weight: 700; font-size: .82rem; text-transform: uppercase; letter-spacing: .07em; margin-bottom: .4rem; }
+.callout.note   .callout-title { color: var(--primary); }
+.callout.tip    .callout-title { color: var(--success); }
+.callout.warn   .callout-title { color: var(--warning); }
+.callout.danger .callout-title { color: var(--danger); }
+
+/* TABLES */
+.table-wrap { overflow-x: auto; margin: 1rem 0; }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th { background: var(--surface2); color: var(--primary2); text-align: left; padding: .6rem .9rem; font-weight: 600; border: 1px solid var(--border); }
+td { padding: .55rem .9rem; border: 1px solid var(--border); vertical-align: top; }
+tr:hover td { background: var(--surface2); }
+
+/* CODE */
+.code-block { position: relative; margin: 1rem 0; }
+pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1rem 1rem 1.2rem; overflow-x: auto; }
+code { font-family: 'Consolas', 'Cascadia Code', monospace; font-size: .88rem; color: var(--primary2); }
+p code, li code, td code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 5px; padding: .05rem .35rem; }
+.copy-btn {
+  position: absolute; top: .5rem; right: .5rem;
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted);
+  padding: .25rem .6rem; font-size: .75rem; border-radius: 5px; cursor: pointer; transition: all .2s;
+}
+.copy-btn:hover { background: var(--primary); color: #0d1117; }
+.copy-btn.copied { background: var(--success); color: #0d1117; }
+
+/* QUIZ */
+.quiz-question { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem; margin-bottom: 1.2rem; }
+.quiz-question h4 { color: var(--primary2); margin-bottom: .9rem; font-size: .98rem; }
+.quiz-options { display: flex; flex-direction: column; gap: .5rem; }
+.quiz-option {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: .6rem .9rem; cursor: pointer;
+  font-size: .9rem; transition: all .2s; text-align: left; color: var(--text);
+}
+.quiz-option:hover:not(:disabled) { border-color: var(--primary); }
+.quiz-option.correct { border-color: var(--success); color: var(--success); }
+.quiz-option.wrong   { border-color: var(--danger);  color: var(--danger);  }
+.quiz-option:disabled { cursor: default; }
+.quiz-feedback { margin-top: .6rem; font-size: .87rem; color: var(--text-muted); font-style: italic; }
+.quiz-score {
+  background: var(--surface2); border: 1px solid var(--primary);
+  border-radius: var(--radius); padding: 1.5rem; text-align: center; margin-top: 1.5rem; display: none;
+}
+.quiz-score .score-num { font-size: 2.5rem; font-weight: 700; color: var(--primary); }
+.quiz-score p { color: var(--text-muted); margin-top: .4rem; }
+.btn-restart { background: var(--primary); color: #0d1117; border: none; padding: .6rem 1.4rem; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 1rem; font-size: .9rem; }
+.btn-restart:hover { background: var(--primary2); }
+
+/* RESPONSIVE — sidebar devient une barre horizontale sous 900px */
+@media (max-width: 900px) {
+  .layout { flex-direction: column; }
+  .sidebar {
+    position: static; width: 100%; height: auto; max-height: 40vh;
+    border-right: none; border-bottom: 1px solid var(--border);
+  }
+  .side-nav { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; gap: .3rem; }
+  .side-nav button { border-left: none; border-bottom: 3px solid transparent; white-space: nowrap; border-radius: 6px 6px 0 0; }
+  .side-nav button.active { border-left-color: transparent; border-bottom-color: var(--primary); }
+  .side-nav-sep { display: none; }
+  .tab-content { padding: 1.5rem 1.2rem 3rem; }
+  .topbar a.chapter-title { font-size: .82rem; }
+}
+</style>
+<link rel="stylesheet" href="assets/course-common.css">
+<script src="assets/course-common.js" defer></script>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="badge">Django - Initiation et Approfondissement</span>
+  <a class="chapter-title" href="index.html" title="Retour à l'accueil de la formation">
+    <span class="num">05</span><span class="txt">Sortir de l&#x27;atelier - e-mails, exports, connexion sociale et mise en production</span>
+  </a>
+  <div class="topbar-links">
+    
+    <a class="topbar-link" href="index.html">Sommaire</a>
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Basculer entre thème clair et sombre">
+      <span id="theme-icon">🌙</span> <span id="theme-label">Sombre</span>
+    </button>
+  </div>
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="objectifs"><span class="objectifs-label">Objectifs</span><ul><li>configurer l&#x27;envoi d&#x27;e-mails par **backend** (console, SMTP, mémoire) et choisir **le bon moment** pour envoyer - après le `COMMIT`, jamais avant ;</li><li>produire un message **texte + HTML**, dans **la langue du destinataire**, avec des liens absolus, depuis des gabarits ;</li><li>tester un envoi avec `mail.outbox` et `captureOnCommitCallbacks`, **sans serveur de messagerie** ;</li><li>exporter des données en **CSV** depuis une vue protégée, lisible dans Excel, **sans injection de formule** ;</li><li>expliquer le flux **OAuth 2.0 « Authorization Code »** et brancher GitHub / Google avec **django-allauth** ;</li><li>relier un compte social au profil `Client`, **sans réseau** dans les tests ;</li><li>séparer **développement** et **production** - variables d&#x27;environnement, `settings_prod`, `DEBUG = False`, `ALLOWED_HOSTS`, `check --deploy` ;</li><li>servir les fichiers statiques avec **WhiteNoise**, se connecter à **PostgreSQL**, lancer l&#x27;application sous **Gunicorn** dans un **conteneur** ;</li><li>dérouler la chaîne **tests → construction → déploiement** et dire pourquoi la suite de tests en est le premier maillon.</li></ul></div>
+    <nav class="side-nav" id="main-nav">
+      <button class="active" onclick="showTab('objectifs-pedagogiques')">Objectifs pédagogiques</button>
+  <button class="" onclick="showTab('organisation-de-la-journee')">Organisation de la journée</button>
+  <button class="" onclick="showTab('b12-ouvrir-l-application-sur-l-exterieur-bloc-12')">B12 — Ouvrir l&#x27;application sur l&#x27;extérieur (bloc 12)</button>
+  <button class="" onclick="showTab('b12a-e-mails-75-min')">B12·a — E-mails (75 min)</button>
+  <button class="" onclick="showTab('b12b-export-csv-60-min')">B12·b — Export CSV (60 min)</button>
+  <button class="" onclick="showTab('b12c-connexion-sociale-avec-oauth-120-min')">B12·c — Connexion sociale avec OAuth (120 min)</button>
+  <button class="" onclick="showTab('b12d-mise-en-production-90-min')">B12·d — Mise en production (90 min)</button>
+  <button class="" onclick="showTab('synthese-de-fin-de-journee')">Synthèse de fin de journée</button>
+  <button class="" onclick="showTab('annexe-commandes-du-jour-cheat-sheet')">Annexe — Commandes du jour (cheat-sheet)</button>
+    </nav>
+  </aside>
+  <div class="content">
+    <div id="tab-objectifs-pedagogiques" class="tab-content active">
+<p>À la fin de la journée, les participants sont capables de :</p>
+<ul>
+<li>configurer l'envoi d'e-mails par <strong>backend</strong> (console, SMTP, mémoire) et choisir <strong>le bon moment</strong> pour envoyer : après le <code>COMMIT</code>, jamais avant ;</li>
+<li>produire un message <strong>texte + HTML</strong>, dans <strong>la langue du destinataire</strong>, avec des liens absolus, depuis des gabarits ;</li>
+<li>tester un envoi avec <code>mail.outbox</code> et <code>captureOnCommitCallbacks</code>, <strong>sans serveur de messagerie</strong> ;</li>
+<li>exporter des données en <strong>CSV</strong> depuis une vue protégée, lisible dans Excel, <strong>sans injection de formule</strong> ;</li>
+<li>expliquer le flux <strong>OAuth 2.0 « Authorization Code »</strong> et brancher GitHub / Google avec <strong>django-allauth</strong> ;</li>
+<li>relier un compte social au profil <code>Client</code>, <strong>sans réseau</strong> dans les tests ;</li>
+<li>séparer <strong>développement</strong> et <strong>production</strong> : variables d'environnement, <code>settings_prod</code>, <code>DEBUG = False</code>, <code>ALLOWED_HOSTS</code>, <code>check --deploy</code> ;</li>
+<li>servir les fichiers statiques avec <strong>WhiteNoise</strong>, se connecter à <strong>PostgreSQL</strong>, lancer l'application sous <strong>Gunicorn</strong> dans un <strong>conteneur</strong> ;</li>
+<li>dérouler la chaîne <strong>tests → construction → déploiement</strong> et dire pourquoi la suite de tests en est le premier maillon.</li>
+</ul>
+<h3>Livrable de la journée</h3>
+<ul>
+<li>un <strong>e-mail de confirmation</strong> (texte + HTML, fr/en) envoyé à chaque inscription validée, jamais pour une inscription refusée ;</li>
+<li>un <strong>export CSV</strong> des inscriptions (<code>/fr/inscriptions/export.csv</code>), filtrable par statut, réservé à qui peut déjà voir la liste ;</li>
+<li>des boutons <strong>GitHub / Google</strong> sur la page de connexion, affichés pour chaque fournisseur configuré ;</li>
+<li><code>gesti/settings_prod.py</code>, un <code>Dockerfile</code>, un <code>.env.example</code> et une configuration validée par <code>check --deploy</code> ;</li>
+<li><strong>29 tests de plus</strong> (e-mails, export, OAuth, configuration de production) : le dépôt de référence en compte <strong>102</strong>, exécutables en une commande.</li>
+</ul>
+<blockquote>
+<p>💡 <strong>Fil conducteur</strong> : jusqu'ici, GestiFormation vivait sur la machine du stagiaire. Aujourd'hui il <strong>parle au monde extérieur</strong> (un serveur de messagerie, un tableur, un fournisseur d'identité, une base serveur). Chaque ouverture ajoute une dépendance <strong>qui peut tomber en panne</strong> : la journée apprend à les isoler, à les configurer <strong>par l'environnement</strong>, et à les tester <strong>sans elles</strong>.</p>
+</blockquote>
+</div>
+
+<div id="tab-organisation-de-la-journee" class="tab-content">
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Heure</th>
+<th>Séquence</th>
+<th>Blocs programme</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>09h00 – 09h15</td>
+<td>Reprise du J4 : <code>check</code>, <code>test</code>, <code>migrate</code>, dépendances, commit</td>
+<td>—</td>
+</tr>
+<tr>
+<td>09h15 – 10h30</td>
+<td><strong>B12·a</strong> — E-mails : backends, <code>on_commit</code>, gabarits, tests</td>
+<td>Bloc 12</td>
+</tr>
+<tr>
+<td>10h30 – 10h45</td>
+<td>Pause</td>
+<td></td>
+</tr>
+<tr>
+<td>10h45 – 11h45</td>
+<td><strong>B12·b</strong> — Export CSV : vue protégée, Excel, injection de formule</td>
+<td>Bloc 12</td>
+</tr>
+<tr>
+<td>11h45 – 12h45</td>
+<td><strong>B12·c·1</strong> — OAuth : le flux, <code>django-allauth</code>, configuration</td>
+<td>Bloc 12</td>
+</tr>
+<tr>
+<td>12h45 – 13h45</td>
+<td>Déjeuner</td>
+<td></td>
+</tr>
+<tr>
+<td>13h45 – 14h45</td>
+<td><strong>B12·c·2</strong> — OAuth : liaison au <code>Client</code>, tests sans réseau, atelier</td>
+<td>Bloc 12</td>
+</tr>
+<tr>
+<td>14h45 – 15h00</td>
+<td>Pause</td>
+<td></td>
+</tr>
+<tr>
+<td>15h00 – 16h30</td>
+<td><strong>B12·d</strong> — Production : <code>settings_prod</code>, statiques, base, Gunicorn, Docker</td>
+<td>Bloc 12</td>
+</tr>
+<tr>
+<td>16h30 – 17h00</td>
+<td>Démonstrations, bilan des 5 jours, et après ?</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<h3>Reprise du jour 4 (15 min)</h3>
+<div class="code-block"><pre><code class="language-bash">python manage.py check
+python manage.py test --shuffle
+python manage.py migrate
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Trois points d'attention sur le dépôt de référence, à régler <strong>avant</strong> de commencer :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Constat</th>
+<th>Correction</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>manage.py test</code> ne trouve <strong>aucun test</strong></td>
+<td><code>catalog/tests/</code> doit contenir un fichier <strong><code>__init__.py</code></strong> vide (piège n°41 du J4 : un dossier sans <code>__init__.py</code> n'est pas découvert)</td>
+</tr>
+<tr>
+<td>trois tests de langue / formulaire encore rouges (<code>test_telephone_invalide</code>, <code>test_pluriel</code>, <code>test_libelles_du_modele</code>)</td>
+<td>ajouter <code>code='telephone_invalide'</code> au <code>ValidationError</code> (§10.4), créer le catalogue <code>fr</code> de pluriel (§10.6), traduire « intervention » en <code>training session</code> : <strong>10 minutes</strong>, et la suite redevient verte</td>
+</tr>
+<tr>
+<td><code>locale/</code> est absent du dépôt</td>
+<td><code>.gitignore</code> contenait <code>*.po</code> : le <strong><code>.po</code> est la source</strong> de la traduction, il doit être versionné ; seul le <code>.mo</code> (compilé) est un artefact. On retire <code>*.po</code> du <code>.gitignore</code> (§12.20)</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>⚠️ <strong>Jamais de déploiement sur une suite rouge.</strong> Aujourd'hui, <code>manage.py test</code> est le <strong>premier maillon</strong> de la chaîne de livraison. On ne passe à la suite que lorsqu'il est vert.</p>
+</blockquote>
+<p>Dépendances nouvelles du jour (le <code>requirements.txt</code> du dépôt est à jour) :</p>
+<div class="code-block"><pre><code class="language-bash">pip install &quot;django-allauth[socialaccount]&quot; whitenoise gunicorn dj-database-url &quot;psycopg[binary]&quot; coverage
+pip freeze &gt; requirements.txt          # sous PowerShell : écrire en UTF-8, pas en UTF-16
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>⚠️ <strong>PowerShell 5 et <code>&gt;</code></strong> : la redirection écrit en <strong>UTF-16</strong>. <code>pip</code> sait le relire, mais git affiche un fichier binaire. Écrire le fichier avec <code>Out-File -Encoding utf8</code>, ou depuis un terminal <code>bash</code>.</p>
+</blockquote>
+<hr />
+</div>
+
+<div id="tab-b12-ouvrir-l-application-sur-l-exterieur-bloc-12" class="tab-content">
+<p><img alt="Les quatre ouvertures" src="assets/deploiement.svg" /></p>
+<p><em>(Le détail de cette architecture est revu au §12.25. On l'affiche dès le matin : chaque séquence en colore un coin.)</em></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Séquence</th>
+<th>Dépendance extérieure</th>
+<th>Ce qui peut mal tourner</th>
+<th>Parade</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>a</strong> — E-mail</td>
+<td>serveur SMTP</td>
+<td>panne, lenteur, message envoyé pour rien</td>
+<td><code>on_commit</code>, <code>EMAIL_TIMEOUT</code>, <code>try/except</code>, journal</td>
+</tr>
+<tr>
+<td><strong>b</strong> — Export</td>
+<td>Excel / LibreOffice</td>
+<td>accents illisibles, formule exécutée</td>
+<td>BOM, <code>;</code>, préfixe <code>'</code></td>
+</tr>
+<tr>
+<td><strong>c</strong> — OAuth</td>
+<td>GitHub, Google</td>
+<td>URL de retour fausse, compte dupliqué</td>
+<td>URL hors préfixe de langue, signal, adaptateurs</td>
+</tr>
+<tr>
+<td><strong>d</strong> — Production</td>
+<td>proxy, base, plateforme</td>
+<td>secret dans le dépôt, <code>DEBUG = True</code></td>
+<td>environnement, <code>settings_prod</code>, <code>check --deploy</code></td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+</div>
+
+<div id="tab-b12a-e-mails-75-min" class="tab-content">
+<h3>12.1. Trois façons d'envoyer, un seul moteur</h3>
+<p>Django fournit un module <code>django.core.mail</code>. Quel que soit le point d'entrée, le message passe par un <strong>backend</strong> choisi par la configuration.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Fonction / classe</th>
+<th>Usage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>send_mail(sujet, corps, expéditeur, [destinataires])</code></td>
+<td>un message texte, une ligne de code</td>
+</tr>
+<tr>
+<td><code>EmailMessage(...)</code></td>
+<td>texte + pièces jointes, en-têtes (<code>reply_to</code>, <code>cc</code>)</td>
+</tr>
+<tr>
+<td><code>EmailMultiAlternatives(...)</code></td>
+<td><strong>texte + version HTML</strong> : ce que nous utilisons</td>
+</tr>
+<tr>
+<td><code>mail_admins(...)</code></td>
+<td>alerte aux <code>ADMINS</code> (hors périmètre)</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Backend</th>
+<th>Quand</th>
+<th>Effet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>console.EmailBackend</code></td>
+<td><strong>développement</strong></td>
+<td>le message s'affiche dans le terminal du serveur</td>
+</tr>
+<tr>
+<td><code>smtp.EmailBackend</code></td>
+<td><strong>production</strong></td>
+<td>envoi réel par un serveur SMTP</td>
+</tr>
+<tr>
+<td><code>locmem.EmailBackend</code></td>
+<td><strong>tests</strong> (activé automatiquement par <code>manage.py test</code>)</td>
+<td>liste <code>mail.outbox</code>, aucun réseau</td>
+</tr>
+<tr>
+<td><code>filebased.EmailBackend</code></td>
+<td>recette</td>
+<td>un fichier par message dans un dossier</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>💡 <strong>Même code partout</strong> : on n'écrit jamais <code>if DEBUG:</code> autour d'un envoi. Seul <code>EMAIL_BACKEND</code> change, et il vient de l'environnement.</p>
+</blockquote>
+<h3>12.2. Les réglages</h3>
+<div class="code-block"><pre><code class="language-python"># gesti/settings.py — J5
+def env_bool(nom, defaut=False):
+    return os.environ.get(nom, str(int(defaut))).strip().lower() in ('1', 'true', 'yes', 'on')
+
+
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '25'))
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = env_bool('EMAIL_USE_TLS', False)
+EMAIL_TIMEOUT = 10                            # sans délai, un SMTP muet bloque la requête indéfiniment
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'GestiFormation &lt;formations@example.org&gt;')
+SERVER_EMAIL = DEFAULT_FROM_EMAIL             # expéditeur des e-mails d'erreur envoyés aux ADMINS
+SITE_URL = os.environ.get('SITE_URL', 'http://127.0.0.1:8000')   # liens absolus dans les e-mails (pas de request)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Deux réglages que les stagiaires oublient et qui font mal en production :</p>
+<ul>
+<li><strong><code>EMAIL_TIMEOUT</code></strong> : par défaut, il n'y en a pas. Un serveur SMTP qui ne répond pas <strong>gèle le worker</strong> qui traite l'inscription ;</li>
+<li><strong><code>SITE_URL</code></strong> : un e-mail est écrit <strong>hors requête</strong>. Il n'existe pas de <code>request.build_absolute_uri()</code> ; le domaine doit venir de la configuration.</li>
+</ul>
+<blockquote>
+<p>⚠️ <strong>Piège n°46 — le lien relatif dans un e-mail</strong> : <code>&lt;a href="/fr/mon-espace/"&gt;</code> est <strong>mort</strong> dans une messagerie : elle n'a pas de domaine de référence. Toujours <code>SITE_URL + reverse(...)</code>.</p>
+</blockquote>
+<h3>12.3. Quand envoyer ? Après le COMMIT</h3>
+<p><img alt="Envoi d'un e-mail" src="assets/envoi-email.svg" /></p>
+<p><code>inscrire()</code> est <code>@transaction.atomic</code>. Si l'on envoie l'e-mail <strong>dans</strong> la fonction, deux scénarios dangereux :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Scénario</th>
+<th>Conséquence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>l'e-mail part, puis l'<code>INSERT</code> échoue (contrainte, exception, panne)</td>
+<td>le client reçoit une <strong>confirmation pour une inscription qui n'existe pas</strong></td>
+</tr>
+<tr>
+<td>l'e-mail part, puis la transaction est annulée par une exception ultérieure</td>
+<td>idem, et <strong>impossible à rattraper</strong> : un e-mail ne se « rollback » pas</td>
+</tr>
+</tbody>
+</table></div>
+<p>La parade s'appelle <strong><code>transaction.on_commit(callback)</code></strong> : Django mémorise le callback et ne l'exécute <strong>qu'après</strong> le <code>COMMIT</code> de la transaction externe. En cas de <code>ROLLBACK</code>, il est <strong>jeté</strong>.</p>
+<blockquote>
+<p>⚠️ <strong>Piège n°47 — un e-mail dans la transaction</strong> : « ça marche » en développement, où rien n'échoue. Le jour où une règle refuse l'inscription, le client a déjà reçu sa confirmation. L'ordre des opérations <strong>est</strong> la règle métier.</p>
+</blockquote>
+<h3>12.4. <code>catalog/emails.py</code> — la fonction d'envoi</h3>
+<div class="code-block"><pre><code class="language-python"># catalog/emails.py
+import logging
+from smtplib import SMTPException
+
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.urls import reverse
+from django.utils import translation
+from django.utils.translation import gettext as _
+
+logger = logging.getLogger(__name__)
+
+
+def confirmation_inscription(inscription, langue=None) -&gt; bool:
+    &quot;&quot;&quot;
+    Envoie la confirmation d'inscription (texte + HTML) au client.
+    Retourne False si l'envoi échoue : un e-mail raté n'annule jamais une inscription.
+    &quot;&quot;&quot;
+    langue = langue or translation.get_language()
+    intervention = inscription.intervention
+    formation = intervention.formation
+
+    # hors requête : pas de request.build_absolute_uri → SITE_URL + reverse() dans la langue de l'e-mail
+    with translation.override(langue):
+        contexte = {
+            'client': inscription.client,
+            'formation': formation,
+            'intervention': intervention,
+            'inscription': inscription,
+            'url_espace': settings.SITE_URL + reverse('catalog:mon-espace'),
+        }
+        sujet = _('Inscription enregistrée : %(formation)s') % {'formation': formation.nom}
+        texte = render_to_string('catalog/emails/confirmation_inscription.txt', contexte)
+        html = render_to_string('catalog/emails/confirmation_inscription.html', contexte)
+
+    message = EmailMultiAlternatives(sujet, texte, to=[inscription.client.email])
+    message.attach_alternative(html, 'text/html')
+    try:
+        message.send()
+    except (SMTPException, OSError):
+        logger.exception(&quot;Envoi impossible de la confirmation de l'inscription %s&quot;, inscription.pk)
+        return False
+    return True
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Lecture guidée :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Choix</th>
+<th>Pourquoi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fonction <strong>dans son module</strong> <code>emails.py</code></td>
+<td>la vue et le service ne savent pas <em>comment</em> on envoie ; on peut la remplacer ou la tester seule</td>
+</tr>
+<tr>
+<td><code>translation.override(langue)</code></td>
+<td>le sujet, le texte, le HTML <strong>et</strong> <code>reverse()</code> utilisent la même langue</td>
+</tr>
+<tr>
+<td><code>from</code> omis</td>
+<td><code>DEFAULT_FROM_EMAIL</code> s'applique</td>
+</tr>
+<tr>
+<td><code>except (SMTPException, OSError)</code></td>
+<td><code>OSError</code> couvre <code>ConnectionRefusedError</code>, <code>TimeoutError</code>, DNS… Pas de <code>except Exception</code> : on n'avale pas un bug</td>
+</tr>
+<tr>
+<td><code>logger.exception</code></td>
+<td>la trace complète est dans les journaux ; la requête de l'utilisateur, elle, aboutit</td>
+</tr>
+<tr>
+<td>retourne un booléen</td>
+<td>le test et l'appelant savent si l'envoi a réussi</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>💡 <strong>Pas de <code>BadHeaderError</code></strong> : Django refuse un sujet contenant un retour à la ligne (injection d'en-tête). Le nom d'une formation n'en contient pas ; une donnée saisie par un utilisateur pourrait. Ne jamais construire un <strong>destinataire</strong> ou un <strong>sujet</strong> par concaténation d'une saisie non contrôlée.</p>
+</blockquote>
+<h3>12.5. Les gabarits d'e-mail</h3>
+<p>Deux fichiers jumeaux dans <code>catalog/templates/catalog/emails/</code>.</p>
+<div class="code-block"><pre><code class="language-django">{# confirmation_inscription.txt — {% autoescape off %} : un e-mail texte n'est pas du HTML #}
+{% load i18n %}{% autoescape off %}{% blocktranslate with prenom=client.prenom %}Bonjour {{ prenom }},{% endblocktranslate %}
+
+{% blocktranslate with nom=formation.nom numero=intervention.numero debut=intervention.date_debut|date:&quot;DATE_FORMAT&quot; ville=intervention.ville trimmed %}
+Votre inscription à « {{ nom }} » est enregistrée.
+Intervention {{ numero }} — {{ ville }}, à partir du {{ debut }}.
+{% endblocktranslate %}
+
+{% blocktranslate with montant=inscription.montant_ht|floatformat:&quot;2g&quot; %}Montant : {{ montant }} € HT.{% endblocktranslate %}
+
+{% translate &quot;Retrouvez vos inscriptions dans votre espace :&quot; %}
+{{ url_espace }}
+
+{% translate &quot;L'équipe GestiFormation&quot; %}
+{% endautoescape %}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code class="language-django">{# confirmation_inscription.html #}
+{% load i18n %}{% get_current_language as LANGUAGE_CODE %}&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;{{ LANGUAGE_CODE }}&quot;&gt;
+&lt;body style=&quot;font-family: system-ui, sans-serif; color: #1f2937;&quot;&gt;
+    &lt;p&gt;{% blocktranslate with prenom=client.prenom %}Bonjour {{ prenom }},{% endblocktranslate %}&lt;/p&gt;
+    &lt;p&gt;
+        {% blocktranslate with nom=formation.nom trimmed %}
+            Votre inscription à &lt;strong&gt;« {{ nom }} »&lt;/strong&gt; est enregistrée.
+        {% endblocktranslate %}
+    &lt;/p&gt;
+    &lt;table cellpadding=&quot;6&quot; style=&quot;border-collapse: collapse;&quot;&gt;
+        &lt;tr&gt;&lt;th align=&quot;left&quot;&gt;{% translate &quot;Intervention&quot; %}&lt;/th&gt;&lt;td&gt;{{ intervention.numero }} — {{ intervention.ville }}&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;&lt;th align=&quot;left&quot;&gt;{% translate &quot;Début&quot; %}&lt;/th&gt;&lt;td&gt;{{ intervention.date_debut|date:&quot;DATE_FORMAT&quot; }}&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;&lt;th align=&quot;left&quot;&gt;{% translate &quot;Montant HT&quot; %}&lt;/th&gt;&lt;td&gt;{{ inscription.montant_ht|floatformat:&quot;2g&quot; }} €&lt;/td&gt;&lt;/tr&gt;
+    &lt;/table&gt;
+    &lt;p&gt;&lt;a href=&quot;{{ url_espace }}&quot;&gt;{% translate &quot;Voir mes inscriptions&quot; %}&lt;/a&gt;&lt;/p&gt;
+    &lt;p&gt;{% translate &quot;L'équipe GestiFormation&quot; %}&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Trois points de cohérence avec le jour 4 :</p>
+<ul>
+<li><strong><code>render_to_string</code> n'a pas de <code>request</code></strong> : le context processor <code>i18n</code> n'est pas appliqué ; on récupère la langue par <code>{% get_current_language as LANGUAGE_CODE %}</code> ;</li>
+<li>les <strong>formats nommés</strong> (<code>DATE_FORMAT</code>, <code>"2g"</code>) suivent la langue active, donc le <code>override</code> de la fonction ;</li>
+<li>le HTML d'e-mail est <strong>minimal</strong> : styles <strong>en ligne</strong>, pas de feuille de style externe (la plupart des messageries l'ignorent).</li>
+</ul>
+<p><strong>Ce que voit le développeur</strong> (backend <code>console</code>, extrait) :</p>
+<div class="code-block"><pre><code>Content-Type: multipart/alternative; boundary=&quot;===============...&quot;
+Subject: Inscription enregistrée : Django : initiation
+From: GestiFormation &lt;formations@example.org&gt;
+To: alice@example.org
+
+Bonjour Alice,
+
+Votre inscription à « Django : initiation » est enregistrée. Intervention T-016-INT — Lyon, à partir du 5 décembre 2026.
+
+Montant : 1 890,00 € HT.
+
+Retrouvez vos inscriptions dans votre espace :
+http://127.0.0.1:8000/fr/mon-espace/
+
+L'équipe GestiFormation
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<h3>12.6. Brancher l'envoi dans le service</h3>
+<div class="code-block"><pre><code class="language-python"># catalog/services.py — fin de inscrire()
+    inscription = Inscription.objects.create(
+        client=client,
+        intervention=intervention,
+        montant_ht=intervention.formation.prix,
+    )
+    # l'e-mail part APRÈS le commit : jamais pour une inscription finalement annulée par un rollback
+    langue = get_language()
+    transaction.on_commit(lambda: emails.confirmation_inscription(inscription, langue))
+    return inscription
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code class="language-python">from django.utils.translation import get_language
+
+from . import emails
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 <strong>Pourquoi capturer <code>langue</code> avant le callback ?</strong> Le callback s'exécute au <code>COMMIT</code>, plus tard que l'appel. On fige la langue <strong>de la requête</strong> au moment où l'on enregistre l'intention d'envoyer. (Dans une vue, c'est celle de l'URL : <code>/en/…</code> donne un e-mail en anglais.)</p>
+<p>💡 <strong>Pourquoi dans le service et pas dans la vue ?</strong> Toute entrée qui inscrit un client — formulaire, bouton « S'inscrire », une action d'admin demain — obtient l'e-mail <strong>sans y penser</strong>. Le service reste testable sans HTTP.</p>
+</blockquote>
+<p><strong>Variante pour un volume plus élevé</strong> : un e-mail dans un <code>on_commit</code> ralentit encore la requête (c'est la requête qui envoie). Pour des envois en masse ou lents, on délègue à une <strong>file de tâches</strong> (Celery, RQ, Django Tasks) : c'est le sujet de « Et après ? » en fin de support. Le principe reste identique : <strong>on enregistre l'intention après le commit</strong>.</p>
+<h3>12.7. Tester les e-mails</h3>
+<div class="code-block"><pre><code class="language-python"># catalog/tests/test_emails.py
+from decimal import Decimal
+from smtplib import SMTPException
+from unittest.mock import patch
+
+from django.core import mail
+from django.test import TestCase, override_settings
+from django.utils import translation
+
+from catalog.models import Inscription
+from catalog.services import InterventionComplete, inscrire
+
+from .factories import creer_client, creer_formation, creer_intervention
+
+
+@override_settings(SITE_URL='https://formation.example.org')     # indépendant du .env de chacun
+class ConfirmationInscriptionTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.formation = creer_formation(nom='Django : initiation', prix=Decimal('1890.00'))
+        cls.alice = creer_client(prenom='Alice', email='alice@example.org')
+
+    def setUp(self):
+        # hors requête, la langue active est celle laissée par le test précédent : on la fixe
+        self.enterContext(translation.override('fr'))
+        self.intervention = creer_intervention(self.formation, capacite=2, ville='Lyon')
+
+    def inscrire_et_envoyer(self, client=None, intervention=None):
+        &quot;&quot;&quot;Dans un TestCase la transaction n'est jamais validée : on exécute les on_commit à la main.&quot;&quot;&quot;
+        with self.captureOnCommitCallbacks(execute=True) as rappels:
+            inscription = inscrire(client or self.alice, intervention or self.intervention)
+        return inscription, rappels
+
+    def test_aucun_mail_tant_que_la_transaction_n_est_pas_validee(self):
+        inscrire(self.alice, self.intervention)
+        self.assertEqual(mail.outbox, [])
+
+    def test_un_mail_part_apres_le_commit(self):
+        _, rappels = self.inscrire_et_envoyer()
+        self.assertEqual(len(rappels), 1)
+        self.assertEqual(len(mail.outbox), 1)
+        message = mail.outbox[0]
+        self.assertEqual(message.to, ['alice@example.org'])
+        self.assertEqual(message.subject, 'Inscription enregistrée : Django : initiation')
+
+    def test_le_corps_contient_les_informations_utiles(self):
+        self.inscrire_et_envoyer()
+        corps = mail.outbox[0].body
+        for attendu in ('Alice', 'Django : initiation', 'Lyon', '1\xa0890,00', 'https://formation.example.org/fr/mon-espace/'):
+            with self.subTest(attendu=attendu):
+                self.assertIn(attendu, corps)
+
+    def test_une_version_html_accompagne_le_texte(self):
+        self.inscrire_et_envoyer()
+        contenu, type_mime = mail.outbox[0].alternatives[0]
+        self.assertEqual(type_mime, 'text/html')
+        self.assertIn('&lt;strong&gt;« Django : initiation »&lt;/strong&gt;', contenu)
+
+    def test_le_mail_suit_la_langue_active(self):
+        with translation.override('en'):
+            self.inscrire_et_envoyer()
+        message = mail.outbox[0]
+        self.assertEqual(message.subject, 'Registration saved: Django : initiation')
+        self.assertIn('https://formation.example.org/en/mon-espace/', message.body)
+
+    def test_aucun_mail_quand_l_inscription_est_refusee(self):
+        complete = creer_intervention(self.formation, capacite=1, nb_inscrits=1)
+        with self.captureOnCommitCallbacks(execute=True) as rappels:
+            with self.assertRaises(InterventionComplete):
+                inscrire(self.alice, complete)
+        self.assertEqual(rappels, [])
+        self.assertEqual(mail.outbox, [])
+
+    def test_une_panne_smtp_n_annule_pas_l_inscription(self):
+        with patch('django.core.mail.message.EmailMultiAlternatives.send', side_effect=SMTPException('hors service')):
+            with self.assertLogs('catalog.emails', level='ERROR'):
+                inscription, _ = self.inscrire_et_envoyer()
+        self.assertTrue(Inscription.objects.filter(pk=inscription.pk).exists())
+        self.assertEqual(mail.outbox, [])
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Quatre mécanismes à faire repérer :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Mécanisme</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mail.outbox</code></td>
+<td>la liste des messages « envoyés » : Django remplace <strong>automatiquement</strong> le backend par <code>locmem</code> pendant les tests</td>
+</tr>
+<tr>
+<td><code>captureOnCommitCallbacks(execute=True)</code></td>
+<td>un <code>TestCase</code> enveloppe chaque test dans une transaction <strong>jamais validée</strong> : sans cet outil, aucun <code>on_commit</code> ne s'exécuterait</td>
+</tr>
+<tr>
+<td><code>message.alternatives[0]</code></td>
+<td>la version HTML jointe à <code>attach_alternative</code></td>
+</tr>
+<tr>
+<td><code>patch(...send, side_effect=SMTPException)</code> + <code>assertLogs</code></td>
+<td><strong>provoquer</strong> la panne qu'on ne veut pas attendre, et vérifier qu'elle est <strong>journalisée</strong></td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>⚠️ <strong>Piège n°48 — la langue active hors requête</strong> : <code>get_language()</code> renvoie la langue <strong>laissée par le dernier traitement</strong> dans ce fil d'exécution (un test précédent sur <code>/en/…</code>, un autre appel). L'e-mail est alors dans la mauvaise langue — et le test n'échoue qu'en ordre aléatoire (<code>--shuffle</code>). On <strong>fixe</strong> la langue (<code>translation.override</code>) ou on la <strong>passe explicitement</strong> (<code>confirmation_inscription(inscription, langue)</code>).</p>
+<p>⚠️ <strong>Piège n°49 — attendre un e-mail sans exécuter <code>on_commit</code></strong> : « le test ne trouve jamais le message » est le symptôme. Ce n'est pas un bug de l'envoi mais de la <strong>transaction de test</strong> : <code>captureOnCommitCallbacks(execute=True)</code>.</p>
+<p>💡 <strong>Bonus — les e-mails que Django envoie déjà</strong> : l'URL <code>comptes/password_reset/</code> (fournie par <code>django.contrib.auth.urls</code>) envoie un e-mail de réinitialisation. Avec le backend <code>console</code>, le lien apparaît dans le terminal : on peut montrer la fonction « mot de passe oublié » sans configurer de messagerie.</p>
+</blockquote>
+<h3>🛠️ Atelier 12·a — La confirmation d'inscription (30 min)</h3>
+<ol>
+<li>appliquer les réglages de §12.2 ; dans <code>.env</code>, ne rien ajouter (le backend <code>console</code> est le défaut) ;</li>
+<li>créer <code>catalog/emails.py</code> et les deux gabarits ; ajouter <code>on_commit</code> dans <code>inscrire</code> ;</li>
+<li>dans l'interface, inscrire un client depuis <code>/fr/inscriptions/nouvelle/</code> : <strong>lire le message dans le terminal du serveur</strong> ; recommencer depuis <code>/en/</code> ;</li>
+<li>écrire <code>test_emails.py</code> ; <strong>lancer</strong> ;</li>
+<li><strong>muter</strong> le code :</li>
+</ol>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Mutation</th>
+<th>Test qui doit échouer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>remplacer <code>transaction.on_commit(lambda: …)</code> par un appel direct</td>
+<td><code>test_aucun_mail_tant_que_la_transaction_n_est_pas_validee</code> <strong>et</strong> <code>test_un_mail_part_apres_le_commit</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>retirer le <code>try/except</code> autour de <code>message.send()</code></td>
+<td><code>test_une_panne_smtp_n_annule_pas_l_inscription</code> (l'exception remonte)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>remplacer <code>langue = get_language()</code> par <code>langue = 'fr'</code> dans <code>inscrire</code></td>
+<td><code>test_le_mail_suit_la_langue_active</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>remplacer <code>settings.SITE_URL + reverse(...)</code> par <code>reverse(...)</code></td>
+<td><code>test_le_corps_contient_les_informations_utiles</code> (le lien n'est plus absolu)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Checklist</strong> :</p>
+<ul>
+<li>[ ] un message s'affiche dans le terminal à chaque inscription réussie, <strong>aucun</strong> quand l'inscription est refusée ;</li>
+<li>[ ] il est en anglais quand on s'est inscrit depuis <code>/en/</code> ;</li>
+<li>[ ] le binôme sait expliquer pourquoi <code>transaction.on_commit</code> plutôt qu'un appel direct ;</li>
+<li>[ ] <code>git add -A &amp;&amp; git commit -m "J5 : e-mail de confirmation d'inscription"</code> fait.</li>
+</ul>
+<hr />
+</div>
+
+<div id="tab-b12b-export-csv-60-min" class="tab-content">
+<h3>12.8. Une réponse HTTP qui est un fichier</h3>
+<p><img alt="Export CSV" src="assets/export-csv.svg" /></p>
+<p>Un export n'a rien de magique : c'est une <strong>vue</strong> qui retourne une <code>HttpResponse</code> dont le type de contenu est <code>text/csv</code>. Deux idées font tout :</p>
+<ol>
+<li>l'en-tête <strong><code>Content-Disposition: attachment</code></strong> dit au navigateur de <strong>télécharger</strong> plutôt que d'afficher ;</li>
+<li>une <code>HttpResponse</code> possède une méthode <code>.write()</code> : elle <strong>est</strong> un fichier, que <code>csv.writer</code> sait remplir directement.</li>
+</ol>
+<h3>12.9. La vue</h3>
+<div class="code-block"><pre><code class="language-python"># catalog/views.py
+import csv
+
+from django.utils import timezone
+from django.utils.formats import get_format
+
+
+def _to_text(valeur) -&gt; str:
+    &quot;&quot;&quot;Neutralise l'injection de formules : Excel exécute une cellule qui commence par = + - @&quot;&quot;&quot;
+    texte = str(valeur)
+    return &quot;'&quot; + texte if texte.startswith(('=', '+', '-', '@', '\t', '\r')) else texte
+
+
+@login_required
+@permission_required('catalog.view_inscription', raise_exception=True)
+def export_inscriptions(request):
+    &quot;&quot;&quot;Export CSV des inscriptions, filtrable par ?statut=P|C|X ; mêmes droits que la liste.&quot;&quot;&quot;
+    inscriptions = Inscription.objects.select_related('client', 'intervention__formation')
+    statut = request.GET.get('statut', '')
+    if statut in dict(Inscription.STATUTS):
+        inscriptions = inscriptions.filter(statut=statut)
+
+    reponse = HttpResponse(content_type='text/csv; charset=utf-8')
+    reponse['Content-Disposition'] = f'attachment; filename=&quot;inscriptions-{timezone.localdate():%Y%m%d}.csv&quot;'
+    reponse.write('\ufeff')                      # BOM : Excel reconnaît l'UTF-8
+    writer = csv.writer(reponse, delimiter=';')    # Excel en langue française attend « ; »
+    writer.writerow([
+        _('Client'), _('E-mail'), _('Société'), _('Formation'), _('Intervention'),
+        _('Début'), _('Statut'), _('Montant HT (€)'), _('Inscrit le'),
+    ])
+    for i in inscriptions.iterator(chunk_size=500):
+        writer.writerow([
+            _to_text(i.client), i.client.email, _to_text(i.client.societe),
+            _to_text(i.intervention.formation.nom), i.intervention.numero,
+            i.intervention.date_debut.isoformat(), i.get_statut_display(),
+            str(i.montant_ht).replace('.', get_format('DECIMAL_SEPARATOR')),     # virgule en français, jamais de milliers
+            timezone.localtime(i.date_inscription).strftime('%Y-%m-%d %H:%M'),
+        ])
+    return reponse
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code class="language-python"># catalog/urls.py — section « Inscription »
+path('inscriptions/export.csv', views.export_inscriptions, name='export-inscriptions'),
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code class="language-django">{# liste_inscriptions.html #}
+&lt;a class=&quot;btn&quot; href=&quot;{% url 'catalog:export-inscriptions' %}&quot;&gt;{% translate &quot;Exporter en CSV&quot; %}&lt;/a&gt;
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><strong>Les décisions, une par une</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Décision</th>
+<th>Raison</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mêmes décorateurs que <code>liste_inscriptions</code></td>
+<td>une donnée exportée est une donnée <strong>lue</strong> : exporter ne doit pas ouvrir de droit nouveau</td>
+</tr>
+<tr>
+<td><code>select_related(...)</code> + <code>.iterator(chunk_size=500)</code></td>
+<td>une requête SQL, mémoire bornée : le piège du <strong>N+1</strong> (jour 2) est encore plus coûteux sur 10 000 lignes</td>
+</tr>
+<tr>
+<td><code>statut in dict(Inscription.STATUTS)</code></td>
+<td><strong>liste blanche</strong> : une valeur inconnue (<code>?statut=ZZ</code>) est ignorée, jamais passée à la requête telle quelle</td>
+</tr>
+<tr>
+<td><code>\ufeff</code> en premier</td>
+<td>le <em>Byte Order Mark</em> signale « UTF-8 » à Excel ; sans lui, « Société » devient « SociÃ©tÃ© »</td>
+</tr>
+<tr>
+<td><code>delimiter=';'</code></td>
+<td>Excel en français lit la virgule comme séparateur <strong>décimal</strong> : la virgule ne sépare pas les colonnes</td>
+</tr>
+<tr>
+<td>montant avec la <strong>virgule locale</strong>, <strong>sans</strong> séparateur de milliers</td>
+<td><code>1890,50</code> : lisible comme un nombre dans Excel français ; <code>1 890,50</code> serait un texte</td>
+</tr>
+<tr>
+<td><code>date_debut.isoformat()</code></td>
+<td>une date <strong>ISO</strong> (<code>2026-12-05</code>) se trie et s'importe partout, quelle que soit la langue</td>
+</tr>
+<tr>
+<td>en-têtes avec <code>_()</code></td>
+<td>les titres de colonnes suivent la langue de l'URL (<code>/en/…</code>)</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>💡 <strong>Rappel du jour 4</strong> : un format localisé est pour un <strong>humain</strong> ; une donnée pour une <strong>machine</strong> ne l'est pas. Un CSV est entre les deux : on garde la virgule décimale (Excel) mais on <strong>évite les milliers</strong> et on écrit les dates en ISO.</p>
+</blockquote>
+<h3>12.10. Les deux pièges de sécurité et de compatibilité</h3>
+<blockquote>
+<p>⚠️ <strong>Piège n°50 — l'injection de formule (« CSV injection »)</strong> : un client s'inscrit avec la société <code>=HYPERLINK("http://pirate.example","Cliquez")</code>. Le gestionnaire ouvre l'export dans Excel : <strong>la cellule s'exécute</strong>. Une donnée <strong>saisie par un tiers</strong> est du texte non fiable. On préfixe d'une apostrophe toute cellule commençant par <code>=</code>, <code>+</code>, <code>-</code>, <code>@</code> (ou tabulation / retour chariot). La fonction <code>_to_text</code> est appliquée aux champs libres (nom, société, formation) — <strong>pas</strong> aux nombres ni aux dates.</p>
+<p>⚠️ <strong>Piège n°51 — « les accents sont illisibles dans Excel »</strong> : le fichier est valide, c'est Excel qui devine l'encodage. BOM + <code>;</code> + virgule décimale sont ce qui rend le fichier <strong>ouvrable par double-clic</strong> en France. Pour un échange <strong>entre machines</strong> (import dans un autre système), on préférera un CSV standard (<code>,</code>, point décimal, sans BOM) — <strong>un format par destinataire</strong>.</p>
+</blockquote>
+<p><strong>Gros volumes : <code>StreamingHttpResponse</code>.</strong> Quand le fichier devient grand, on n'accumule plus tout dans la réponse :</p>
+<div class="code-block"><pre><code class="language-python">from django.http import StreamingHttpResponse
+
+
+class Echo:
+    &quot;&quot;&quot;Pseudo-fichier : write() retourne la valeur au lieu de l'écrire.&quot;&quot;&quot;
+    def write(self, valeur):
+        return valeur
+
+
+def lignes(inscriptions):
+    writer = csv.writer(Echo(), delimiter=';')
+    yield '\ufeff'
+    for i in inscriptions.iterator(chunk_size=500):
+        yield writer.writerow([...])
+
+
+return StreamingHttpResponse(lignes(inscriptions), content_type='text/csv; charset=utf-8')
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Le fichier part au fil de la lecture de la base. Deux contreparties : <code>translation</code> et le contexte de requête ne sont plus garantis <strong>pendant</strong> le flux (on précalcule en-têtes et formats avant le <code>yield</code>), et une exception <strong>après</strong> le premier octet ne peut plus produire une page d'erreur. À réserver aux cas qui l'exigent.</p>
+<blockquote>
+<p>💡 <strong>Et le format Excel (.xlsx) ou le PDF ?</strong> Hors périmètre : <code>openpyxl</code> (xlsx), <code>WeasyPrint</code> ou <code>ReportLab</code> (PDF). La structure d'une vue d'export reste la même : <em>gardes → requête → écrire dans une réponse avec le bon <code>Content-Type</code></em>.</p>
+</blockquote>
+<h3>12.11. Tester l'export</h3>
+<div class="code-block"><pre><code class="language-python"># catalog/tests/test_export.py
+import csv
+import io
+from decimal import Decimal
+
+from django.test import TestCase
+from django.urls import reverse
+from django.utils import translation
+
+from catalog.services import annuler, inscrire
+
+from .factories import creer_client, creer_formation, creer_intervention, creer_utilisateur
+
+
+class ExportInscriptionsTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        formation = creer_formation(nom='Django : initiation', prix=Decimal('1890.50'))
+        intervention = creer_intervention(formation, capacite=5)
+        cls.alice = creer_client(prenom='Alice', nom='Martin', societe='Acme')
+        cls.mallory = creer_client(prenom='Mallory', nom='Dupont', societe='=HYPERLINK(&quot;http://x&quot;)')
+        cls.confirmee = inscrire(cls.alice, intervention)
+        cls.annulee = inscrire(cls.mallory, intervention)
+        annuler(cls.annulee)
+        cls.gestionnaire = creer_utilisateur('gestionnaire', ['view_inscription'])
+
+    def setUp(self):
+        self.enterContext(translation.override('fr'))     # l'URL porte le préfixe de la langue active
+        self.url = reverse('catalog:export-inscriptions')
+
+    def lignes(self, reponse):
+        # utf-8-sig : retire le BOM avant de relire le fichier comme le ferait Excel
+        texte = reponse.content.decode('utf-8-sig')
+        return list(csv.reader(io.StringIO(texte), delimiter=';'))
+
+    def test_anonyme_est_redirige_vers_la_connexion(self):
+        self.assertRedirects(self.client.get(self.url), f&quot;{reverse('login')}?next={self.url}&quot;)
+
+    def test_sans_permission_recoit_403(self):
+        self.client.force_login(creer_utilisateur('stagiaire'))
+        self.assertEqual(self.client.get(self.url).status_code, 403)
+
+    def test_entetes_http(self):
+        self.client.force_login(self.gestionnaire)
+        reponse = self.client.get(self.url)
+        self.assertEqual(reponse.status_code, 200)
+        self.assertEqual(reponse['Content-Type'], 'text/csv; charset=utf-8')
+        self.assertRegex(reponse['Content-Disposition'], r'^attachment; filename=&quot;inscriptions-\d{8}\.csv&quot;$')
+        self.assertTrue(reponse.content.startswith(b'\xef\xbb\xbf'))
+
+    def test_une_ligne_par_inscription_apres_l_entete(self):
+        self.client.force_login(self.gestionnaire)
+        lignes = self.lignes(self.client.get(self.url))
+        self.assertEqual(len(lignes), 3)
+        self.assertEqual(lignes[0][:2], ['Client', 'E-mail'])
+        self.assertEqual(len({len(ligne) for ligne in lignes}), 1)
+
+    def test_filtre_par_statut(self):
+        self.client.force_login(self.gestionnaire)
+        lignes = self.lignes(self.client.get(self.url, {'statut': 'X'}))
+        self.assertEqual(len(lignes), 2)
+        self.assertEqual(lignes[1][0], 'Mallory Dupont')
+
+    def test_un_statut_inconnu_est_ignore(self):
+        self.client.force_login(self.gestionnaire)
+        self.assertEqual(len(self.lignes(self.client.get(self.url, {'statut': 'ZZ'}))), 3)
+
+    def test_une_formule_est_neutralisee(self):
+        self.client.force_login(self.gestionnaire)
+        lignes = self.lignes(self.client.get(self.url, {'statut': 'X'}))
+        self.assertEqual(lignes[1][2], '\'=HYPERLINK(&quot;http://x&quot;)')
+
+    def test_le_montant_suit_la_langue_sans_separateur_de_milliers(self):
+        self.client.force_login(self.gestionnaire)
+        colonne = self.lignes(self.client.get(self.url, {'statut': 'P'}))[1][7]
+        self.assertEqual(colonne, '1890,50')
+        with translation.override('en'):
+            url_en = reverse('catalog:export-inscriptions')
+        self.assertEqual(self.lignes(self.client.get(url_en, {'statut': 'P'}))[1][7], '1890.50')
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Idée à retenir : <strong>on relit le fichier produit comme le ferait le destinataire</strong> (<code>csv.reader</code> avec le même séparateur) et l'on vérifie des <strong>cellules</strong>, pas des sous-chaînes du corps brut.</p>
+<h3>🛠️ Atelier 12·b — Exporter les inscriptions (45 min)</h3>
+<ol>
+<li>écrire <code>_to_text</code>, la vue, la route et le lien ; ouvrir <code>/fr/inscriptions/</code> et cliquer ;</li>
+<li><strong>ouvrir le fichier dans Excel ou LibreOffice</strong> : accents corrects, colonnes séparées, montant lisible comme un nombre ;</li>
+<li>créer un client dont la <strong>société</strong> vaut <code>=1+1</code> ; l'inscrire ; exporter ; constater l'apostrophe ; retirer <code>_to_text</code> : <strong>la cellule affiche <code>2</code></strong> ;</li>
+<li>écrire <code>test_export.py</code> ; lancer ;</li>
+<li><strong>muter</strong> :</li>
+</ol>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Mutation</th>
+<th>Test qui doit échouer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>retirer <code>@permission_required</code></td>
+<td><code>test_sans_permission_recoit_403</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>retirer <code>reponse.write('\ufeff')</code></td>
+<td><code>test_entetes_http</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>remplacer <code>';'</code> par <code>','</code></td>
+<td><code>test_une_ligne_par_inscription_apres_l_entete</code> (toutes les colonnes se mélangent aux virgules décimales)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>remplacer la liste blanche par <code>inscriptions.filter(statut=statut)</code> sans condition</td>
+<td><code>test_un_statut_inconnu_est_ignore</code> (la requête filtre sur <code>ZZ</code> : 0 ligne)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Checklist</strong> :</p>
+<ul>
+<li>[ ] le fichier s'ouvre sans bricolage dans le tableur de la salle ;</li>
+<li>[ ] <code>?statut=X</code> ne contient que des inscriptions annulées ;</li>
+<li>[ ] le stagiaire sait dire <strong>pourquoi</strong> l'export a les mêmes droits que la liste ;</li>
+<li>[ ] commit <code>J5 : export CSV des inscriptions</code>.</li>
+</ul>
+<hr />
+</div>
+
+<div id="tab-b12c-connexion-sociale-avec-oauth-120-min" class="tab-content">
+<h3>12.12. OAuth 2.0 en dix minutes</h3>
+<p><strong>Le problème.</strong> On veut qu'un visiteur se connecte avec son compte GitHub ou Google, <strong>sans que GestiFormation ne voie jamais son mot de passe</strong> et sans en stocker un de plus.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Rôle</th>
+<th>Dans notre cas</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Propriétaire de la ressource</strong></td>
+<td>l'utilisateur</td>
+</tr>
+<tr>
+<td><strong>Client</strong></td>
+<td>GestiFormation</td>
+</tr>
+<tr>
+<td><strong>Serveur d'autorisation / de ressources</strong></td>
+<td>GitHub, Google</td>
+</tr>
+<tr>
+<td><strong>Scope</strong></td>
+<td>ce que l'on demande : <code>user:email</code> (GitHub), <code>profile</code> + <code>email</code> (Google)</td>
+</tr>
+<tr>
+<td><strong><code>client_id</code> / <code>client_secret</code></strong></td>
+<td>l'identité de <strong>notre application</strong> chez le fournisseur ; le secret <strong>ne quitte jamais le serveur</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p><img alt="Flux OAuth" src="assets/flux-oauth.svg" /></p>
+<p>Le flux « <strong>Authorization Code</strong> » en trois idées :</p>
+<ol>
+<li>le <strong>navigateur</strong> est envoyé chez le fournisseur : c'est <strong>là</strong> que l'utilisateur s'authentifie et consent. GestiFormation n'est qu'un spectateur ;</li>
+<li>le fournisseur renvoie le navigateur vers notre <strong>URL de retour (callback)</strong> avec un <strong><code>code</code></strong> à usage unique. Le <code>code</code> ne vaut <strong>rien</strong> seul ;</li>
+<li><strong>côté serveur</strong>, GestiFormation échange le <code>code</code> <strong>+ son <code>client_secret</code></strong> contre un <strong>jeton d'accès</strong>, puis interroge le fournisseur pour obtenir le profil. Le secret ne traverse jamais le navigateur.</li>
+</ol>
+<p>Le paramètre <strong><code>state</code></strong> (aléatoire, mémorisé en session) protège contre le <em>CSRF de connexion</em> : un attaquant ne peut pas faire se connecter un utilisateur à <strong>son</strong> compte à lui.</p>
+<blockquote>
+<p>💡 <strong>OAuth ou OpenID Connect ?</strong> OAuth 2.0 <em>autorise</em> l'accès à des données ; <strong>OpenID Connect</strong> (couche au-dessus, utilisée par Google) <em>authentifie</em> l'utilisateur. Pour le développeur, <code>django-allauth</code> masque la différence : on configure un « fournisseur ».</p>
+</blockquote>
+<h3>12.13. Déclarer l'application chez le fournisseur</h3>
+<p>On enregistre GestiFormation <strong>chez</strong> GitHub (ou Google) pour obtenir <code>client_id</code> et <code>client_secret</code>. Le champ à renseigner avec soin est <strong>l'URL de retour</strong> :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Fournisseur</th>
+<th>Où</th>
+<th>URL de retour (développement)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>GitHub</strong></td>
+<td><em>Settings → Developer settings → OAuth Apps → New OAuth App</em></td>
+<td><code>http://127.0.0.1:8000/accounts/github/login/callback/</code></td>
+</tr>
+<tr>
+<td><strong>Google</strong></td>
+<td><em>Google Cloud Console → API et services → Identifiants → ID client OAuth (application Web)</em></td>
+<td><code>http://127.0.0.1:8000/accounts/google/login/callback/</code></td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>💡 Les consoles des fournisseurs évoluent souvent : en cas d'écart avec ce tableau, on suit la page du fournisseur dans la documentation d'<code>allauth</code> (<a href="https://docs.allauth.org/">docs.allauth.org</a>). L'<strong>URL de retour</strong> reste le point critique.</p>
+<p>⚠️ *<em>Piège n°52 — l'URL de retour doit correspondre au <strong>caractère près</strong></em> : <code>127.0.0.1</code> n'est <strong>pas</strong> <code>localhost</code>, <code>http</code> n'est pas <code>https</code>, le <code>/</code> final compte. Le message d'erreur du fournisseur (« redirect<strong>ri mism</strong>ch ») est exact : l'URL que l'on ouvre dans le navigateur doit être <strong>la même</strong> que celle enregistrée. En production : l'URL <code>https://formation.example.org/accounts/…</code> est une <strong>seconde</strong> déclaration.</p>
+</blockquote>
+<p>Les identifiants vont dans l'<strong>environnement</strong> (<code>.env</code>, jamais dans le dépôt) :</p>
+<div class="code-block"><pre><code class="language-bash"># .env
+GITHUB_CLIENT_ID=Iv1.0123456789abcdef
+GITHUB_SECRET=…
+GOOGLE_CLIENT_ID=…apps.googleusercontent.com
+GOOGLE_SECRET=…
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>⚠️ <strong>Piège n°53 — un <code>client_secret</code> dans git</strong> : un secret commité est un secret <strong>public</strong>, même après suppression (l'historique le conserve). Il se <strong>révoque</strong> chez le fournisseur et on en génère un autre. Le dépôt contient <code>.env.example</code> (noms de variables, valeurs factices) ; <code>.env</code> est ignoré.</p>
+</blockquote>
+<h3>12.14. Installer et configurer <code>django-allauth</code></h3>
+<p><code>django-allauth</code> fournit toute la mécanique OAuth (redirections, <code>state</code>, échange du <code>code</code>, création du compte) et un catalogue de fournisseurs.</p>
+<div class="code-block"><pre><code class="language-python"># gesti/settings.py — J5
+INSTALLED_APPS = [
+    …
+    'catalog.apps.CatalogConfig',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.github',
+    'allauth.socialaccount.providers.google',
+    …
+]
+
+MIDDLEWARE = [
+    …
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'allauth.account.middleware.AccountMiddleware',     # requis par allauth, après les messages
+    …
+]
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',               # nos comptes locaux et l'admin
+    'allauth.account.auth_backends.AuthenticationBackend',     # comptes sociaux
+]
+ACCOUNT_ADAPTER = 'catalog.adapters.CompteAdapter'             # pas d'inscription locale par allauth
+SOCIALACCOUNT_ADAPTER = 'catalog.adapters.SocialAdapter'       # mais inscription sociale ouverte
+ACCOUNT_EMAIL_VERIFICATION = 'none'                            # l'e-mail vient du fournisseur (vérifié chez lui)
+SOCIALACCOUNT_LOGIN_ON_GET = False                             # démarrer le flux = POST + CSRF
+
+
+def _app_oauth(prefixe):
+    &quot;&quot;&quot;Identifiants OAuth lus dans l'environnement ; None si le fournisseur n'est pas configuré.&quot;&quot;&quot;
+    client_id = os.environ.get(f'{prefixe}_CLIENT_ID')
+    if not client_id:
+        return None
+    return {'client_id': client_id, 'secret': os.environ.get(f'{prefixe}_SECRET', ''), 'key': ''}
+
+
+SOCIALACCOUNT_PROVIDERS = {}
+if _app_oauth('GITHUB'):
+    SOCIALACCOUNT_PROVIDERS['github'] = {'SCOPE': ['user:email'], 'APP': _app_oauth('GITHUB')}
+if _app_oauth('GOOGLE'):
+    SOCIALACCOUNT_PROVIDERS['google'] = {'SCOPE': ['profile', 'email'], 'APP': _app_oauth('GOOGLE')}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code class="language-bash">python manage.py migrate        # tables allauth : account_*, socialaccount_*
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><strong>Les choix commentés</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Réglage</th>
+<th>Choix</th>
+<th>Raison</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AUTHENTICATION_BACKENDS</code></td>
+<td><code>ModelBackend</code> <strong>et</strong> celui d'allauth</td>
+<td>l'admin et <code>creer_compte</code> continuent de fonctionner</td>
+</tr>
+<tr>
+<td><code>SOCIALACCOUNT_PROVIDERS[…]['APP']</code></td>
+<td>credentials <strong>dans la configuration</strong></td>
+<td>pas de <code>SocialApp</code> à créer dans l'admin ; reproductible d'un environnement à l'autre</td>
+</tr>
+<tr>
+<td>fournisseur absent de l'environnement</td>
+<td><strong>pas de bouton</strong></td>
+<td>un stagiaire sans identifiants voit un site cohérent, pas une erreur</td>
+</tr>
+<tr>
+<td><code>SOCIALACCOUNT_LOGIN_ON_GET = False</code></td>
+<td>le flux démarre par un <strong>POST</strong></td>
+<td>un lien GET pourrait être déclenché par une page tierce (CSRF de connexion)</td>
+</tr>
+<tr>
+<td><code>ACCOUNT_EMAIL_VERIFICATION = 'none'</code></td>
+<td>pas d'e-mail de vérification</td>
+<td>l'adresse vient d'un fournisseur qui l'a déjà vérifiée</td>
+</tr>
+</tbody>
+</table></div>
+<p>Deux <strong>adaptateurs</strong> pour refermer ce qu'on n'utilise pas :</p>
+<div class="code-block"><pre><code class="language-python"># catalog/adapters.py
+from allauth.account.adapter import DefaultAccountAdapter
+from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+
+
+class CompteAdapter(DefaultAccountAdapter):
+    &quot;&quot;&quot;Les comptes locaux se créent par notre vue `creer_compte`, pas par les pages d'allauth.&quot;&quot;&quot;
+
+    def is_open_for_signup(self, request):
+        return False
+
+
+class SocialAdapter(DefaultSocialAccountAdapter):
+    &quot;&quot;&quot;L'inscription par un fournisseur (GitHub, Google) reste ouverte.&quot;&quot;&quot;
+
+    def is_open_for_signup(self, request, sociallogin):
+        return True
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 <strong>Réduire la surface</strong> : <code>allauth.account</code> expose ses propres pages (<code>/accounts/login/</code>, <code>/accounts/signup/</code>, <code>/accounts/password/reset/</code>…). <code>CompteAdapter</code> ferme l'inscription locale : <strong>une seule</strong> porte d'entrée pour créer un compte par mot de passe (<code>creer_compte</code>), une seule pour créer un compte social.</p>
+</blockquote>
+<h3>12.15. Les URLs : <strong>hors</strong> <code>i18n_patterns</code></h3>
+<div class="code-block"><pre><code class="language-python"># gesti/urls.py — J5
+urlpatterns = [
+    path('i18n/', include('django.conf.urls.i18n')),           # set_language (POST)
+    # hors i18n_patterns : l'URL de retour (callback) enregistrée chez GitHub/Google ne doit pas changer avec la langue
+    path('accounts/', include('allauth.urls')),
+]
+
+urlpatterns += i18n_patterns(
+    path('admin/', admin.site.urls),
+    path('comptes/', include('django.contrib.auth.urls')),
+    path('', include('catalog.urls')),
+)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>⚠️ <strong>Piège n°54 — le callback sous <code>i18n_patterns</code></strong> : l'URL de retour devient <code>/fr/accounts/github/login/callback/</code> ou <code>/en/…</code> selon la langue du visiteur. Le fournisseur n'accepte qu'<strong>une</strong> URL enregistrée : le flux échoue pour l'autre langue. Les URLs qui <strong>dialoguent avec un tiers</strong> vivent <strong>hors</strong> préfixe de langue (comme <code>set_language</code>).</p>
+</blockquote>
+<p>Le gabarit de mise en page d'<code>allauth</code> est surchargé pour hériter de celui du site :</p>
+<div class="code-block"><pre><code class="language-django">{# catalog/templates/allauth/layouts/base.html #}
+{% extends &quot;catalog/base.html&quot; %}
+
+{# Les pages d'allauth (liaison de compte, erreurs OAuth…) héritent de la mise en page du site #}
+{% block titre %}{% block head_title %}{% endblock %} — GestiFormation{% endblock %}
+
+{% block contenu %}
+    {% block content %}{% endblock %}
+{% endblock %}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 <strong>Pourquoi ça marche</strong> : Django cherche d'abord dans les <code>templates/</code> des applications <strong>dans l'ordre de <code>INSTALLED_APPS</code></strong>. <code>catalog</code> est listé <strong>avant</strong> <code>allauth</code> : notre <code>allauth/layouts/base.html</code> masque celui du paquet. C'est la technique générale pour « habiller » une application tierce sans la modifier.</p>
+</blockquote>
+<h3>12.16. Le bouton sur la page de connexion</h3>
+<div class="code-block"><pre><code class="language-django">{# catalog/templates/registration/login.html #}
+{% extends &quot;catalog/base.html&quot; %}
+{% load i18n socialaccount %}
+…
+    {# un bouton par fournisseur configuré (variables d'environnement) ; POST obligatoire : CSRF #}
+    {% get_providers as fournisseurs %}
+    {% if fournisseurs %}
+    &lt;div class=&quot;social&quot;&gt;
+        &lt;p&gt;{% translate &quot;ou continuer avec&quot; %}&lt;/p&gt;
+        {% for fournisseur in fournisseurs %}
+        &lt;form method=&quot;post&quot; action=&quot;{% provider_login_url fournisseur process='login' %}&quot; class=&quot;inline&quot;&gt;
+            {% csrf_token %}&lt;button type=&quot;submit&quot; class=&quot;btn&quot;&gt;{{ fournisseur.name }}&lt;/button&gt;
+        &lt;/form&gt;
+        {% endfor %}
+    &lt;/div&gt;
+    {% endif %}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><code>{% get_providers %}</code> ne retourne que les fournisseurs <strong>configurés</strong> ; <code>{% provider_login_url %}</code> fabrique <code>/accounts/github/login/</code>. Le formulaire est un <strong>POST avec jeton CSRF</strong> : c'est ce qui démarre le flux (cohérent avec <code>SOCIALACCOUNT_LOGIN_ON_GET = False</code>).</p>
+<h3>🛠️ Atelier 12·c·1 — Faire apparaître le bouton (30 min)</h3>
+<ol>
+<li>installer <code>django-allauth[socialaccount]</code>, appliquer §12.14 et §12.15, <code>migrate</code> ;</li>
+<li><code>python manage.py check</code> — aucune erreur ;</li>
+<li><strong>sans</strong> identifiants : ouvrir <code>/fr/comptes/login/</code> → <strong>aucun</strong> bouton ;</li>
+<li>ajouter à <code>.env</code> des identifiants (réels ou <strong>factices</strong>) <code>GITHUB_CLIENT_ID=test</code>, <code>GITHUB_SECRET=test</code> ; redémarrer <code>runserver</code> ;</li>
+<li>le bouton « GitHub » apparaît ; cliquer : le navigateur est <strong>redirigé vers github.com</strong> avec <code>client_id=test&amp;state=…</code> — GitHub répondra par une erreur (identifiants faux), mais <strong>la moitié de notre côté du flux est prouvée</strong> ;</li>
+<li>avec de <strong>vrais</strong> identifiants (application enregistrée en §12.13), terminer le parcours : retour sur <code>/fr/mon-espace/</code>, utilisateur connecté.</li>
+</ol>
+<p><strong>Checklist</strong> :</p>
+<ul>
+<li>[ ] le bouton n'apparaît que si la variable <code>*_CLIENT_ID</code> existe ;</li>
+<li>[ ] l'URL de retour enregistrée est strictement celle que le navigateur ouvre ;</li>
+<li>[ ] <code>/accounts/signup/</code> répond « inscription fermée » (adaptateur) ;</li>
+<li>[ ] aucune clé n'est dans <code>git status</code>.</li>
+</ul>
+<h3>12.17. Relier le compte social au profil <code>Client</code></h3>
+<p>Après un premier accès par GitHub, l'utilisateur existe (<code>User</code>), mais <strong>pas de <code>Client</code></strong> : « Mon espace » dirait « Aucun profil client n'est associé à ce compte ». Le jour 3 avait la même règle pour <code>creer_compte</code> : on la <strong>sort de la vue</strong> pour la partager.</p>
+<div class="code-block"><pre><code class="language-python"># catalog/services.py
+def rattacher_client(user) -&gt; Client | None:
+    &quot;&quot;&quot;
+    retrouve (ou crée) le Client portant l'e-mail de l'utilisateur et le lui rattache
+    sans jamais voler un Client déjà lié à un autre compte ; None si le compte n'a pas d'e-mail
+    &quot;&quot;&quot;
+    email = user.email.lower()
+    if not email:
+        return None
+    client, _cree = Client.objects.get_or_create(
+        email=email,
+        defaults={'prenom': user.first_name, 'nom': user.last_name},
+    )
+    if client.utilisateur_id is None:
+        client.utilisateur = user
+        client.save(update_fields=['utilisateur'])
+    return client
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code class="language-python"># catalog/views.py — creer_compte, après user.save()
+            rattacher_client(user)                   # même règle que la connexion sociale
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')   # 2 backends : à préciser
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code class="language-python"># catalog/signals.py
+from allauth.account.signals import user_signed_up
+from django.dispatch import receiver
+
+from .services import rattacher_client
+
+
+@receiver(user_signed_up)
+def rattacher_client_au_premier_acces(request, user, **kwargs):
+    &quot;&quot;&quot;Émis par allauth à la création d'un compte (y compris social) : même profil Client que `creer_compte`.&quot;&quot;&quot;
+    rattacher_client(user)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code class="language-python"># catalog/apps.py
+class CatalogConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'catalog'
+
+    def ready(self):
+        # l'import enregistre les récepteurs de signaux
+        from . import signals  # noqa: F401
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><strong>Ce qu'il faut comprendre</strong></p>
+<ul>
+<li>un <strong>signal</strong> est un point d'extension : allauth <em>émet</em> <code>user_signed_up</code> après la création d'un compte, nous <em>branchons</em> un récepteur — sans modifier le code d'allauth ;</li>
+<li>les signaux se <strong>branchent dans <code>AppConfig.ready()</code></strong> : sans l'import, le récepteur n'existe jamais et rien ne se passe, <strong>sans erreur</strong> ;</li>
+<li><code>rattacher_client</code> ne <strong>vole jamais</strong> un <code>Client</code> déjà lié à un autre <code>User</code> : si l'e-mail existe côté <code>Client</code> avec un autre propriétaire, on ne touche à rien.</li>
+</ul>
+<blockquote>
+<p>⚠️ <strong>Piège n°55 — <code>login()</code> avec deux backends</strong> : dès qu'<code>AUTHENTICATION_BACKENDS</code> en liste plusieurs, <code>login(request, user)</code> lève <code>ValueError: You have multiple authentication backends configured and therefore must provide the backend argument</code>. Django ne devine pas lequel a authentifié l'utilisateur : on le <strong>précise</strong> (<code>backend=…</code>) quand on connecte à la main (<code>creer_compte</code>). <code>client.force_login(user)</code> des tests, lui, prend le premier de la liste.</p>
+<p>⚠️ <strong>Piège n°56 — « un compte existe déjà avec cet e-mail »</strong> : un stagiaire créé via <code>creer_compte</code> (<code>alice@example.org</code>) clique ensuite sur « GitHub » (même e-mail). <code>allauth</code> <strong>refuse</strong> par défaut de fusionner : rattacher automatiquement un compte social à un compte existant <strong>par l'e-mail</strong> permet, si le fournisseur est laxiste, une <strong>prise de contrôle de compte</strong>. <code>SOCIALACCOUNT_EMAIL_AUTHENTICATION = True</code> (+ <code>…_AUTO_CONNECT</code>) active la fusion — réservé aux fournisseurs dont on <strong>sait</strong> qu'ils vérifient l'adresse (Google, GitHub pour l'e-mail principal), et décision <strong>assumée</strong>. Notre choix : refuser, et laisser l'utilisateur se connecter d'abord avec son mot de passe.</p>
+</blockquote>
+<h3>12.18. Tester OAuth <strong>sans réseau</strong></h3>
+<p>On ne teste <strong>ni</strong> GitHub <strong>ni</strong> Google (ce sont leurs systèmes) : on teste <strong>notre</strong> moitié — la configuration, l'amorçage du flux, la liaison au <code>Client</code>.</p>
+<div class="code-block"><pre><code class="language-python"># catalog/tests/test_oauth.py
+from allauth.account.signals import user_signed_up
+from django.contrib.auth import get_user_model
+from django.test import TestCase, override_settings
+from django.urls import reverse
+
+from catalog.models import Client
+
+from .factories import creer_client
+
+APP_FACTICE = {'APP': {'client_id': 'id-factice', 'secret': 'secret-factice', 'key': ''}}
+
+
+class RattachementDuClientTests(TestCase):
+    &quot;&quot;&quot;Un compte créé par un fournisseur (ou par allauth) reçoit son profil Client — sans réseau.&quot;&quot;&quot;
+
+    def inscrire_par_fournisseur(self, **champs):
+        user = get_user_model().objects.create_user(**champs)
+        user_signed_up.send(sender=get_user_model(), request=None, user=user)
+        return user
+
+    def test_cree_le_client_quand_l_email_est_inconnu(self):
+        user = self.inscrire_par_fournisseur(username='octocat', email='Octo@Example.org', first_name='Octo', last_name='Cat')
+        client = Client.objects.get(utilisateur=user)
+        self.assertEqual((client.email, client.prenom, client.nom), ('octo@example.org', 'Octo', 'Cat'))
+
+    def test_rattache_le_client_existant_de_meme_email(self):
+        existant = creer_client(email='octo@example.org')
+        user = self.inscrire_par_fournisseur(username='octocat', email='octo@example.org')
+        existant.refresh_from_db()
+        self.assertEqual(existant.utilisateur, user)
+        self.assertEqual(Client.objects.count(), 1)
+
+    def test_ne_prend_pas_un_client_deja_lie_a_un_autre_compte(self):
+        proprietaire = get_user_model().objects.create_user('alice', 'alice@example.org')
+        client = creer_client(email='alice@example.org', utilisateur=proprietaire)
+        self.inscrire_par_fournisseur(username='intrus', email='alice@example.org')
+        client.refresh_from_db()
+        self.assertEqual(client.utilisateur, proprietaire)
+
+    def test_sans_email_aucun_client_n_est_cree(self):
+        self.inscrire_par_fournisseur(username='anonyme', email='')
+        self.assertEqual(Client.objects.count(), 0)
+
+
+class FluxOAuthTests(TestCase):
+    @override_settings(SOCIALACCOUNT_PROVIDERS={})
+    def test_aucun_bouton_sans_fournisseur_configure(self):
+        self.assertNotContains(self.client.get(reverse('login')), 'GitHub')
+
+    @override_settings(SOCIALACCOUNT_PROVIDERS={'github': APP_FACTICE})
+    def test_un_bouton_par_fournisseur_configure(self):
+        reponse = self.client.get(reverse('login'))
+        self.assertContains(reponse, 'GitHub')
+        self.assertContains(reponse, 'action=&quot;/accounts/github/login/')
+        self.assertNotContains(reponse, 'Google')
+
+    @override_settings(SOCIALACCOUNT_PROVIDERS={'github': APP_FACTICE})
+    def test_le_post_redirige_vers_le_fournisseur_avec_un_state(self):
+        reponse = self.client.post('/accounts/github/login/')
+        self.assertEqual(reponse.status_code, 302)
+        self.assertTrue(reponse['Location'].startswith('https://github.com/login/oauth/authorize?'))
+        self.assertIn('client_id=id-factice', reponse['Location'])
+        self.assertIn('state=', reponse['Location'])
+
+    @override_settings(SOCIALACCOUNT_PROVIDERS={'github': APP_FACTICE})
+    def test_le_get_ne_demarre_pas_le_flux(self):
+        reponse = self.client.get('/accounts/github/login/')
+        self.assertEqual(reponse.status_code, 200)
+
+    def test_l_inscription_locale_d_allauth_est_fermee(self):
+        self.assertTemplateUsed(self.client.get('/accounts/signup/'), 'account/signup_closed.html')
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Ce que chaque test <strong>prouve</strong> :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Prouve</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>…_sans_fournisseur_configure</code></td>
+<td>pas d'identifiants → pas de bouton (jamais d'erreur pour un stagiaire sans clé)</td>
+</tr>
+<tr>
+<td><code>…_le_post_redirige_vers_le_fournisseur_avec_un_state</code></td>
+<td><strong>l'étape ②</strong> du schéma : redirection vers <code>github.com/login/oauth/authorize</code> avec <code>client_id</code> et <code>state</code></td>
+</tr>
+<tr>
+<td><code>…_le_get_ne_demarre_pas_le_flux</code></td>
+<td>un simple lien ne démarre rien (CSRF de connexion)</td>
+</tr>
+<tr>
+<td><code>…_l_inscription_locale_d_allauth_est_fermee</code></td>
+<td>l'adaptateur ferme bien la porte inutile</td>
+</tr>
+<tr>
+<td><code>RattachementDuClientTests</code></td>
+<td>la liaison au <code>Client</code> : créée, retrouvée, jamais volée, ignorée sans e-mail</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>💡 <strong>Ce que l'on ne teste pas</strong> : l'échange <code>code</code> → jeton. C'est du code <strong>d'<code>allauth</code></strong> (testé chez eux) qui dialogue avec un tiers. Pour un test de bout en bout du retour, on simulerait la réponse HTTP du fournisseur avec <code>unittest.mock.patch</code> — utile, mais plus coûteux que son rendement ici.</p>
+</blockquote>
+<h3>🛠️ Atelier 12·c·2 — Un compte social qui a son profil (45 min)</h3>
+<ol>
+<li>écrire <code>rattacher_client</code>, le signal, <code>ready()</code> ; refactorer <code>creer_compte</code> ;</li>
+<li>écrire <code>test_oauth.py</code> ; lancer ;</li>
+<li>se connecter <strong>pour de vrai</strong> avec GitHub (ou avec Google) ; ouvrir <code>/fr/mon-espace/</code> : « Bonjour <prénom> », <strong>pas</strong> de message « aucun profil client » ;</li>
+<li>dans l'admin, ouvrir <em>Clients</em> : le <code>Client</code> existe, lié au compte ;</li>
+<li><strong>muter</strong> :</li>
+</ol>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Mutation</th>
+<th>Ce qui casse</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>supprimer <code>def ready(self)</code></td>
+<td><strong>rien n'échoue visiblement</strong> en usage normal ; <code>test_cree_le_client_quand_l_email_est_inconnu</code> rougit</td>
+</tr>
+<tr>
+<td>2</td>
+<td>retirer <code>backend=…</code> de <code>login(…)</code> dans <code>creer_compte</code></td>
+<td><code>test_cree_le_compte_connecte_et_rattache_le_client_existant</code> (J4) : <code>ValueError</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>is_open_for_signup</code> du <code>CompteAdapter</code> → <code>True</code></td>
+<td><code>test_l_inscription_locale_d_allauth_est_fermee</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>déplacer <code>path('accounts/', …)</code> dans <code>i18n_patterns</code></td>
+<td><code>test_le_post_redirige…</code> (l'URL n'existe plus sans préfixe)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Checklist</strong> :</p>
+<ul>
+<li>[ ] le binôme dessine le flux de mémoire (trois acteurs, dix étapes) ;</li>
+<li>[ ] le profil <code>Client</code> est créé automatiquement, jamais en double ;</li>
+<li>[ ] le piège n°52 (URL de retour) est identifié sur un cas concret ;</li>
+<li>[ ] commit <code>J5 : connexion GitHub / Google (allauth)</code>.</li>
+</ul>
+<hr />
+</div>
+
+<div id="tab-b12d-mise-en-production-90-min" class="tab-content">
+<h3>12.19. Ce qui change entre dev et prod</h3>
+<p><code>DEBUG = True</code> est un <strong>outil de travail</strong> : pages d'erreur détaillées, rechargement automatique, fichiers statiques servis par <code>runserver</code>. Chacun de ces conforts est une <strong>faille</strong> en production.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Risque avec <code>DEBUG = True</code></th>
+<th>Conséquence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>la page d'erreur affiche variables locales, settings, chemins</td>
+<td>fuite de secrets et de structure</td>
+</tr>
+<tr>
+<td>la mémoire grossit (toutes les requêtes SQL sont conservées)</td>
+<td>arrêt du processus au bout de quelques heures</td>
+</tr>
+<tr>
+<td><code>ALLOWED_HOSTS</code> n'est pas contrôlé</td>
+<td>usurpation d'en-tête <code>Host</code></td>
+</tr>
+<tr>
+<td><code>runserver</code></td>
+<td>un seul processus, pas fait pour la charge, pas audité en sécurité</td>
+</tr>
+</tbody>
+</table></div>
+<p><img alt="Configuration par couches" src="assets/configuration-env.svg" /></p>
+<p>La stratégie : <strong>un seul code, plusieurs configurations</strong>.</p>
+<ul>
+<li><strong><code>gesti/settings.py</code></strong> : commun + développement. Lit l'environnement avec des valeurs par défaut <strong>confortables</strong> (<code>DEBUG = True</code>, SQLite, e-mail console). C'est ce que <code>runserver</code> <strong>et <code>manage.py test</code></strong> utilisent ;</li>
+<li><strong><code>gesti/settings_prod.py</code></strong> : <code>from .settings import *</code> puis <strong>durcit</strong>. Les variables <strong>obligatoires</strong> y sont exigées : si l'une manque, le processus <strong>refuse de démarrer</strong>.</li>
+</ul>
+<blockquote>
+<p>💡 <strong>Pourquoi pas un seul fichier avec <code>if DEBUG:</code> partout ?</strong> Parce que les valeurs « sécurisées » (HTTPS forcé, cookies <code>Secure</code>) <strong>cassent</strong> les tests et le développement en HTTP. Séparer en deux modules garde la suite de tests <strong>verte sans configuration</strong> et rend la production <strong>explicite</strong>.</p>
+</blockquote>
+<h3>12.20. <code>settings.py</code> : lire l'environnement</h3>
+<div class="code-block"><pre><code class="language-python"># gesti/settings.py — J5
+from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+load_dotenv()                                       # charge .env en développement ; sans effet s'il n'existe pas
+
+
+def env_bool(nom, defaut=False):
+    return os.environ.get(nom, str(int(defaut))).strip().lower() in ('1', 'true', 'yes', 'on')
+
+
+def env_list(nom):
+    return [v.strip() for v in os.environ.get(nom, '').split(',') if v.strip()]
+
+
+SECRET_KEY = os.environ.get(&quot;SECRET_KEY&quot;)
+DEBUG = env_bool('DJANGO_DEBUG', True)               # gesti.settings = développement ; la production utilise settings_prod
+ALLOWED_HOSTS = env_list('ALLOWED_HOSTS')
+
+# destination de `collectstatic` : le dossier que WhiteNoise sert en production (cf. settings_prod)
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Trois règles :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Règle</th>
+<th>Détail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>un secret n'a pas de valeur par défaut</strong></td>
+<td><code>SECRET_KEY = os.environ.get("SECRET_KEY")</code> : absent → <code>ImproperlyConfigured</code> à l'usage, jamais une clé « de secours » partagée</td>
+</tr>
+<tr>
+<td><strong><code>.env</code> en développement, variables de la plateforme en production</strong></td>
+<td><code>load_dotenv()</code> ne remplace <strong>pas</strong> une variable déjà définie : la plateforme a le dernier mot</td>
+</tr>
+<tr>
+<td><strong><code>.env.example</code> est versionné, <code>.env</code> ne l'est pas</strong></td>
+<td>le modèle documente <strong>les noms</strong> ; les valeurs réelles restent locales</td>
+</tr>
+</tbody>
+</table></div>
+<div class="code-block"><pre><code class="language-bash"># .gitignore — J5
+*.pyc
+__pycache__/
+.venv/
+.env*
+!.env.example          # exception : le modèle, lui, est versionné
+*.mo                   # compilé : artefact ; le .po (source de la traduction) EST versionné
+staticfiles/
+htmlcov/
+.coverage
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>⚠️ <strong>Piège n°57 — le <code>.po</code> ignoré par git</strong> : avec <code>*.po</code> dans <code>.gitignore</code>, <strong>les traductions ne sont jamais versionnées</strong> : un <code>git clone</code> donne un site sans anglais, et la production ne peut pas compiler ce qui n'existe pas. Le <code>.po</code> est du <strong>code source</strong> (écrit à la main, relu en revue) ; le <code>.mo</code> est un <strong>artefact</strong> (régénéré par <code>compilemessages</code> à la construction).</p>
+</blockquote>
+<h3>12.21. <code>settings_prod.py</code></h3>
+<div class="code-block"><pre><code class="language-python"># gesti/settings_prod.py
+&quot;&quot;&quot;
+Production : DJANGO_SETTINGS_MODULE=gesti.settings_prod
+
+Tout ce qui est secret ou propre à la machine vient de l'environnement ; une valeur
+obligatoire absente arrête le démarrage au lieu de produire un site à moitié configuré.
+&quot;&quot;&quot;
+import os
+
+import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
+
+from .settings import *  # noqa: F401,F403 — on part de la configuration commune, puis on durcit
+
+
+def requis(nom):
+    valeur = os.environ.get(nom, '').strip()
+    if not valeur:
+        raise ImproperlyConfigured(f'Variable d\'environnement obligatoire absente : {nom}')
+    return valeur
+
+
+DEBUG = False
+SECRET_KEY = requis('SECRET_KEY')
+ALLOWED_HOSTS = env_list('ALLOWED_HOSTS') or requis('ALLOWED_HOSTS')   # noqa: F405
+CSRF_TRUSTED_ORIGINS = env_list('CSRF_TRUSTED_ORIGINS')                # noqa: F405 — ex. https://formation.example.org
+
+# les outils de développement n'existent pas en production
+INSTALLED_APPS = [a for a in INSTALLED_APPS if a not in ('debug_toolbar', 'django_extensions')]  # noqa: F405
+MIDDLEWARE = [m for m in MIDDLEWARE if 'debug_toolbar' not in m]                                  # noqa: F405
+# WhiteNoise sert les fichiers de STATIC_ROOT : juste après SecurityMiddleware
+MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    # noms hachés (cache navigateur illimité) + versions gzip/brotli ; exige `collectstatic`
+    'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
+}
+
+DATABASES = {'default': dj_database_url.parse(requis('DATABASE_URL'), conn_max_age=600, conn_health_checks=True)}
+
+# HTTPS : le reverse proxy termine TLS et transmet X-Forwarded-Proto
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', True)     # noqa: F405
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', '3600'))   # à relever (1 an) une fois HTTPS validé
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', False)   # noqa: F405
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'                         # URL de retour OAuth construites en https
+
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+
+# journaux sur la sortie standard : c'est la plateforme (Docker, systemd…) qui les collecte
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {'simple': {'format': '{asctime} {levelname} {name} {message}', 'style': '{'}},
+    'handlers': {'console': {'class': 'logging.StreamHandler', 'formatter': 'simple'}},
+    'root': {'handlers': ['console'], 'level': os.environ.get('LOG_LEVEL', 'INFO')},
+}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><strong>Lecture par couche</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Bloc</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>requis(...)</code></td>
+<td>échec <strong>au démarrage</strong>, avec le nom de la variable manquante : on préfère un conteneur qui ne démarre pas à un site qui tourne avec une clé vide</td>
+</tr>
+<tr>
+<td><code>ALLOWED_HOSTS</code>, <code>CSRF_TRUSTED_ORIGINS</code></td>
+<td>la liste des domaines servis ; derrière HTTPS, l'<strong>origine</strong> (<code>https://…</code>) doit être déclarée pour les formulaires</td>
+</tr>
+<tr>
+<td>retrait de <code>debug_toolbar</code> / <code>django_extensions</code></td>
+<td>pas de dépendance de développement chargée en production</td>
+</tr>
+<tr>
+<td><code>WhiteNoiseMiddleware</code> en position 1</td>
+<td><strong>juste après</strong> <code>SecurityMiddleware</code>, avant tout le reste : les statiques n'ont pas besoin de session, de langue, de CSRF</td>
+</tr>
+<tr>
+<td><code>CompressedManifestStaticFilesStorage</code></td>
+<td><code>base.css</code> → <code>base.b5fba86194a2.css</code> : l'URL change dès que le contenu change, on peut donc dire au navigateur « garde-le un an »</td>
+</tr>
+<tr>
+<td><code>dj_database_url.parse(DATABASE_URL)</code></td>
+<td>une seule variable : <code>postgres://utilisateur:motdepasse@hôte:5432/base</code> ; <code>conn_max_age=600</code> garde les connexions ouvertes 10 min</td>
+</tr>
+<tr>
+<td><code>SECURE_PROXY_SSL_HEADER</code></td>
+<td>derrière un proxy, Django voit du HTTP ; l'en-tête <code>X-Forwarded-Proto</code> lui dit que le visiteur est en HTTPS (sans lui : redirections en boucle)</td>
+</tr>
+<tr>
+<td><code>SECURE_SSL_REDIRECT</code> + cookies <code>Secure</code> + HSTS</td>
+<td>HTTPS partout, cookies de session et CSRF <strong>jamais</strong> envoyés en clair</td>
+</tr>
+<tr>
+<td><code>LOGGING</code> sur stdout</td>
+<td>une application en conteneur <strong>n'écrit pas dans des fichiers</strong> : la plateforme collecte la sortie standard</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>⚠️ <strong>Piège n°58 — HSTS : un engagement difficile à défaire</strong> : <code>SECURE_HSTS_SECONDS</code> dit au navigateur « n'accède <strong>jamais</strong> à ce domaine en HTTP pendant N secondes ». Si le certificat expire ou si un sous-domaine n'a pas HTTPS, les visiteurs sont <strong>bloqués</strong> jusqu'à l'échéance. On démarre à <strong>3 600 s</strong>, on valide, puis on monte (1 jour, 1 semaine, 1 an). <code>INCLUDE_SUBDOMAINS</code> et <code>PRELOAD</code> ne s'activent qu'en connaissance de cause.</p>
+<p>⚠️ <strong>Piège n°59 — <code>DEBUG = True</code> ou <code>ALLOWED_HOSTS = ['*']</code> « juste pour voir »</strong> : un <code>DEBUG = True</code> temporaire en production expose la configuration <strong>à n'importe quel visiteur</strong> qui provoque une erreur. C'est pourquoi <code>DEBUG = False</code> est <strong>écrit en dur</strong> dans <code>settings_prod.py</code> — on ne le lit <strong>pas</strong> dans l'environnement.</p>
+</blockquote>
+<h3>12.22. Contrôler : <code>check --deploy</code></h3>
+<p>Django sait auditer sa propre configuration :</p>
+<div class="code-block"><pre><code class="language-bash">export SECRET_KEY=&quot;…clé longue et aléatoire…&quot; ALLOWED_HOSTS=formation.example.org DATABASE_URL=sqlite:///check.db
+python manage.py check --deploy --settings=gesti.settings_prod
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Résultat réel sur le dépôt de référence :</p>
+<div class="code-block"><pre><code>System check identified some issues:
+
+WARNINGS:
+?: (security.W005) You have not set the SECURE_HSTS_INCLUDE_SUBDOMAINS setting to True. Without this, your site is
+potentially vulnerable to attack via an insecure connection to a subdomain. Only set this to True if you are certain
+that all subdomains of your domain should be served exclusively via SSL.
+?: (security.W021) You have not set the SECURE_HSTS_PRELOAD setting to True. Without this, your site cannot be
+submitted to the browser preload list.
+
+System check identified 2 issues (0 silenced).
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Les deux avertissements restants sont <strong>assumés</strong> (piège n°58) : on les lève plus tard, une fois HTTPS validé sur tout le domaine. Un <code>check --deploy</code> <strong>qui ne dit plus rien</strong> d'inattendu est le critère d'entrée en production.</p>
+<blockquote>
+<p>💡 <strong>Générer une <code>SECRET_KEY</code></strong> : <code>python -c "from django.core.management.utils import get_random_secret_key as g; print(g())"</code>. La clé signe les sessions et les jetons : la changer <strong>déconnecte tout le monde</strong> ; la perdre est sans gravité, la <strong>divulguer</strong> exige de la changer.</p>
+</blockquote>
+<p><strong>Les tests de configuration</strong> (sans serveur, sans environnement réel) :</p>
+<div class="code-block"><pre><code class="language-python"># catalog/tests/test_production.py
+import importlib
+import sys
+from unittest.mock import patch
+
+from django.core.exceptions import ImproperlyConfigured
+from django.test import SimpleTestCase
+
+ENV_VALIDE = {
+    'SECRET_KEY': 'cle-factice',
+    'ALLOWED_HOSTS': 'formation.example.org, www.example.org',
+    'DATABASE_URL': 'postgres://gesti:pw@db:5432/gesti',
+}
+
+
+def charger_settings_prod(env):
+    &quot;&quot;&quot;Réimporte gesti.settings_prod avec un environnement donné (le module lit os.environ à l'import).&quot;&quot;&quot;
+    sys.modules.pop('gesti.settings_prod', None)
+    with patch.dict('os.environ', env, clear=True):
+        return importlib.import_module('gesti.settings_prod')
+
+
+class SettingsProdTests(SimpleTestCase):
+    def test_durcissement(self):
+        s = charger_settings_prod(ENV_VALIDE)
+        self.assertFalse(s.DEBUG)
+        self.assertEqual(s.ALLOWED_HOSTS, ['formation.example.org', 'www.example.org'])
+        self.assertTrue(s.SECURE_SSL_REDIRECT)
+        self.assertTrue(s.SESSION_COOKIE_SECURE)
+        self.assertTrue(s.CSRF_COOKIE_SECURE)
+        self.assertGreater(s.SECURE_HSTS_SECONDS, 0)
+
+    def test_les_outils_de_developpement_sont_retires(self):
+        s = charger_settings_prod(ENV_VALIDE)
+        self.assertNotIn('debug_toolbar', s.INSTALLED_APPS)
+        self.assertNotIn('django_extensions', s.INSTALLED_APPS)
+        self.assertFalse([m for m in s.MIDDLEWARE if 'debug_toolbar' in m])
+
+    def test_whitenoise_suit_le_middleware_de_securite(self):
+        s = charger_settings_prod(ENV_VALIDE)
+        self.assertEqual(s.MIDDLEWARE[:2], ['django.middleware.security.SecurityMiddleware', 'whitenoise.middleware.WhiteNoiseMiddleware'])
+
+    def test_la_base_vient_de_l_environnement(self):
+        base = charger_settings_prod(ENV_VALIDE).DATABASES['default']
+        self.assertEqual((base['HOST'], base['NAME'], base['USER']), ('db', 'gesti', 'gesti'))
+
+    def test_chaque_variable_obligatoire_est_exigee(self):
+        for manquante in ENV_VALIDE:
+            with self.subTest(variable=manquante):
+                env = {k: v for k, v in ENV_VALIDE.items() if k != manquante}
+                with self.assertRaisesMessage(ImproperlyConfigured, manquante):
+                    charger_settings_prod(env)
+
+    def tearDown(self):
+        sys.modules.pop('gesti.settings_prod', None)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Le module de réglages lit <code>os.environ</code> <strong>à l'import</strong> : on le <strong>réimporte</strong> sous un environnement contrôlé (<code>patch.dict(..., clear=True)</code>), plutôt que de lancer un sous-processus. <code>SimpleTestCase</code> suffit : aucune base.</p>
+<h3>12.23. Fichiers statiques : <code>collectstatic</code> et WhiteNoise</h3>
+<p>En développement, <code>runserver</code> sert <code>catalog/static/</code>. En production, <strong>aucun</strong> serveur Django ne doit le faire : on <strong>collecte</strong> tous les fichiers statiques (ceux des applications <strong>et</strong> de l'admin) dans <strong>un</strong> dossier, que <code>WhiteNoise</code> expose.</p>
+<div class="code-block"><pre><code class="language-bash">python manage.py collectstatic --noinput --settings=gesti.settings_prod
+# 130 static files copied to '…/staticfiles', 390 post-processed.
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code>staticfiles/css/
+├── base.css                 ← l'original
+├── base.css.gz              ← version compressée (servie si le navigateur l'accepte)
+├── base.b5fba86194a2.css    ← nom haché : empreinte du contenu
+└── base.b5fba86194a2.css.gz
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><code>{% static 'css/base.css' %}</code> produit <strong>automatiquement</strong> l'URL hachée (<code>/static/css/base.b5fba86194a2.css</code>) : le gabarit n'a pas changé.</p>
+<blockquote>
+<p>⚠️ <strong>Piège n°60 — le stockage « manifest » exige <code>collectstatic</code></strong> : avec <code>CompressedManifestStaticFilesStorage</code>, <code>{% static %}</code> consulte le manifeste produit par <code>collectstatic</code>. Si on l'active dans <code>settings.py</code> <strong>commun</strong>, la suite de tests échoue (<code>ValueError: Missing staticfiles manifest entry for 'css/base.css'</code>) tant qu'on n'a pas collecté. Raison pour laquelle le stockage <strong>et</strong> le middleware WhiteNoise sont dans <code>settings_prod.py</code> : le développement et les tests n'en dépendent pas.</p>
+<p>💡 <strong>Et les fichiers téléversés (<code>MEDIA</code>) ?</strong> GestiFormation n'en a pas. Si un jour il en reçoit : stockage objet (S3, Azure Blob) via <code>django-storages</code>, <strong>pas</strong> le disque du conteneur (il disparaît à chaque redéploiement).</p>
+</blockquote>
+<h3>12.24. Base de données et migrations</h3>
+<p>SQLite convient à l'atelier, <strong>pas</strong> à une application multi-processus : verrous d'écriture globaux, pas d'accès réseau, un fichier dans un conteneur éphémère. On passe à <strong>PostgreSQL</strong> :</p>
+<div class="code-block"><pre><code class="language-bash"># une variable, tout est dedans
+DATABASE_URL=postgres://gesti:motdepasse@db:5432/gesti
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Élément</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>psycopg[binary]</code></td>
+<td>pilote PostgreSQL (dans <code>requirements.txt</code>)</td>
+</tr>
+<tr>
+<td><code>dj-database-url</code></td>
+<td>convertit l'URL en dictionnaire <code>DATABASES</code></td>
+</tr>
+<tr>
+<td><code>conn_max_age=600</code></td>
+<td>réutilise les connexions plutôt que d'en ouvrir une par requête</td>
+</tr>
+<tr>
+<td><code>conn_health_checks=True</code></td>
+<td>vérifie qu'une connexion persistante est encore vivante avant de s'en servir</td>
+</tr>
+</tbody>
+</table></div>
+<p>Les migrations s'appliquent <strong>au déploiement</strong>, <strong>avant</strong> de démarrer la nouvelle version, jamais au démarrage de chaque worker :</p>
+<div class="code-block"><pre><code class="language-bash">python manage.py migrate --noinput --settings=gesti.settings_prod
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>⚠️ <strong>Piège n°61 — oublier <code>makemigrations --check</code></strong> : le dépôt de référence a une migration en attente (le <code>choices</code> « Clôturée » corrigé au jour 4 sans <code>makemigrations</code>). Une migration manquante ne se voit <strong>pas</strong> en développement ; en production, <code>migrate</code> n'applique rien et le code attend un état de schéma qui n'existe pas. En CI : <code>python manage.py makemigrations --check --dry-run</code> <strong>doit</strong> retourner 0.</p>
+<p>💡 <strong>Vos données de développement ne partent pas en production</strong> : <code>db.sqlite3</code> n'est pas déployé (<code>.dockerignore</code>). Pour peupler une base neuve : <code>migrate</code>, puis <code>seed</code> ou <code>loaddata</code> <strong>explicitement</strong>, une fois.</p>
+</blockquote>
+<h3>12.25. Gunicorn, Docker et l'image</h3>
+<p><code>runserver</code> n'est pas un serveur de production. On utilise <strong>Gunicorn</strong>, un serveur d'application WSGI, derrière un <strong>reverse proxy</strong> qui termine TLS (nginx, Caddy, ou la plateforme elle-même).</p>
+<div class="code-block"><pre><code class="language-bash">gunicorn gesti.wsgi:application --bind 0.0.0.0:8000 --workers 3 --access-logfile -
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 <strong>Combien de workers ?</strong> Règle de départ : <code>2 × cœurs + 1</code>. Chaque worker est un processus Python complet (mémoire), traitant <strong>une</strong> requête à la fois.
+⚠️ <strong>Gunicorn ne tourne pas sous Windows</strong> : il s'exécute dans un <strong>conteneur Linux</strong> (ou WSL). <code>waitress</code> est l'équivalent Windows.</p>
+</blockquote>
+<div class="code-block"><pre><code class="language-dockerfile"># Dockerfile
+FROM python:3.13-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DJANGO_SETTINGS_MODULE=gesti.settings_prod
+
+# gettext : compilemessages (.mo) ; non versionnés, ils sont produits à la construction
+RUN apt-get update \
+    &amp;&amp; apt-get install -y --no-install-recommends gettext \
+    &amp;&amp; rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+# valeurs factices : seules les commandes de construction en ont besoin, jamais l'image finale
+RUN SECRET_KEY=construction ALLOWED_HOSTS=construction DATABASE_URL=sqlite:////tmp/build.db \
+    python manage.py compilemessages \
+    &amp;&amp; SECRET_KEY=construction ALLOWED_HOSTS=construction DATABASE_URL=sqlite:////tmp/build.db \
+    python manage.py collectstatic --noinput
+
+RUN useradd --create-home appuser
+USER appuser
+
+EXPOSE 8000
+CMD [&quot;gunicorn&quot;, &quot;gesti.wsgi:application&quot;, &quot;--bind&quot;, &quot;0.0.0.0:8000&quot;, &quot;--workers&quot;, &quot;3&quot;, &quot;--access-logfile&quot;, &quot;-&quot;]
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code># .dockerignore
+.venv/
+.git/
+.env*
+!.env.example
+__pycache__/
+*.pyc
+db.sqlite3
+staticfiles/
+htmlcov/
+docs/
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Ligne</th>
+<th>Pourquoi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>COPY requirements.txt</code> <strong>avant</strong> <code>COPY . .</code></td>
+<td>la couche des dépendances est <strong>mise en cache</strong> : modifier une vue ne réinstalle pas tout</td>
+</tr>
+<tr>
+<td><code>gettext</code> + <code>compilemessages</code></td>
+<td>le <code>.mo</code> n'est pas versionné ; l'image le fabrique à partir du <code>.po</code></td>
+</tr>
+<tr>
+<td>variables factices à la construction</td>
+<td><code>settings_prod</code> exige <code>SECRET_KEY</code>… : on lui en donne <strong>uniquement</strong> pour ces deux commandes ; l'image finale n'en contient aucune</td>
+</tr>
+<tr>
+<td><code>useradd</code> + <code>USER appuser</code></td>
+<td>le processus ne tourne <strong>pas</strong> en <code>root</code></td>
+</tr>
+<tr>
+<td><code>.dockerignore</code> : <code>.env*</code>, <code>db.sqlite3</code>, <code>.git/</code></td>
+<td>un secret ou une base locale ne finit jamais <strong>dans l'image</strong></td>
+</tr>
+<tr>
+<td><code>CMD</code> Gunicorn</td>
+<td>l'image est autonome : aucune commande de démarrage à retenir</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Construire et lancer</strong> (sur une machine disposant de Docker et d'une base PostgreSQL) :</p>
+<div class="code-block"><pre><code class="language-bash">docker build -t gestiformation:j5 .
+docker run --rm -p 8000:8000 --env-file .env.prod gestiformation:j5
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 <strong>Formateur</strong> : la construction de l'image <strong>n'a pas été exécutée</strong> lors de la rédaction (démon Docker arrêté sur la machine de préparation). Valider <code>docker build</code> <strong>la veille</strong> sur le poste de la salle ; en cas d'impossibilité, l'atelier se limite aux étapes 1 à 5 ci-dessous, qui n'ont pas besoin de Docker.</p>
+<p>⚠️ <strong>Piège n°62 — les secrets ne se copient pas dans l'image</strong> : <code>ENV SECRET_KEY=…</code> dans un <code>Dockerfile</code> <strong>grave</strong> la valeur dans chaque couche (<code>docker history</code> la montre). Les secrets sont injectés à <strong>l'exécution</strong> (<code>--env-file</code>, secrets de la plateforme).</p>
+</blockquote>
+<h3>12.26. La chaîne de livraison</h3>
+<p>Le schéma du matin se lit maintenant de gauche à droite :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Étape</th>
+<th>Commande</th>
+<th>Échec =</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1. Tests</strong></td>
+<td><code>SECRET_KEY=cle-factice python manage.py test --shuffle</code></td>
+<td>on s'arrête, <strong>rien n'est construit</strong></td>
+</tr>
+<tr>
+<td>2. Migrations à jour</td>
+<td><code>python manage.py makemigrations --check --dry-run</code></td>
+<td>un <code>models.py</code> modifié sans migration</td>
+</tr>
+<tr>
+<td>3. Dépendances</td>
+<td><code>pip install -r requirements.txt</code></td>
+<td>un paquet manquant se voit <strong>ici</strong>, pas en production</td>
+</tr>
+<tr>
+<td>4. Traductions</td>
+<td><code>python manage.py compilemessages</code></td>
+<td><code>.po</code> invalide</td>
+</tr>
+<tr>
+<td>5. Statiques</td>
+<td><code>python manage.py collectstatic --noinput --settings=gesti.settings_prod</code></td>
+<td>un <code>{% static %}</code> vers un fichier inexistant</td>
+</tr>
+<tr>
+<td>6. Audit</td>
+<td><code>python manage.py check --deploy --settings=gesti.settings_prod</code></td>
+<td>un réglage fragile</td>
+</tr>
+<tr>
+<td>7. Base</td>
+<td><code>python manage.py migrate --noinput --settings=gesti.settings_prod</code></td>
+<td>schéma et code désynchronisés</td>
+</tr>
+<tr>
+<td>8. Démarrage</td>
+<td><code>gunicorn gesti.wsgi:application …</code></td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>💡 Le test d'<strong>entrée</strong> de la chaîne est celui qui a été écrit hier : <em>« Quand un collègue touchera <code>services.py</code>, il n'aura pas besoin de vous : les tests lui diront ce qui casse. »</em> Aujourd'hui, la même phrase vaut pour <strong>le déploiement</strong>.</p>
+</blockquote>
+<h3>🛠️ Atelier 12·d — Du poste à la production (60 min)</h3>
+<ol>
+<li>appliquer les modifications de <code>settings.py</code> (§12.20) ; vérifier que <strong>rien ne change</strong> : <code>python manage.py test</code> toujours vert ;</li>
+<li>créer <code>settings_prod.py</code> ; <strong>lancer sans variable</strong> :</li>
+</ol>
+<div class="code-block"><pre><code class="language-bash">python manage.py check --settings=gesti.settings_prod
+# django.core.exceptions.ImproperlyConfigured: Variable d'environnement obligatoire absente : SECRET_KEY
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<ol>
+<li>fournir les trois variables (clé générée, hôte, <code>DATABASE_URL=sqlite:///check.db</code>) : <code>check --deploy</code> → <strong>deux avertissements</strong> HSTS seulement ;</li>
+<li><code>collectstatic --settings=gesti.settings_prod</code> : repérer <code>base.&lt;hash&gt;.css</code> ; modifier une ligne de <code>base.css</code>, relancer : <strong>le hash change</strong> ;</li>
+<li>écrire <code>test_production.py</code> ; lancer ;</li>
+<li><em>(si Docker disponible)</em> construire l'image, la lancer avec un <code>--env-file</code>, ouvrir <code>http://127.0.0.1:8000/</code> : redirection HTTPS attendue (<code>SECURE_SSL_REDIRECT</code>) — définir <code>SECURE_SSL_REDIRECT=0</code> pour un essai local ;</li>
+<li><strong>muter</strong> :</li>
+</ol>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Mutation</th>
+<th>Détection</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>DEBUG = True</code> dans <code>settings_prod.py</code></td>
+<td><code>test_durcissement</code> ; <code>check --deploy</code> (W018)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>retirer <code>SESSION_COOKIE_SECURE = True</code></td>
+<td><code>test_durcissement</code> ; <code>check --deploy</code> (W012)</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>MIDDLEWARE.insert(0, …)</code> au lieu de <code>insert(1, …)</code></td>
+<td><code>test_whitenoise_suit_le_middleware_de_securite</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>mettre <code>STORAGES</code> dans <code>settings.py</code> (commun)</td>
+<td><code>manage.py test</code> : <code>ValueError … Missing staticfiles manifest entry</code> (piège n°60)</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Checklist</strong> :</p>
+<ul>
+<li>[ ] <code>manage.py test</code> est <strong>vert sans variable</strong> (settings de développement), <code>check --deploy</code> est <strong>quasi muet</strong> (settings de production) ;</li>
+<li>[ ] aucun secret n'est dans le dépôt (<code>git grep -n "SECRET\|CLIENT_ID"</code> ne renvoie que des <strong>noms</strong> de variables) ;</li>
+<li>[ ] les stagiaires savent dire ce que ferait <code>DEBUG = True</code> en production ;</li>
+<li>[ ] commit <code>J5 : configuration de production, Dockerfile</code>.</li>
+</ul>
+<blockquote>
+<p>💡 <strong>Critère de réussite de la journée</strong> (à énoncer devant le binôme) : « Je sais dire, pour l'inscription d'un client, <strong>quand part l'e-mail</strong> et pourquoi <strong>pas avant</strong> ; <strong>ce qui se passe</strong> quand le serveur SMTP est en panne ; <strong>comment un compte GitHub devient un <code>Client</code></strong> ; et <strong>ce qui empêche</strong> <code>DEBUG = True</code> de se retrouver en production. »</p>
+</blockquote>
+<hr />
+</div>
+
+<div id="tab-synthese-de-fin-de-journee" class="tab-content">
+<h3>Ce qui est en place</h3>
+<div class="code-block"><pre><code>gestiformation/
+├── manage.py
+├── requirements.txt                  # + django-allauth, whitenoise, gunicorn, dj-database-url, psycopg
+├── Dockerfile                        # ← NOUVEAU
+├── .dockerignore                     # ← NOUVEAU
+├── .env.example                      # ← NOUVEAU (modèle versionné ; .env reste local)
+├── .gitignore                        # *.po n'est plus ignoré ; .env.example excepté
+├── gesti/
+│   ├── settings.py                   # + env_bool/env_list, EMAIL_*, allauth, STATIC_ROOT
+│   ├── settings_prod.py              # ← NOUVEAU : DEBUG=False, HTTPS, WhiteNoise, PostgreSQL
+│   └── urls.py                       # + accounts/ (allauth) hors i18n_patterns, toolbar conditionnelle
+└── catalog/
+    ├── emails.py                     # ← NOUVEAU : confirmation_inscription()
+    ├── adapters.py                   # ← NOUVEAU : inscription locale fermée, sociale ouverte
+    ├── signals.py                    # ← NOUVEAU : user_signed_up → rattacher_client
+    ├── apps.py                       # ready() branche les signaux
+    ├── services.py                   # + rattacher_client(), on_commit dans inscrire()
+    ├── views.py                      # + export_inscriptions(), _to_text()
+    ├── urls.py                       # + inscriptions/export.csv
+    ├── templates/
+    │   ├── allauth/layouts/base.html # ← NOUVEAU : habille les pages d'allauth
+    │   ├── catalog/emails/…          # ← NOUVEAU : confirmation_inscription.txt / .html
+    │   └── registration/login.html   # + boutons GitHub / Google
+    └── tests/
+        ├── test_emails.py            #  7 tests
+        ├── test_export.py            #  8 tests
+        ├── test_oauth.py             #  9 tests
+        └── test_production.py        #  5 tests
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<h3>Les réflexes installés</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Réflexe</th>
+<th>Pourquoi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>un effet de bord irréversible (e-mail, webhook) part <strong>après le COMMIT</strong>, par <code>transaction.on_commit</code></td>
+<td>jamais de confirmation pour une inscription qui n'existe pas</td>
+</tr>
+<tr>
+<td>un service extérieur <strong>peut tomber</strong> : <code>timeout</code>, <code>try/except</code>, journal, et la requête <strong>aboutit</strong></td>
+<td>l'inscription est plus importante que sa notification</td>
+</tr>
+<tr>
+<td>la langue d'un e-mail se <strong>fixe</strong> (<code>translation.override</code>)</td>
+<td>hors requête, la langue « active » n'est pas fiable</td>
+</tr>
+<tr>
+<td>un lien d'e-mail est <strong>absolu</strong> (<code>SITE_URL</code>)</td>
+<td>une messagerie n'a pas de domaine de référence</td>
+</tr>
+<tr>
+<td>un export = mêmes <strong>gardes</strong> que la liste ; une donnée saisie par un tiers est <strong>non fiable</strong></td>
+<td>exporter ne doit ni ouvrir de droit, ni exécuter de formule</td>
+</tr>
+<tr>
+<td>un CSV a <strong>un destinataire</strong> : Excel français (<code>;</code>, BOM, virgule) ou un autre système (standard)</td>
+<td>« le fichier est valide » ≠ « le fichier s'ouvre bien »</td>
+</tr>
+<tr>
+<td>OAuth : le <strong>secret reste côté serveur</strong>, <code>state</code> anti-CSRF, flux démarré en <strong>POST</strong></td>
+<td>le mot de passe ne passe jamais chez nous</td>
+</tr>
+<tr>
+<td>l'<strong>URL de retour</strong> est identique <strong>au caractère près</strong>, <strong>hors</strong> préfixe de langue</td>
+<td>une seule URL enregistrée chez le fournisseur</td>
+</tr>
+<tr>
+<td>on teste <strong>notre</strong> moitié d'OAuth, jamais celle du fournisseur</td>
+<td>tests rapides, déterministes, sans réseau</td>
+</tr>
+<tr>
+<td>un signal se branche dans <code>AppConfig.ready()</code></td>
+<td>sinon : <strong>aucune erreur, aucun effet</strong></td>
+</tr>
+<tr>
+<td>la configuration vient de l'<strong>environnement</strong> ; un secret n'a <strong>pas</strong> de valeur par défaut</td>
+<td>le même code tourne partout ; rien de sensible dans git</td>
+</tr>
+<tr>
+<td>un module <code>settings_prod</code> <strong>explicite</strong>, <code>DEBUG = False</code> <strong>écrit en dur</strong></td>
+<td>la production est lisible et ne dépend d'aucun <code>if</code></td>
+</tr>
+<tr>
+<td><code>check --deploy</code> avant chaque mise en ligne</td>
+<td>Django audite sa propre configuration</td>
+</tr>
+<tr>
+<td>les tests sont le <strong>premier maillon</strong> de la livraison</td>
+<td>on ne construit pas une image sur une suite rouge</td>
+</tr>
+</tbody>
+</table></div>
+<h3>Pièges vus aujourd'hui (à récapituler oralement)</h3>
+<ol>
+<li>lien relatif dans un e-mail : mort hors du site ;</li>
+<li>e-mail envoyé <strong>dans</strong> la transaction : confirmation d'une inscription annulée ;</li>
+<li>langue active hors requête : e-mail dans la mauvaise langue (visible en <code>--shuffle</code>) ;</li>
+<li>attendre un e-mail sans <code>captureOnCommitCallbacks</code> : <code>mail.outbox</code> vide ;</li>
+<li>injection de formule dans un CSV ;</li>
+<li>accents illisibles dans Excel : BOM, séparateur, virgule décimale ;</li>
+<li>URL de retour OAuth différente de celle enregistrée (<code>127.0.0.1</code> ≠ <code>localhost</code>, <code>http</code> ≠ <code>https</code>) ;</li>
+<li><code>client_secret</code> ou <code>SECRET_KEY</code> dans git ;</li>
+<li>callback OAuth sous <code>i18n_patterns</code> : une URL par langue ;</li>
+<li><code>login()</code> avec plusieurs backends : <code>ValueError</code> ;</li>
+<li>fusion automatique des comptes par e-mail : risque de prise de contrôle ;</li>
+<li><code>*.po</code> dans <code>.gitignore</code> : traductions jamais versionnées ;</li>
+<li>HSTS activé trop vite ou trop longtemps ;</li>
+<li><code>DEBUG = True</code> ou <code>ALLOWED_HOSTS = ['*']</code> en production ;</li>
+<li>stockage « manifest » dans la configuration commune : tests et développement cassés ;</li>
+<li>migration oubliée : <code>makemigrations --check</code> en CI ;</li>
+<li>secret copié dans l'image Docker.</li>
+</ol>
+<h3>Bilan des cinq jours</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Jour</th>
+<th>Question traitée</th>
+<th>Ce que GestiFormation sait faire</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>J1</strong></td>
+<td>Comment une requête devient une page ?</td>
+<td>projet, application <code>catalog</code>, URLs, vues, gabarits, 404</td>
+</tr>
+<tr>
+<td><strong>J2</strong></td>
+<td>Où vivent les données ?</td>
+<td>modèles, migrations, relations, ORM (<code>F</code>, <code>select_related</code>), formulaires de saisie</td>
+</tr>
+<tr>
+<td><strong>J3</strong></td>
+<td>Qui a le droit de faire quoi ?</td>
+<td><code>ModelForm</code>, inscriptions, admin sur mesure, authentification, permissions, « Mon espace »</td>
+</tr>
+<tr>
+<td><strong>J4</strong></td>
+<td>Est-ce lisible par d'autres, et est-ce correct ?</td>
+<td>français / anglais, formats localisés, <strong>suite de tests</strong></td>
+</tr>
+<tr>
+<td><strong>J5</strong></td>
+<td>Comment ça sort de l'atelier ?</td>
+<td>e-mails, export CSV, connexion sociale, <strong>production</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>Le fil conducteur de la semaine : <strong>une règle métier s'écrit une fois</strong> (<code>services.inscrire</code>), puis chaque jour lui donne une nouvelle porte d'entrée (formulaire, bouton, admin), une nouvelle langue, un nouveau garde-fou (permission, test), un nouveau canal (e-mail, CSV) — <strong>sans jamais la réécrire</strong>.</p>
+<h3>Et après ? (pistes hors périmètre)</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Besoin</th>
+<th>Piste</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tâches longues ou en masse (e-mailing de 5 000 destinataires, exports volumineux)</td>
+<td><strong>Celery</strong>, <strong>RQ</strong>, ou Django Tasks : même principe <code>on_commit</code> → file → worker</td>
+</tr>
+<tr>
+<td>API pour une application mobile ou une SPA</td>
+<td><strong>Django REST Framework</strong> (ou Ninja) : sérialiseurs, permissions, authentification par jeton</td>
+</tr>
+<tr>
+<td>performances</td>
+<td>cache (<code>django.core.cache</code>, Redis), <code>select_related</code>/<code>prefetch_related</code>, index, pagination</td>
+</tr>
+<tr>
+<td>suivi en production</td>
+<td><strong>Sentry</strong> (erreurs), métriques, <code>health check</code> HTTP, alertes</td>
+</tr>
+<tr>
+<td>factures PDF</td>
+<td><strong>WeasyPrint</strong> ou <strong>ReportLab</strong>, <code>Contrat</code> (hérité d'un <code>Document</code>) comme point de départ</td>
+</tr>
+<tr>
+<td>séparer les données par organisme (multi-tenant)</td>
+<td>filtre systématique par propriétaire (§9.7 du jour 3) ou schéma par client</td>
+</tr>
+<tr>
+<td>sauvegardes</td>
+<td><code>pg_dump</code> planifié, restauration <strong>testée</strong></td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>💡 <strong>Message de clôture</strong> : « En cinq jours, le site est passé d'une page blanche à une application <strong>multilingue, testée, ouverte sur l'extérieur et déployable</strong>. Le plus important n'est pas ce qu'elle fait aujourd'hui : c'est que n'importe qui peut la modifier demain <strong>sans la casser</strong> — parce que les règles sont à un seul endroit et que les tests le diront. »</p>
+</blockquote>
+<hr />
+</div>
+
+<div id="tab-annexe-commandes-du-jour-cheat-sheet" class="tab-content">
+<div class="code-block"><pre><code class="language-bash"># Dépendances
+pip install &quot;django-allauth[socialaccount]&quot; whitenoise gunicorn dj-database-url &quot;psycopg[binary]&quot; coverage
+python manage.py migrate                         # tables allauth
+
+# E-mail (développement : affichage dans le terminal)
+python manage.py runserver                       # EMAIL_BACKEND = console par défaut
+python manage.py test catalog.tests.test_emails
+
+# Export
+python manage.py test catalog.tests.test_export
+
+# OAuth
+python manage.py test catalog.tests.test_oauth
+#   .env : GITHUB_CLIENT_ID, GITHUB_SECRET, GOOGLE_CLIENT_ID, GOOGLE_SECRET
+#   URL de retour : http://127.0.0.1:8000/accounts/&lt;fournisseur&gt;/login/callback/
+
+# Traductions (le .po est versionné ; le .mo non)
+python manage.py makemessages -l en -i .venv -i staticfiles
+python manage.py compilemessages
+
+# Production
+python -c &quot;from django.core.management.utils import get_random_secret_key as g; print(g())&quot;
+export SECRET_KEY=… ALLOWED_HOSTS=formation.example.org DATABASE_URL=postgres://…
+python manage.py check --deploy --settings=gesti.settings_prod
+python manage.py collectstatic --noinput --settings=gesti.settings_prod
+python manage.py migrate --noinput --settings=gesti.settings_prod
+gunicorn gesti.wsgi:application --bind 0.0.0.0:8000 --workers 3 --access-logfile -
+
+# Conteneur
+docker build -t gestiformation:j5 .
+docker run --rm -p 8000:8000 --env-file .env.prod gestiformation:j5
+
+# Chaîne complète en CI
+SECRET_KEY=cle-factice python manage.py test --shuffle
+python manage.py makemigrations --check --dry-run
+SECRET_KEY=cle-factice coverage run --source=catalog manage.py test --shuffle &amp;&amp; coverage report --fail-under=85
+
+# Git
+git add -A &amp;&amp; git commit -m &quot;J5 : e-mail de confirmation d'inscription&quot;
+git add -A &amp;&amp; git commit -m &quot;J5 : export CSV des inscriptions&quot;
+git add -A &amp;&amp; git commit -m &quot;J5 : connexion GitHub / Google (allauth)&quot;
+git add -A &amp;&amp; git commit -m &quot;J5 : configuration de production, Dockerfile&quot;
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+</div>
+  </div>
+</div>
+
+<script>
+// ─── THEME ──────────────────────────────────────────────────────────────────
+(function () {
+  const root = document.documentElement;
+  const stored = localStorage.getItem('dawan-theme');
+  if (stored) root.setAttribute('data-theme', stored);
+  updateToggleLabel();
+})();
+
+function updateToggleLabel() {
+  const current = document.documentElement.getAttribute('data-theme') ||
+    (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  document.getElementById('theme-icon').textContent = current === 'dark' ? '🌙' : '☀️';
+  document.getElementById('theme-label').textContent = current === 'dark' ? 'Sombre' : 'Clair';
+}
+
+function toggleTheme() {
+  const root = document.documentElement;
+  const current = root.getAttribute('data-theme') ||
+    (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  const next = current === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('dawan-theme', next);
+  updateToggleLabel();
+}
+
+// ─── TABS ───────────────────────────────────────────────────────────────────
+function showTab(id) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.side-nav button').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+  document.querySelector('.content').scrollTo({ top: 0, behavior: 'instant' });
+}
+
+// ─── COPY CODE ──────────────────────────────────────────────────────────────
+function copyCode(btn) {
+  const pre = btn.previousElementSibling;
+  navigator.clipboard.writeText(pre.textContent).then(() => {
+    btn.textContent = 'Copié !'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copier'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 540" role="img" aria-label="Flux d'authentification Django : redirection vers le login, authenticate, login, cookie de session">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#475569"/>
+    </marker>
+    <marker id="arr-ok" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#0f766e"/>
+    </marker>
+    <marker id="arr-err" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#d97706"/>
+    </marker>
+  </defs>
+  <rect width="1080" height="540" fill="#ffffff"/>
+  <text x="540" y="30" text-anchor="middle" font-family="system-ui, sans-serif" font-size="18" font-weight="600" fill="#1f2937">Authentification — du @login_required au cookie de session</text>
+
+  <!-- têtes de colonnes -->
+  <g font-family="system-ui, sans-serif" text-anchor="middle">
+    <rect x="75" y="50" width="150" height="40" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text x="150" y="75" font-size="14" font-weight="600" fill="#1f2937">Navigateur</text>
+    <rect x="440" y="50" width="200" height="40" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="540" y="75" font-size="14" font-weight="600" fill="#1f2937">Django (middleware + vue)</text>
+    <rect x="850" y="50" width="160" height="40" rx="8" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.5"/>
+    <text x="930" y="75" font-size="14" font-weight="600" fill="#1f2937">Base de données</text>
+  </g>
+
+  <!-- lignes de vie -->
+  <g stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="5 5">
+    <line x1="150" y1="90" x2="150" y2="480"/>
+    <line x1="540" y1="90" x2="540" y2="480"/>
+    <line x1="930" y1="90" x2="930" y2="480"/>
+  </g>
+
+  <!-- messages -->
+  <g stroke-width="2" fill="none">
+    <line x1="152" y1="125" x2="538" y2="125" stroke="#475569" marker-end="url(#arr)"/>
+    <line x1="538" y1="165" x2="152" y2="165" stroke="#d97706" stroke-dasharray="6 4" marker-end="url(#arr-err)"/>
+    <line x1="152" y1="215" x2="538" y2="215" stroke="#475569" marker-end="url(#arr)"/>
+    <line x1="542" y1="255" x2="928" y2="255" stroke="#475569" marker-end="url(#arr)"/>
+    <line x1="542" y1="295" x2="928" y2="295" stroke="#475569" marker-end="url(#arr)"/>
+    <line x1="538" y1="335" x2="152" y2="335" stroke="#0f766e" stroke-dasharray="6 4" marker-end="url(#arr-ok)"/>
+    <line x1="152" y1="385" x2="538" y2="385" stroke="#475569" marker-end="url(#arr)"/>
+    <line x1="542" y1="425" x2="928" y2="425" stroke="#475569" marker-end="url(#arr)"/>
+    <line x1="538" y1="465" x2="152" y2="465" stroke="#0f766e" stroke-dasharray="6 4" marker-end="url(#arr-ok)"/>
+  </g>
+
+  <g font-family="system-ui, sans-serif" font-size="11.5" fill="#374151" text-anchor="middle">
+    <text x="345" y="117">1. GET /inscriptions/   (aucun cookie)</text>
+    <text x="345" y="157" fill="#b45309">2. 302 → /comptes/login/?next=/inscriptions/</text>
+    <text x="345" y="207">3. POST /comptes/login/  (username, password, csrf)</text>
+    <text x="735" y="247">4. authenticate() : SELECT auth_user + check_password</text>
+    <text x="735" y="287">5. login() : INSERT django_session (clé aléatoire)</text>
+    <text x="345" y="327" fill="#0f766e">6. 302 → /inscriptions/  +  Set-Cookie: sessionid=…</text>
+    <text x="345" y="377">7. GET /inscriptions/  +  Cookie: sessionid</text>
+    <text x="735" y="417">8. SELECT django_session  →  request.user</text>
+    <text x="345" y="457" fill="#0f766e">9. 200 OK   (ou 403 si la permission manque)</text>
+  </g>
+
+  <!-- annotations -->
+  <g font-family="system-ui, sans-serif" font-size="10.5" fill="#6b7280">
+    <text x="548" y="141">@login_required : request.user est anonyme</text>
+    <text x="548" y="231">LoginView + AuthenticationForm</text>
+    <text x="548" y="401">AuthenticationMiddleware lit le cookie</text>
+  </g>
+
+  <text x="540" y="510" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11.5" fill="#6b7280">Le mot de passe n'est jamais stocké : seulement son hash salé (PBKDF2). Le cookie ne contient qu'une clé de session, jamais l'identité.</text>
+</svg>

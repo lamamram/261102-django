@@ -1,0 +1,93 @@
+:root {
+  --course-home-bg: rgba(22, 27, 34, .9);
+  --course-home-border: rgba(255, 255, 255, .16);
+  --course-home-text: #e6edf3;
+  --course-focus: #f0883e;
+}
+
+:root[data-theme="light"] {
+  --course-home-bg: rgba(246, 248, 250, .92);
+  --course-home-border: rgba(31, 35, 40, .16);
+  --course-home-text: #1f2328;
+  --course-focus: #bc4c00;
+}
+
+.course-home-link {
+  position: fixed;
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  min-height: 2.35rem;
+  padding: .55rem .85rem;
+  border: 1px solid var(--course-home-border);
+  border-radius: 999px;
+  background: var(--course-home-bg);
+  color: var(--course-home-text);
+  font: 600 .86rem/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .26);
+  backdrop-filter: blur(12px);
+}
+
+.course-home-link:hover {
+  border-color: rgba(240, 136, 62, .5);
+  transform: translateY(-1px);
+}
+
+.course-home-link:focus-visible,
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--course-focus);
+  outline-offset: 3px;
+}
+
+.card.course-visited {
+  border-style: solid;
+}
+
+.card.course-visited::before {
+  opacity: 1;
+}
+
+.course-progress-pill {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  margin-top: .15rem;
+  padding: .18rem .55rem;
+  border: 1px solid rgba(63, 185, 80, .5);
+  border-radius: 999px;
+  color: #3fb950;
+  background: rgba(63, 185, 80, .1);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 640px) {
+  .course-home-link {
+    left: .75rem;
+    bottom: .75rem;
+    max-width: calc(100vw - 1.5rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .001ms !important;
+  }
+}

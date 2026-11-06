@@ -1,0 +1,2383 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Support interactif de formation Django - Initiation et Approfondissement : 04 — Parler plusieurs langues, prouver que ça marche - internationalisation et tests">
+<title>04 — Parler plusieurs langues, prouver que ça marche - internationalisation et tests</title>
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --surface2: #1c2128; --border: #30363d;
+  --primary: #f0883e; --primary2: #ffa657;
+  --success: #3fb950; --warning: #d29922; --danger: #f85149;
+  --text: #e6edf3; --text-muted: #8b949e; --code-bg: #010409; --radius: 10px;
+  --topbar-h: 3.25rem;
+}
+:root[data-theme="light"] {
+  --bg: #ffffff; --surface: #f6f8fa; --surface2: #eaeef2; --border: #d0d7de;
+  --primary: #bc4c00; --primary2: #953800;
+  --success: #1a7f37; --warning: #9a6700; --danger: #cf222e;
+  --text: #1f2328; --text-muted: #656d76; --code-bg: #f6f8fa;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #ffffff; --surface: #f6f8fa; --surface2: #eaeef2; --border: #d0d7de;
+    --primary: #bc4c00; --primary2: #953800;
+    --success: #1a7f37; --warning: #9a6700; --danger: #cf222e;
+    --text: #1f2328; --text-muted: #656d76; --code-bg: #f6f8fa;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.7; transition: background .2s, color .2s; }
+
+/* TOPBAR — fixe, ne bouge jamais au scroll */
+.topbar {
+  position: sticky; top: 0; z-index: 200; height: var(--topbar-h);
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: .9rem; padding: 0 1rem;
+}
+.topbar .badge {
+  flex: 0 0 auto; background: var(--primary); color: #0d1117;
+  font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 20px; white-space: nowrap;
+}
+.topbar a.chapter-title {
+  flex: 1 1 auto; min-width: 0; display: flex; align-items: baseline; gap: .5rem;
+  text-decoration: none; color: var(--text); font-weight: 700; font-size: .92rem;
+  overflow: hidden;
+}
+.topbar a.chapter-title:hover { color: var(--primary); }
+.topbar a.chapter-title .num { color: var(--primary); flex: 0 0 auto; }
+.topbar a.chapter-title .txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar-links { flex: 0 0 auto; display: flex; align-items: center; gap: .5rem; }
+.topbar-link {
+  white-space: nowrap; padding: .4rem .8rem; border: 1px solid var(--border); border-radius: 20px;
+  font-size: .8rem; font-weight: 600; color: var(--text-muted); text-decoration: none; transition: all .2s;
+}
+.topbar-link:hover { color: var(--primary); border-color: var(--primary); }
+.theme-toggle {
+  flex: 0 0 auto; background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  padding: .4rem .7rem; border-radius: 20px; font-size: .8rem; cursor: pointer;
+  display: inline-flex; align-items: center; gap: .35rem;
+}
+.theme-toggle:hover { border-color: var(--primary); }
+
+/* LAYOUT — sidebar gauche + contenu */
+.layout { display: flex; align-items: flex-start; }
+.sidebar {
+  flex: 0 0 280px; width: 280px;
+  position: sticky; top: var(--topbar-h);
+  height: calc(100vh - var(--topbar-h));
+  overflow-y: auto; border-right: 1px solid var(--border); background: var(--surface);
+  padding: 1.25rem 1rem 2rem;
+}
+.objectifs {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: .8rem 1rem; margin-bottom: 1.25rem;
+}
+.objectifs-label { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--primary); }
+.objectifs ul { margin: .4rem 0 0 1.1rem; }
+.objectifs li { font-size: .82rem; color: var(--text-muted); margin-bottom: .3rem; line-height: 1.4; }
+.side-nav { display: flex; flex-direction: column; gap: .1rem; }
+.side-nav button {
+  text-align: left; background: none; border: none; border-left: 3px solid transparent;
+  color: var(--text-muted); padding: .55rem .7rem; font-size: .87rem; font-weight: 500;
+  cursor: pointer; border-radius: 0 6px 6px 0; transition: all .15s;
+}
+.side-nav button:hover { color: var(--text); background: var(--surface2); }
+.side-nav button.active { color: var(--primary); border-left-color: var(--primary); background: var(--surface2); font-weight: 600; }
+.side-nav-sep { height: 1px; background: var(--border); margin: .6rem 0; }
+
+.content { flex: 1 1 auto; min-width: 0; }
+.tab-content { display: none; padding: 2rem 2.5rem 4rem; max-width: 1100px; margin: 0 auto; }
+.tab-content.active { display: block; }
+
+/* SECTIONS */
+h2 { font-size: 1.25rem; color: var(--primary2); margin: 1.8rem 0 .8rem; border-left: 3px solid var(--primary); padding-left: .75rem; }
+h3 { font-size: 1.05rem; color: var(--text); margin: 1.4rem 0 .6rem; }
+p { margin-bottom: .9rem; }
+ul, ol { padding-left: 1.4rem; margin-bottom: .9rem; }
+li { margin-bottom: .35rem; }
+
+/* RESSOURCES — liste sous forme de cartes plutôt que de puces */
+#tab-ressources ul { list-style: none; padding-left: 0; display: flex; flex-direction: column; gap: .5rem; }
+#tab-ressources li {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: .75rem 1rem; margin-bottom: 0;
+}
+#tab-ressources li a { color: var(--primary2); font-weight: 600; text-decoration: none; }
+#tab-ressources li a:hover { text-decoration: underline; }
+
+/* AIDE — divulgation progressive pas-à-pas */
+details.aide { margin-top: 1.5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+details.aide summary {
+  cursor: pointer; padding: .8rem 1.1rem; font-weight: 600; color: var(--primary);
+  list-style: none; display: flex; align-items: center; gap: .5rem;
+}
+details.aide summary::-webkit-details-marker { display: none; }
+details.aide summary::before { content: "▶"; font-size: .7rem; transition: transform .15s; }
+details.aide[open] summary::before { transform: rotate(90deg); }
+details.aide .aide-body { padding: 0 1.1rem 1.1rem; border-top: 1px solid var(--border); margin-top: .2rem; padding-top: 1rem; }
+img { max-width: 100%; height: auto; display: block; margin: 1rem auto; }
+
+/* EXERCICE — un bloc par atelier, avec son aide pas-à-pas attachée juste en dessous */
+.exercice { padding: 1.3rem 0; border-top: 1px solid var(--border); }
+.exercice:first-of-type { border-top: none; padding-top: 0; }
+.exercice h3 { margin: 0 0 .8rem; color: var(--primary2); }
+
+/* CALLOUTS */
+.callout { border-radius: var(--radius); padding: .9rem 1.1rem; margin: 1.2rem 0; border-left: 4px solid; background: var(--surface2); }
+.callout.note   { border-color: var(--primary); }
+.callout.tip    { border-color: var(--success); }
+.callout.warn   { border-color: var(--warning); }
+.callout.danger { border-color: var(--danger); }
+.callout p:last-child { margin-bottom: 0; }
+.callout-title { font-weight: 700; font-size: .82rem; text-transform: uppercase; letter-spacing: .07em; margin-bottom: .4rem; }
+.callout.note   .callout-title { color: var(--primary); }
+.callout.tip    .callout-title { color: var(--success); }
+.callout.warn   .callout-title { color: var(--warning); }
+.callout.danger .callout-title { color: var(--danger); }
+
+/* TABLES */
+.table-wrap { overflow-x: auto; margin: 1rem 0; }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th { background: var(--surface2); color: var(--primary2); text-align: left; padding: .6rem .9rem; font-weight: 600; border: 1px solid var(--border); }
+td { padding: .55rem .9rem; border: 1px solid var(--border); vertical-align: top; }
+tr:hover td { background: var(--surface2); }
+
+/* CODE */
+.code-block { position: relative; margin: 1rem 0; }
+pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1rem 1rem 1.2rem; overflow-x: auto; }
+code { font-family: 'Consolas', 'Cascadia Code', monospace; font-size: .88rem; color: var(--primary2); }
+p code, li code, td code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 5px; padding: .05rem .35rem; }
+.copy-btn {
+  position: absolute; top: .5rem; right: .5rem;
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted);
+  padding: .25rem .6rem; font-size: .75rem; border-radius: 5px; cursor: pointer; transition: all .2s;
+}
+.copy-btn:hover { background: var(--primary); color: #0d1117; }
+.copy-btn.copied { background: var(--success); color: #0d1117; }
+
+/* QUIZ */
+.quiz-question { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem; margin-bottom: 1.2rem; }
+.quiz-question h4 { color: var(--primary2); margin-bottom: .9rem; font-size: .98rem; }
+.quiz-options { display: flex; flex-direction: column; gap: .5rem; }
+.quiz-option {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: .6rem .9rem; cursor: pointer;
+  font-size: .9rem; transition: all .2s; text-align: left; color: var(--text);
+}
+.quiz-option:hover:not(:disabled) { border-color: var(--primary); }
+.quiz-option.correct { border-color: var(--success); color: var(--success); }
+.quiz-option.wrong   { border-color: var(--danger);  color: var(--danger);  }
+.quiz-option:disabled { cursor: default; }
+.quiz-feedback { margin-top: .6rem; font-size: .87rem; color: var(--text-muted); font-style: italic; }
+.quiz-score {
+  background: var(--surface2); border: 1px solid var(--primary);
+  border-radius: var(--radius); padding: 1.5rem; text-align: center; margin-top: 1.5rem; display: none;
+}
+.quiz-score .score-num { font-size: 2.5rem; font-weight: 700; color: var(--primary); }
+.quiz-score p { color: var(--text-muted); margin-top: .4rem; }
+.btn-restart { background: var(--primary); color: #0d1117; border: none; padding: .6rem 1.4rem; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 1rem; font-size: .9rem; }
+.btn-restart:hover { background: var(--primary2); }
+
+/* RESPONSIVE — sidebar devient une barre horizontale sous 900px */
+@media (max-width: 900px) {
+  .layout { flex-direction: column; }
+  .sidebar {
+    position: static; width: 100%; height: auto; max-height: 40vh;
+    border-right: none; border-bottom: 1px solid var(--border);
+  }
+  .side-nav { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; gap: .3rem; }
+  .side-nav button { border-left: none; border-bottom: 3px solid transparent; white-space: nowrap; border-radius: 6px 6px 0 0; }
+  .side-nav button.active { border-left-color: transparent; border-bottom-color: var(--primary); }
+  .side-nav-sep { display: none; }
+  .tab-content { padding: 1.5rem 1.2rem 3rem; }
+  .topbar a.chapter-title { font-size: .82rem; }
+}
+</style>
+<link rel="stylesheet" href="assets/course-common.css">
+<script src="assets/course-common.js" defer></script>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="badge">Django - Initiation et Approfondissement</span>
+  <a class="chapter-title" href="index.html" title="Retour à l'accueil de la formation">
+    <span class="num">04</span><span class="txt">Parler plusieurs langues, prouver que ça marche - internationalisation et tests</span>
+  </a>
+  <div class="topbar-links">
+    
+    <a class="topbar-link" href="index.html">Sommaire</a>
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Basculer entre thème clair et sombre">
+      <span id="theme-icon">🌙</span> <span id="theme-label">Sombre</span>
+    </button>
+  </div>
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="objectifs"><span class="objectifs-label">Objectifs</span><ul><li>distinguer **internationalisation** (préparer le code), **traduction** et **localisation** (formats de dates, de nombres) ;</li><li>marquer les chaînes - `gettext`, `gettext_lazy`, `ngettext`, `pgettext`, `{% translate %}`, `{% blocktranslate %}` — et choisir la bonne fonction selon **le moment d&#x27;exécution** ;</li><li>produire et compiler un catalogue - `makemessages`, fichier `.po`, `compilemessages`, fichier `.mo` ;</li><li>servir le site en `/fr/` et `/en/` - `LocaleMiddleware`, `i18n_patterns`, sélecteur de langue, formats localisés ;</li><li>écrire des tests avec `django.test` - `SimpleTestCase`, `TestCase`, client de test, `RequestFactory`, `mock.patch` ;</li><li>construire des **fabriques** de données de test, sans fixtures ni seed ;</li><li>tester **services**, **formulaires**, **vues**, **gardes d&#x27;accès**, **admin** et **langues** ;</li><li>appliquer un cycle **rouge → vert** (TDD) sur une règle métier ;</li><li>mesurer la **couverture**, en tirer des constats, et vérifier qu&#x27;un test **échoue vraiment** quand on casse la règle.</li></ul></div>
+    <nav class="side-nav" id="main-nav">
+      <button class="active" onclick="showTab('objectifs-pedagogiques')">Objectifs pédagogiques</button>
+  <button class="" onclick="showTab('organisation-de-la-journee')">Organisation de la journée</button>
+  <button class="" onclick="showTab('b10-internationalisation-et-localisation-bloc-10-195-min')">B10 — Internationalisation et localisation (bloc 10) · 195 min</button>
+  <button class="" onclick="showTab('b11-tests-prouver-que-ca-marche-bloc-11-150-min')">B11 — Tests : prouver que ça marche (bloc 11) · 150 min</button>
+  <button class="" onclick="showTab('synthese-de-fin-de-journee')">Synthèse de fin de journée</button>
+  <button class="" onclick="showTab('annexe-commandes-du-jour-cheat-sheet')">Annexe — Commandes du jour (cheat-sheet)</button>
+    </nav>
+  </aside>
+  <div class="content">
+    <div id="tab-objectifs-pedagogiques" class="tab-content active">
+<p>À la fin de la journée, les participants sont capables de :</p>
+<ul>
+<li>distinguer <strong>internationalisation</strong> (préparer le code), <strong>traduction</strong> et <strong>localisation</strong> (formats de dates, de nombres) ;</li>
+<li>marquer les chaînes : <code>gettext</code>, <code>gettext_lazy</code>, <code>ngettext</code>, <code>pgettext</code>, <code>{% translate %}</code>, <code>{% blocktranslate %}</code> — et choisir la bonne fonction selon <strong>le moment d'exécution</strong> ;</li>
+<li>produire et compiler un catalogue : <code>makemessages</code>, fichier <code>.po</code>, <code>compilemessages</code>, fichier <code>.mo</code> ;</li>
+<li>servir le site en <code>/fr/</code> et <code>/en/</code> : <code>LocaleMiddleware</code>, <code>i18n_patterns</code>, sélecteur de langue, formats localisés ;</li>
+<li>écrire des tests avec <code>django.test</code> : <code>SimpleTestCase</code>, <code>TestCase</code>, client de test, <code>RequestFactory</code>, <code>mock.patch</code> ;</li>
+<li>construire des <strong>fabriques</strong> de données de test, sans fixtures ni seed ;</li>
+<li>tester <strong>services</strong>, <strong>formulaires</strong>, <strong>vues</strong>, <strong>gardes d'accès</strong>, <strong>admin</strong> et <strong>langues</strong> ;</li>
+<li>appliquer un cycle <strong>rouge → vert</strong> (TDD) sur une règle métier ;</li>
+<li>mesurer la <strong>couverture</strong>, en tirer des constats, et vérifier qu'un test <strong>échoue vraiment</strong> quand on casse la règle.</li>
+</ul>
+<h3>Livrable de la journée</h3>
+<ul>
+<li>catalogue <strong>français / anglais</strong> : navigation, messages, formulaires, statuts, libellés de modèles, admin ;</li>
+<li>URLs préfixées <code>/fr/…</code> et <code>/en/…</code>, sélecteur de langue, dates et nombres localisés ;</li>
+<li>une suite de <strong>74 tests</strong> (<code>catalog/tests/</code>), exécutable en une commande, en ordre aléatoire ;</li>
+<li>un constat de couverture et la correction du code mort qu'il révèle ;</li>
+<li>les pages et les URLs des jours précédents toujours fonctionnelles, désormais préfixées par la langue.</li>
+</ul>
+<blockquote>
+<p>💡 <strong>Fil conducteur</strong> : hier, on a <em>protégé</em> le site ; aujourd'hui, on le rend <strong>lisible par d'autres</strong> (B10) et <strong>vérifiable</strong> (B11). Les deux blocs sont liés : un test de langue vérifie une traduction, un test d'accès vérifie un décorateur. Chaque règle de la semaine devient une phrase qu'un ordinateur sait contrôler.</p>
+</blockquote>
+</div>
+
+<div id="tab-organisation-de-la-journee" class="tab-content">
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Heure</th>
+<th>Séquence</th>
+<th>Blocs programme</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>09h00 – 09h15</td>
+<td>Reprise du J3 : <code>check</code>, <code>migrate</code>, seed, serveur, commit</td>
+<td>—</td>
+</tr>
+<tr>
+<td>09h15 – 11h00</td>
+<td><strong>B10·a</strong> — Marquer le code, extraire, traduire, compiler</td>
+<td>Bloc 10</td>
+</tr>
+<tr>
+<td>11h00 – 11h15</td>
+<td>Pause</td>
+<td></td>
+</tr>
+<tr>
+<td>11h15 – 12h45</td>
+<td><strong>B10·b</strong> — Langue dans l'URL, formats localisés, atelier</td>
+<td>Bloc 10</td>
+</tr>
+<tr>
+<td>12h45 – 13h45</td>
+<td>Déjeuner</td>
+<td></td>
+</tr>
+<tr>
+<td>13h45 – 16h15</td>
+<td><strong>B11</strong> — Tests : services, formulaires, vues, accès, langues, couverture</td>
+<td>Bloc 11</td>
+</tr>
+<tr>
+<td>16h15 – 16h30</td>
+<td>Pause</td>
+<td></td>
+</tr>
+<tr>
+<td>16h30 – 17h00</td>
+<td>Démonstrations, synthèse, preview du jour 5</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+</div>
+
+<div id="tab-b10-internationalisation-et-localisation-bloc-10-195-min" class="tab-content">
+<h3>10.1. Trois mots, trois chantiers</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Terme</th>
+<th>Sens</th>
+<th>Dans GestiFormation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Internationalisation</strong> (i18n)</td>
+<td>préparer le code pour qu'il <em>puisse</em> être traduit</td>
+<td>marquer les chaînes avec <code>gettext</code> / <code>{% translate %}</code></td>
+</tr>
+<tr>
+<td><strong>Traduction</strong></td>
+<td>fournir le texte dans une langue</td>
+<td><code>locale/en/LC_MESSAGES/django.po</code></td>
+</tr>
+<tr>
+<td><strong>Localisation</strong> (l10n)</td>
+<td>adapter les <strong>formats</strong> à une région</td>
+<td><code>1 890,50 €</code> en français, <code>1,890.50</code> en anglais ; <code>1 décembre 2026</code> / <code>Dec. 1, 2026</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Une <strong>locale</strong> est un code de langue (<code>fr</code>, <code>en</code>), éventuellement régional (<code>fr-ca</code>, <code>en-gb</code>). On ne traduit pas « un site » mais des <strong>chaînes marquées</strong> ; tout ce qui n'est pas marqué reste tel quel.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Django traduit tout seul</th>
+<th>Il faut le marquer soi-même</th>
+<th>Il ne sait pas traduire</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>l'admin, les messages d'erreur des formulaires (<code>required</code>, <code>invalid</code>), les formulaires de connexion et de mot de passe</td>
+<td>nos gabarits, nos messages, nos libellés de modèles, nos exceptions</td>
+<td><strong>les contenus saisis en base</strong> (noms de formations, compétences) — voir §10.9</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>💡 <strong>Effet immédiat à montrer</strong> : passer <code>LANGUAGE_CODE</code> à <code>'fr'</code> met l'admin, le login et les erreurs de formulaire en français — <strong>sans écrire une ligne de traduction</strong>. Django embarque ses propres catalogues ; on n'a qu'à traduire <em>nos</em> chaînes.</p>
+</blockquote>
+<h3>10.2. La chaîne de traduction</h3>
+<p><img alt="La chaîne de traduction" src="assets/chaine-traduction.svg" /></p>
+<p>Cinq étapes, toujours dans cet ordre : <strong>marquer</strong> (code), <strong>extraire</strong> (<code>makemessages</code>), <strong>traduire</strong> (le <code>.po</code>), <strong>compiler</strong> (<code>compilemessages</code>), <strong>servir</strong> (le middleware choisit la langue, Django lit le <code>.mo</code>). Quand le code évolue, on <strong>ré-extrait</strong> : les traductions existantes sont conservées.</p>
+<h3>10.3. Les réglages</h3>
+<div class="code-block"><pre><code class="language-python"># gesti/settings.py — modifications J4
+LANGUAGE_CODE = 'fr'                          # langue par défaut (était 'en-us')
+
+LANGUAGES = [                                 # langues proposées — noms écrits dans leur propre langue
+    ('fr', 'Français'),
+    ('en', 'English'),
+]
+
+LOCALE_PATHS = [BASE_DIR / 'locale']          # où chercher / écrire nos catalogues
+
+TIME_ZONE = 'Europe/Paris'                    # était 'UTC' : le stockage reste en UTC (USE_TZ = True)
+USE_I18N = True
+USE_THOUSAND_SEPARATOR = True                 # « 1 890,50 » plutôt que « 1890,50 »
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Deux ajouts de configuration, dont <strong>l'ordre compte</strong> :</p>
+<div class="code-block"><pre><code class="language-python">MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',      # ← après la session, avant CommonMiddleware
+    'django.middleware.common.CommonMiddleware',
+    …
+]
+
+TEMPLATES = [{
+    …
+    'OPTIONS': {'context_processors': [
+        'django.template.context_processors.request',
+        'django.template.context_processors.i18n',    # ← expose LANGUAGES, LANGUAGE_CODE aux gabarits
+        …
+    ]},
+}]
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 <strong>Choix de la langue source.</strong> Convention Django : msgid en <strong>anglais</strong>, traductions dans les autres langues. Notre code existant est en <strong>français</strong> : on le garde comme <em>langue source</em> et on ne crée qu'un catalogue <strong><code>en</code></strong>. Conséquence : en français, rien à traduire (le msgid <em>est</em> le texte). Pour un nouveau projet destiné à plusieurs langues, préférer des msgid anglais.</p>
+<p>💡 <strong><code>USE_L10N</code> n'existe plus</strong> (supprimé en Django 5.0) : la localisation des formats est toujours active. Seuls <code>USE_I18N</code> et <code>USE_TZ</code> subsistent.</p>
+</blockquote>
+<h3>10.4. Marquer le code Python</h3>
+<p>Une seule question à se poser : <strong>quand ce code s'exécute-t-il ?</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Moment d'exécution</th>
+<th>Exemples</th>
+<th>Fonction</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>à chaque requête</strong> (corps d'une vue, d'un service, d'une méthode)</td>
+<td>messages, exceptions, <code>label_from_instance</code></td>
+<td><code>gettext</code> (importée en <code>_</code>)</td>
+</tr>
+<tr>
+<td><strong>au chargement du module</strong> (attributs de classe, <code>Meta</code>, <code>choices</code>, <code>admin</code>)</td>
+<td><code>verbose_name</code>, <code>STATUS</code>, <code>error_messages</code>, <code>site_header</code></td>
+<td><code>gettext_lazy</code> (importée en <code>_</code>)</td>
+</tr>
+<tr>
+<td><strong>dépend d'un nombre</strong></td>
+<td>« 1 place » / « 2 places »</td>
+<td><code>ngettext</code> / <code>ngettext_lazy</code></td>
+</tr>
+<tr>
+<td><strong>mot ambigu</strong></td>
+<td>« Annuler » (bouton) / « Annulée » (statut)</td>
+<td><code>pgettext('contexte', 'texte')</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><em>Lazy</em> signifie : l'objet renvoyé n'est <strong>pas</strong> un texte, mais une promesse de texte, résolue au moment de l'affichage, dans la langue <strong>active à ce moment-là</strong>. Un <code>gettext</code> ordinaire évalué à l'import figerait la langue du démarrage du serveur.</p>
+<p><strong>Les modèles</strong> (<code>catalog/models.py</code>) :</p>
+<div class="code-block"><pre><code class="language-python">from django.utils.translation import gettext_lazy as _
+
+
+class Intervention(models.Model):
+    STATUS = [
+        (&quot;A&quot;, _(&quot;à venir&quot;)),
+        (&quot;E&quot;, _(&quot;En cours&quot;)),
+        (&quot;C&quot;, _(&quot;Clôturée&quot;)),               # « Clotûrée » dans le dépôt : faute à corriger
+    ]
+    numero = models.CharField(_('numéro'), max_length=16, unique=True)
+    …
+    class Meta:
+        verbose_name = _('intervention')
+        ordering = ['date_debut']
+
+
+class Inscription(models.Model):
+    STATUTS = [
+        ('P', _('En attente')),
+        ('C', _('Confirmée')),
+        ('X', _('Annulée')),
+    ]
+    …
+    class Meta:
+        verbose_name = _('inscription')
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Le premier argument positionnel d'un champ (le libellé) se marque tel quel : <code>models.CharField(_('prénom'), …)</code>. Les <code>ModelForm</code> et l'admin reprennent <strong>automatiquement</strong> ces libellés — rien à marquer une seconde fois.</p>
+<blockquote>
+<p>💡 <strong>Migrations</strong> : envelopper un texte dans <code>_()</code> ne change <strong>pas</strong> la migration (<code>makemigrations</code> désactive les traductions : il voit le msgid). En revanche corriger la <strong>faute de frappe</strong> « Clotûrée » → « Clôturée » modifie les <code>choices</code> : <code>makemigrations</code> génère un <code>AlterField</code>, <strong>sans SQL</strong> — c'est normal.</p>
+</blockquote>
+<p><strong>Les messages des vues</strong> (<code>catalog/views.py</code>) — texte <em>variable</em> : <strong>jamais</strong> d'f-string dans <code>_()</code>.</p>
+<div class="code-block"><pre><code class="language-python">from django.utils.translation import gettext as _
+
+messages.success(request, _('Client « %(client)s » créé.') % {'client': client})
+messages.success(request, _('Inscription enregistrée.'))
+messages.error(request, _(&quot;Aucun profil client n'est associé à votre compte.&quot;))
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>⚠️ <strong>Piège n°34 — <code>_(f"Client {client} créé")</code></strong> : l'f-string est évaluée <strong>avant</strong> <code>_()</code> ; le msgid devient « Client Marie Dupont créé », unique et <strong>inextricable</strong> — <code>makemessages</code> ne peut pas l'extraire. On écrit un msgid <strong>constant</strong> avec des marqueurs nommés <code>%(client)s</code>, puis on <strong>formate après</strong> la traduction : <code>_('…%(client)s…') % {'client': client}</code>. Les marqueurs nommés (pas <code>%s</code>) permettent au traducteur de <strong>réordonner</strong> les mots.</p>
+</blockquote>
+<p><strong>Les services</strong> (<code>catalog/services.py</code>) — les exceptions portent un message affiché à l'utilisateur :</p>
+<div class="code-block"><pre><code class="language-python">from django.utils.translation import gettext as _
+
+raise DejaInscrit(_('Ce client est déjà inscrit à cette intervention.'))
+raise InterventionComplete(_(&quot;Cette intervention est complète ou n'est plus ouverte.&quot;))
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><strong>Les formulaires</strong> (<code>catalog/forms.py</code>) :</p>
+<div class="code-block"><pre><code class="language-python">from django.utils.formats import date_format
+from django.utils.translation import gettext_lazy as _, ngettext
+
+
+class ClientForm(forms.ModelForm):
+    class Meta:
+        model = Client
+        fields = ['prenom', 'nom', 'societe', 'email', 'telephone']
+        error_messages = {
+            'email': {'unique': _('Un client existe déjà avec cette adresse e-mail.')},
+        }
+
+    def clean_telephone(self):
+        valeur = self.cleaned_data.get('telephone', '')
+        if valeur and not re.fullmatch(r'[\d\s()+.-]{6,20}', valeur):
+            raise ValidationError(
+                _('Format invalide — chiffres, espaces et « + » attendus.'),
+                code='telephone_invalide',          # ← sert aux tests : le code ne change pas avec la langue
+            )
+        return valeur
+
+
+class InterventionChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, intervention):
+        places = ngettext('%(n)d place', '%(n)d places', intervention.places) % {'n': intervention.places}
+        debut = date_format(intervention.date_debut, 'SHORT_DATE_FORMAT')
+        return f'{intervention.numero} — {intervention.formation.nom} ({intervention.ville}, {debut}) — {places}'
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Ici <code>label_from_instance</code> s'exécute <strong>à l'affichage</strong> : <code>ngettext</code> ordinaire. <code>error_messages</code> est un attribut de classe : <code>gettext_lazy</code>. Le <code>place(s)</code> « à la main » du jour 3 disparaît : <strong><code>ngettext</code> choisit singulier ou pluriel</strong> selon le nombre, et chaque langue applique sa propre règle.</p>
+<p><strong>L'admin</strong> — les attributs de classe et les décorateurs sont évalués à l'import :</p>
+<div class="code-block"><pre><code class="language-python">from django.utils.translation import gettext_lazy as _
+
+admin.site.site_header = _('GestiFormation — administration')
+admin.site.site_title = _('GestiFormation')
+admin.site.index_title = _(&quot;Pilotage de l'organisme&quot;)
+
+@admin.display(description=_('places libres'), ordering='_places')
+def places(self, obj): …
+
+@admin.action(description=_('Clôturer les interventions sélectionnées'), permissions=['change'])
+def cloturer(self, request, queryset): …
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>⚠️ <strong>Piège n°35 — <code>gettext</code> (non lazy) au niveau d'une classe ou d'un module</strong> : le texte est résolu <strong>une fois</strong>, à l'import, dans la langue du démarrage ; tous les utilisateurs verront cette langue, quelle que soit celle de leur requête. Les attributs de classe (<code>verbose_name</code>, <code>choices</code>, <code>error_messages</code>, <code>site_header</code>) sont <strong>toujours</strong> en <code>gettext_lazy</code>.</p>
+</blockquote>
+<h3>10.5. Marquer les gabarits</h3>
+<div class="code-block"><pre><code class="language-html">{% load i18n %}                                  {# à écrire dans CHAQUE gabarit, y compris ceux qui héritent #}
+
+{% translate &quot;Catalogue&quot; %}                      {# texte constant #}
+{% translate &quot;Connexion&quot; as libelle %}           {# stocker le résultat dans une variable #}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Dès que la phrase contient des variables ou un pluriel : <strong><code>{% blocktranslate %}</code></strong>.</p>
+<div class="code-block"><pre><code class="language-html">{# variable simple, avec un filtre : on la déclare par « with » #}
+&lt;h1&gt;{% blocktranslate with prenom=user.first_name|default:user.get_username %}Bonjour {{ prenom }}{% endblocktranslate %}&lt;/h1&gt;
+
+{# pluriel : « count » + « plural » #}
+&lt;p class=&quot;chiffre&quot;&gt;
+    {% blocktranslate count total=formations|length trimmed %}
+        {{ total }} formation au catalogue.
+    {% plural %}
+        {{ total }} formations au catalogue.
+    {% endblocktranslate %}
+&lt;/p&gt;
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Trois règles :</p>
+<ul>
+<li>à l'intérieur d'un <code>blocktranslate</code>, <strong>seules des variables simples</strong> (<code>{{ prenom }}</code>) sont autorisées : pas de filtre, pas d'attribut — d'où le <code>with</code> ;</li>
+<li><strong><code>trimmed</code></strong> supprime les retours à la ligne et indentations du msgid (sinon le catalogue conserve la mise en forme du gabarit) ;</li>
+<li><code>count</code> remplace le <code>|pluralize</code> du jour 1, qui ne sait pas traduire (« jour/jours » n'est pas « day/days »).</li>
+</ul>
+<p><strong>Le gabarit de base</strong> (<code>catalog/base.html</code>) — extraits :</p>
+<div class="code-block"><pre><code class="language-html">{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
+&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;{{ LANGUAGE_CODE }}&quot;&gt;                {# était lang=&quot;fr&quot; : l'attribut suit la langue #}
+…
+&lt;li&gt;&lt;a href=&quot;{% url 'catalog:liste-formations' %}&quot;&gt;{% translate &quot;Catalogue&quot; %}&lt;/a&gt;&lt;/li&gt;
+{% if user.is_authenticated %}
+    &lt;li&gt;&lt;a href=&quot;{% url 'catalog:mon-espace' %}&quot;&gt;{% translate &quot;Mon espace&quot; %}&lt;/a&gt;&lt;/li&gt;
+    …
+    &lt;button type=&quot;submit&quot; class=&quot;lien&quot;&gt;{% translate &quot;Déconnexion&quot; %}&lt;/button&gt;
+{% else %}
+    &lt;li&gt;&lt;a href=&quot;{% url 'login' %}&quot;&gt;{% translate &quot;Connexion&quot; %}&lt;/a&gt;&lt;/li&gt;
+    &lt;li&gt;&lt;a href=&quot;{% url 'catalog:creer-compte' %}&quot;&gt;{% translate &quot;Créer un compte&quot; %}&lt;/a&gt;&lt;/li&gt;
+{% endif %}
+…
+&lt;p&gt;{% now &quot;DATE_FORMAT&quot; %} — GestiFormation, {% translate &quot;site de démonstration&quot; %}&lt;/p&gt;
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Le gabarit <code>liste_formations.html</code> : les têtes de colonnes en <code>{% translate %}</code>, le compteur ci-dessus, et le pluriel de durée :</p>
+<div class="code-block"><pre><code class="language-html">&lt;td&gt;{% blocktranslate count jours=formation.duree %}{{ jours }} jour{% plural %}{{ jours }} jours{% endblocktranslate %}&lt;/td&gt;
+&lt;td class=&quot;prix-col&quot;&gt;{{ formation.prix|floatformat:&quot;2g&quot; }} €&lt;/td&gt;
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 <strong><code>"2g"</code></strong> : <code>floatformat:2</code> donne <code>1890,50</code>, <code>floatformat:"2g"</code> ajoute le séparateur de milliers de la langue (<code>1 890,50</code> / <code>1,890.50</code>). Le préfixe <code>"g"</code> est le <strong>seul</strong> moyen de grouper depuis un gabarit.</p>
+</blockquote>
+<h3>10.6. Extraire, traduire, compiler</h3>
+<p><strong>Prérequis : les outils GNU gettext.</strong> <code>makemessages</code> appelle <code>xgettext</code>, <code>msguniq</code>, <code>msgmerge</code> ; <code>compilemessages</code> appelle <code>msgfmt</code>. Sous Windows, ils ne sont pas fournis avec Python :</p>
+<div class="code-block"><pre><code class="language-powershell"># installer GNU gettext (binaires Windows, ex. mlocati/gettext-iconv-windows, ou `choco install gettext`)
+xgettext --version                # doit répondre — redémarrer le terminal après l'installation
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>⚠️ <strong>Piège n°36 — <code>CommandError: Can't find msguniq</code></strong> : les outils gettext sont absents du <code>PATH</code>. Ce n'est pas une erreur Django ; on installe gettext, on <strong>ferme et rouvre</strong> le terminal, on relance.</p>
+</blockquote>
+<div class="code-block"><pre><code class="language-bash">mkdir locale                                      # le dossier doit exister avant la première extraction
+python manage.py makemessages -l en -i .venv       # -i : ignorer le dossier de l'environnement virtuel
+# → locale/en/LC_MESSAGES/django.po
+python manage.py compilemessages
+# → locale/en/LC_MESSAGES/django.mo
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>(<code>.venv</code> est déjà ignoré, car les dossiers cachés le sont par défaut.) <code>makemessages</code> parcourt les <code>.py</code> <strong>et</strong> les <code>.html</code> du projet.</p>
+<p><strong>Le fichier <code>.po</code></strong> — un enregistrement par chaîne :</p>
+<div class="code-block"><pre><code class="language-po">&quot;Language: en\n&quot;
+&quot;Content-Type: text/plain; charset=UTF-8\n&quot;
+&quot;Plural-Forms: nplurals=2; plural=(n != 1);\n&quot;
+
+#: catalog/templates/catalog/base.html:23
+msgid &quot;Connexion&quot;
+msgstr &quot;Log in&quot;
+
+#: catalog/views.py:71
+#, python-format
+msgid &quot;Client « %(client)s » créé.&quot;
+msgstr &quot;Customer “%(client)s” created.&quot;
+
+#: catalog/forms.py:57
+#, python-format
+msgid &quot;%(n)d place&quot;
+msgid_plural &quot;%(n)d places&quot;
+msgstr[0] &quot;%(n)d seat&quot;
+msgstr[1] &quot;%(n)d seats&quot;
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Un <code>msgid</code> vide de <code>msgstr</code> est une chaîne <strong>non traduite</strong> : Django affiche alors le <code>msgid</code> — c'est ce qui rend le français (langue source) sans catalogue.</p>
+<blockquote>
+<p>⚠️ <strong>Piège n°37 — <code>.po</code> modifié, <code>.mo</code> oublié, ou entrée <code>fuzzy</code></strong> : Django ne lit que le <strong><code>.mo</code></strong>. Après chaque édition : <code>compilemessages</code>. Et une entrée marquée <code>#, fuzzy</code> (le rapprochement approximatif que <code>makemessages</code> propose quand un msgid proche a changé) est <strong>ignorée à la compilation</strong> : retirer l'indicateur <code>fuzzy</code> <strong>après avoir relu</strong> la traduction. <code>runserver</code> recharge les <code>.mo</code> tout seul ; en production, il faut redémarrer.</p>
+</blockquote>
+<p><strong>Un vocabulaire minimal pour l'atelier</strong> (à saisir dans le <code>.po</code> ou dans Poedit) :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>msgid (français)</th>
+<th>msgstr (<code>en</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Catalogue</td>
+<td>Catalog</td>
+</tr>
+<tr>
+<td>Mon espace</td>
+<td>My account</td>
+</tr>
+<tr>
+<td>Clients</td>
+<td>Customers</td>
+</tr>
+<tr>
+<td>Inscriptions</td>
+<td>Registrations</td>
+</tr>
+<tr>
+<td>Déconnexion</td>
+<td>Log out</td>
+</tr>
+<tr>
+<td>Connexion</td>
+<td>Log in</td>
+</tr>
+<tr>
+<td>Créer un compte</td>
+<td>Sign up</td>
+</tr>
+<tr>
+<td>Langue</td>
+<td>Language</td>
+</tr>
+<tr>
+<td>site de démonstration</td>
+<td>demo site</td>
+</tr>
+<tr>
+<td>intervention</td>
+<td>training session</td>
+</tr>
+<tr>
+<td>inscription</td>
+<td>registration</td>
+</tr>
+<tr>
+<td>à venir / En cours / Clôturée</td>
+<td>Upcoming / In progress / Closed</td>
+</tr>
+<tr>
+<td>En attente / Confirmée / Annulée</td>
+<td>Pending / Confirmed / Cancelled</td>
+</tr>
+<tr>
+<td>Client « %(client)s » créé.</td>
+<td>Customer “%(client)s” created.</td>
+</tr>
+<tr>
+<td>Inscription enregistrée.</td>
+<td>Registration saved.</td>
+</tr>
+<tr>
+<td>Ce client est déjà inscrit à cette intervention.</td>
+<td>This customer is already registered for this session.</td>
+</tr>
+<tr>
+<td>Cette intervention est complète ou n'est plus ouverte.</td>
+<td>This session is full or no longer open.</td>
+</tr>
+<tr>
+<td>Aucun profil client n'est associé à votre compte.</td>
+<td>No customer profile is linked to your account.</td>
+</tr>
+<tr>
+<td>Un client existe déjà avec cette adresse e-mail.</td>
+<td>A customer with this e-mail address already exists.</td>
+</tr>
+<tr>
+<td>%(n)d place / %(n)d places</td>
+<td>%(n)d seat / %(n)d seats</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Un détail sur les pluriels en français.</strong> Une phrase <em>non traduite</em> suit la règle « 1 = singulier, tout le reste = pluriel » : <code>0</code> donne « 0 places ». Or le français met <strong>0 et 1 au singulier</strong> (« 0 place »). Pour obtenir « 0 place » il faut un <strong>catalogue <code>fr</code></strong> qui déclare sa règle (<code>plural=(n &gt; 1)</code>) et traduise les entrées plurielles à l'identique :</p>
+<div class="code-block"><pre><code class="language-bash">python manage.py makemessages -l fr -i venv
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code class="language-po">&quot;Plural-Forms: nplurals=2; plural=(n &gt; 1);\n&quot;
+
+msgid &quot;%(n)d place&quot;
+msgid_plural &quot;%(n)d places&quot;
+msgstr[0] &quot;%(n)d place&quot;
+msgstr[1] &quot;%(n)d places&quot;
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 Le catalogue <code>fr</code> n'a <strong>que</strong> ses entrées plurielles à renseigner : les autres msgstr restent vides (le msgid est déjà du français). On vérifie par un test (§11.9).</p>
+</blockquote>
+<h3>🛠️ Atelier 10·a — Marquer et traduire (45 min)</h3>
+<ol>
+<li>appliquer les réglages de §10.3 (<code>LANGUAGE_CODE</code>, <code>LANGUAGES</code>, <code>LOCALE_PATHS</code>, <code>LocaleMiddleware</code>, context processor <code>i18n</code>) ; <strong>ouvrir <code>/admin/</code></strong> : l'admin passe en français sans une ligne de traduction ;</li>
+<li>marquer : <code>models.py</code>, <code>forms.py</code>, <code>services.py</code>, les trois messages de <code>views.py</code>, <code>base.html</code>, <code>mon_espace.html</code> ;</li>
+<li>corriger « Clotûrée » ; <code>makemigrations</code> → une migration <code>AlterField</code> <strong>sans SQL</strong> (vérifier avec <code>sqlmigrate</code>) ; <code>migrate</code> ;</li>
+<li>installer gettext, <code>mkdir locale</code>, <code>makemessages -l en -i venv</code> ; <strong>ouvrir le <code>.po</code></strong> : retrouver chaque chaîne marquée et son emplacement <code>#:</code> ;</li>
+<li>traduire avec le vocabulaire de §10.6 ; <code>compilemessages</code> ;</li>
+<li>vérifier dans le shell :</li>
+</ol>
+<div class="code-block"><pre><code class="language-python">&gt;&gt;&gt; from django.utils import translation
+&gt;&gt;&gt; from catalog.models import Intervention, Inscription
+&gt;&gt;&gt; with translation.override('en'):
+...     print(Intervention._meta.verbose_name, '|', Inscription(statut='X').get_statut_display())
+training session | Cancelled
+&gt;&gt;&gt; with translation.override('fr'):
+...     print(Intervention._meta.verbose_name, '|', Inscription(statut='X').get_statut_display())
+intervention | Annulée
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><strong>Checklist</strong> :</p>
+<ul>
+<li>[ ] l'admin s'affiche en français avant toute traduction personnelle ;</li>
+<li>[ ] aucune f-string à l'intérieur d'un <code>_()</code> ; aucun <code>gettext</code> non lazy dans un attribut de classe ;</li>
+<li>[ ] le binôme sait dire pourquoi <code>makemigrations</code> ne détecte rien après avoir enveloppé les libellés ;</li>
+<li>[ ] <code>git add -A &amp;&amp; git commit -m "J4 : marquage des chaînes + catalogue en"</code> fait (le <code>.mo</code> est un artefact : décider ensemble de le versionner ou de le compiler en CI).</li>
+</ul>
+<hr />
+<h3>10.7. La langue dans l'URL</h3>
+<p><img alt="Négociation de la langue" src="assets/negociation-langue.svg" /></p>
+<p>Pour servir <code>/fr/…</code> et <code>/en/…</code>, on enveloppe les routes dans <code>i18n_patterns</code>. La vue <strong><code>set_language</code></strong> (qui reçoit le choix de l'utilisateur) reste <strong>hors</strong> préfixe : elle reçoit un <code>POST</code> quelle que soit la langue courante.</p>
+<div class="code-block"><pre><code class="language-python"># gesti/urls.py — version J4
+from django.conf.urls.i18n import i18n_patterns
+from django.contrib import admin
+from django.contrib.auth.views import LoginView
+from django.urls import include, path
+from debug_toolbar.toolbar import debug_toolbar_urls
+
+urlpatterns = [
+    path('i18n/', include('django.conf.urls.i18n')),           # set_language (POST)
+]
+
+urlpatterns += i18n_patterns(
+    path('admin/', admin.site.urls),
+    path('comptes/login/', LoginView.as_view(template_name='catalog/login.html'), name='login'),
+    path('comptes/', include('django.contrib.auth.urls')),
+    path('', include('catalog.urls')),
+)
+
+urlpatterns += debug_toolbar_urls()                            # outils de dev : hors préfixe
+
+handler404 = 'catalog.views.page_introuvable'
+handler500 = 'catalog.views.interne'
+handler403 = 'catalog.views.acces_refuse'
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Conséquences à faire constater :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Requête</th>
+<th>Résultat</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /</code></td>
+<td><strong>302</strong> vers <code>/fr/</code> (ou <code>/en/</code> si le cookie ou <code>Accept-Language</code> le demande)</td>
+</tr>
+<tr>
+<td><code>GET /en/formations/</code></td>
+<td>page en anglais, <code>&lt;html lang="en"&gt;</code></td>
+</tr>
+<tr>
+<td><code>{% url 'login' %}</code> / <code>reverse('login')</code></td>
+<td><strong>suit la langue active</strong> : <code>/en/comptes/login/</code></td>
+</tr>
+<tr>
+<td><code>GET /formations/</code> (sans préfixe)</td>
+<td>redirigé vers la version préfixée</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Le sélecteur de langue</strong> (dans la navigation de <code>base.html</code>) — un <code>POST</code> vers <code>set_language</code> :</p>
+<div class="code-block"><pre><code class="language-html">&lt;form action=&quot;{% url 'set_language' %}&quot; method=&quot;post&quot; class=&quot;inline&quot;&gt;
+    {% csrf_token %}
+    &lt;input name=&quot;next&quot; type=&quot;hidden&quot; value=&quot;{{ request.get_full_path }}&quot;&gt;
+    {% get_available_languages as LANGUAGES %}
+    {% get_language_info_list for LANGUAGES as langues %}
+    &lt;select name=&quot;language&quot; onchange=&quot;this.form.submit()&quot; aria-label=&quot;{% translate 'Langue' %}&quot;&gt;
+        {% for langue in langues %}
+            &lt;option value=&quot;{{ langue.code }}&quot;{% if langue.code == LANGUAGE_CODE %} selected{% endif %}&gt;
+                {{ langue.name_local }}
+            &lt;/option&gt;
+        {% endfor %}
+    &lt;/select&gt;
+&lt;/form&gt;
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><code>set_language</code> pose le cookie <code>django_language</code> et redirige vers <code>next</code> <strong>en remplaçant le préfixe</strong> (<code>/fr/formations/</code> → <code>/en/formations/</code>).</p>
+<blockquote>
+<p>⚠️ <strong>Piège n°38 — les URLs écrites en dur</strong> : <code>&lt;a href="/formations/"&gt;</code> ne porte pas le préfixe de langue et ne suit pas la langue choisie ; la vue <code>accueil</code> du jour 1 en contenait une. Partout : <code>{% url %}</code> dans les gabarits, <code>reverse()</code> en Python.</p>
+</blockquote>
+<div class="code-block"><pre><code class="language-python">def accueil(request: HttpRequest) -&gt; HttpResponse:
+    &quot;&quot;&quot;Page d'accueil — réponse brute, mais sans URL écrite en dur.&quot;&quot;&quot;
+    texte = _(&quot;Gestion d'un organisme de formation : catalogue, interventions, inscriptions.&quot;)
+    voir = _('Voir le catalogue')                   # hors de l'f-string : sinon, non extractible
+    lien = reverse('catalog:liste-formations')
+    return HttpResponse(
+        f'&lt;h1&gt;GestiFormation&lt;/h1&gt;&lt;p&gt;{texte}&lt;/p&gt;&lt;a href=&quot;{lien}&quot;&gt;{voir}&lt;/a&gt;',
+        content_type='text/html',
+    )
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 <strong>Aller plus loin (non pratiqué)</strong> : <code>path(_('formations/'), …)</code> avec <code>gettext_lazy</code> traduit <strong>l'URL elle-même</strong> (<code>/en/courses/</code>). Utile pour le référencement ; chaque route traduite devient une entrée du catalogue.</p>
+</blockquote>
+<h3>10.8. Localisation : formats, fuseaux, séparateurs</h3>
+<p>Les formats <strong>suivent la langue active</strong> — à condition de ne pas les écrire en dur.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Écrit en dur (jours 1–3)</th>
+<th>Localisé (J4)</th>
+<th><code>fr</code></th>
+<th><code>en</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{{ d\|date:"d/m/Y" }}</code></td>
+<td><code>{{ d\|date:"SHORT_DATE_FORMAT" }}</code></td>
+<td><code>01/12/2026</code></td>
+<td><code>12/01/2026</code></td>
+</tr>
+<tr>
+<td><code>{% now "d/m/Y" %}</code></td>
+<td><code>{% now "DATE_FORMAT" %}</code></td>
+<td><code>1 décembre 2026</code></td>
+<td><code>Dec. 1, 2026</code></td>
+</tr>
+<tr>
+<td><code>{{ prix\|floatformat:2 }}</code></td>
+<td><code>{{ prix\|floatformat:"2g" }}</code></td>
+<td><code>1 890,50</code></td>
+<td><code>1,890.50</code></td>
+</tr>
+<tr>
+<td><code>f'{debut:%d/%m/%Y}'</code> (Python)</td>
+<td><code>date_format(debut, 'SHORT_DATE_FORMAT')</code></td>
+<td><code>01/12/2026</code></td>
+<td><code>12/01/2026</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Les noms <code>DATE_FORMAT</code>, <code>SHORT_DATE_FORMAT</code>, <code>DATETIME_FORMAT</code>… sont des <strong>formats nommés</strong> : chaque locale définit les siens.</p>
+<p>Trois cas où l'on <strong>désactive</strong> la localisation, car la sortie n'est plus destinée à un humain :</p>
+<div class="code-block"><pre><code class="language-html">&lt;input type=&quot;number&quot; value=&quot;{{ formation.prix|unlocalize }}&quot;&gt;        {# « 1890.50 », pas « 1890,50 » #}
+&lt;div data-prix=&quot;{{ formation.prix|unlocalize }}&quot;&gt;&lt;/div&gt;                {# attribut lu par du JavaScript #}
+{% load l10n %}{% localize off %}{{ formation.prix }}{% endlocalize %}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>⚠️ <strong>Piège n°39 — un format écrit en dur ignore la langue ; un nombre localisé casse une machine</strong> : <code>|date:"d/m/Y"</code> s'affichera à la française pour un lecteur anglophone ; à l'inverse <code>value="1 890,50"</code> dans un attribut numérique ou un JSON n'est pas lisible par le navigateur ni par <code>float()</code>. Texte pour l'humain → localisé ; donnée pour une machine → <code>|unlocalize</code>.</p>
+</blockquote>
+<p><strong>Fuseau horaire.</strong> <code>USE_TZ = True</code> : la base stocke en UTC, <code>TIME_ZONE</code> (<code>'Europe/Paris'</code>) est le fuseau d'<strong>affichage</strong>. Les <code>DateTimeField</code> (comme <code>Inscription.date_inscription</code>) sont convertis <strong>au rendu du gabarit</strong> ; <code>timezone.localdate()</code> donne la date du jour <strong>dans ce fuseau</strong> (c'est ce que le test du §11.5 utilise).</p>
+<h3>10.9. Ce que le catalogue ne traduit pas</h3>
+<p><code>Formation.nom</code>, <code>Competence.nom</code>, <code>Formation.public</code> sont des <strong>données</strong> : le <code>.po</code> ne les connaît pas. Trois approches, par coût croissant :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Approche</th>
+<th>Principe</th>
+<th>Limite</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>colonnes dédiées</td>
+<td><code>nom_en</code>, <code>public_en</code> dans le modèle</td>
+<td>une migration par langue ajoutée</td>
+</tr>
+<tr>
+<td>paquet tiers (<code>django-modeltranslation</code>, <code>django-parler</code>)</td>
+<td>traductions stockées en base, sélection par langue</td>
+<td>dépendance, apprentissage</td>
+</tr>
+<tr>
+<td>ne pas traduire</td>
+<td>acceptable pour des intitulés propres (« Django : initiation »)</td>
+<td>contenu incohérent</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>⚠️ <strong>Piège n°40 — croire que <code>makemessages</code> traduit la base</strong> : il n'extrait que du <strong>code</strong> et des <strong>gabarits</strong>. Le jour où un client demande « le catalogue en anglais », la réponse est un choix de modélisation, pas une commande.</p>
+</blockquote>
+<h3>🛠️ Atelier 10·b — Un site bilingue (45 min)</h3>
+<ol>
+<li>installer <code>i18n_patterns</code> et la vue <code>set_language</code> ; ajouter le sélecteur dans <code>base.html</code> ;</li>
+<li>remplacer les formats en dur (<code>d/m/Y</code>, <code>floatformat:2</code>) dans <code>liste_formations</code>, <code>detail_formation</code>, <code>mon_espace</code>, <code>liste_inscriptions</code> ; remplacer les pluriels <code>|pluralize</code> ;</li>
+<li>créer le catalogue <code>fr</code> (pluriel), traduire <code>accueil</code>, <code>compilemessages</code> ;</li>
+<li>dérouler :</li>
+</ol>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Action</th>
+<th>Résultat attendu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>ouvrir <code>http://127.0.0.1:8000/</code></td>
+<td>redirection vers <code>/fr/</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>changer la langue dans le sélecteur</td>
+<td><code>/en/…</code>, navigation en anglais, cookie <code>django_language</code> posé</td>
+</tr>
+<tr>
+<td>3</td>
+<td>sur <code>/en/</code>, ouvrir le catalogue</td>
+<td>prix <code>1,890.00 €</code>, durée « 3 days »</td>
+</tr>
+<tr>
+<td>4</td>
+<td>sur <code>/fr/</code>, même page</td>
+<td>prix <code>1 890,00 €</code>, durée « 3 jours »</td>
+</tr>
+<tr>
+<td>5</td>
+<td>forcer <code>/en/</code> dans l'URL en gardant le cookie <code>fr</code></td>
+<td><strong>l'URL gagne</strong> : page en anglais</td>
+</tr>
+<tr>
+<td>6</td>
+<td>se connecter, ouvrir <code>/en/admin/</code></td>
+<td>l'admin (Django) passe en anglais, nos libellés (<code>site_header</code>…) aussi</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>/en/inscriptions/nouvelle/</code></td>
+<td>les sessions du <code>&lt;select&gt;</code> sont décrites en anglais, avec « 3 seats »</td>
+</tr>
+<tr>
+<td>8</td>
+<td>provoquer l'erreur « déjà inscrit » en <code>/en/</code></td>
+<td>le message est en anglais</td>
+</tr>
+<tr>
+<td>9</td>
+<td>créer un compte avec un mot de passe trop courant</td>
+<td>erreur traduite par Django, <strong>sans</strong> notre catalogue</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>git grep -n "href=\"/"</code></td>
+<td>aucune URL en dur ne subsiste</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Checklist</strong> :</p>
+<ul>
+<li>[ ] les 10 cas passés, le binôme capable de redessiner la cascade « préfixe → cookie → en-tête → défaut » ;</li>
+<li>[ ] aucun <code>|date:"d/m/Y"</code> ni <code>floatformat:2</code> dans les gabarits d'affichage ;</li>
+<li>[ ] <code>python manage.py check</code> passe, commit <code>J4 : site bilingue fr/en</code> fait.</li>
+</ul>
+<hr />
+</div>
+
+<div id="tab-b11-tests-prouver-que-ca-marche-bloc-11-150-min" class="tab-content">
+<h3>11.1. Pourquoi tester — et quoi</h3>
+<p>On a, depuis lundi, accumulé des <strong>règles</strong> : « une inscription prend une place, jamais plus », « seul un gestionnaire annule l'inscription d'un autre », « le formulaire normalise l'e-mail ». Chacune a été vérifiée <strong>à la main</strong>, une fois. Demain, quelqu'un touchera <code>services.py</code> ; qui relancera les 15 vérifications de l'atelier 9 ?</p>
+<p>Un test est une <strong>règle écrite sous une forme qu'un ordinateur sait contrôler</strong>. Il rapporte à trois moments : quand on écrit (la règle est précisée), quand on modifie (une régression est détectée en 1 seconde), quand on reprend le projet six mois plus tard (le test <em>est</em> la documentation).</p>
+<p><img alt="La pyramide des tests" src="assets/pyramide-tests.svg" /></p>
+<p>La suite du jour (74 tests) est répartie en trois étages ; la répartition réelle d'une application Django est souvent « large au milieu » : les vues sont minces parce que la logique est dans <code>services.py</code> — c'est cette discipline (jour 3) qui rend la base de la pyramide <strong>testable sans HTTP</strong>.</p>
+<h3>11.2. Les outils de <code>django.test</code></h3>
+<p>Django s'appuie sur <strong><code>unittest</code></strong> (bibliothèque standard) et lui ajoute la base de données, le client HTTP et des assertions web.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Classe</th>
+<th>Base</th>
+<th>À utiliser pour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SimpleTestCase</code></td>
+<td><strong>interdite</strong> (toute requête SQL échoue)</td>
+<td>logique pure : <code>places_dispo</code>, fonctions de formatage</td>
+</tr>
+<tr>
+<td><code>TestCase</code></td>
+<td>oui, <strong>transaction annulée après chaque test</strong></td>
+<td><strong>99 % des cas</strong> : services, formulaires, vues</td>
+</tr>
+<tr>
+<td><code>TransactionTestCase</code></td>
+<td>oui, base vidée à la fin</td>
+<td>tester le comportement des transactions et de la concurrence</td>
+</tr>
+<tr>
+<td><code>LiveServerTestCase</code></td>
+<td>oui, avec un vrai serveur</td>
+<td>parcours navigateur (Selenium, Playwright) — hors périmètre</td>
+</tr>
+</tbody>
+</table></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Outil</th>
+<th>Rôle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>self.client</code></td>
+<td>client HTTP de test : <code>get</code>, <code>post</code>, <code>force_login</code>, <code>follow=True</code></td>
+</tr>
+<tr>
+<td><code>RequestFactory</code></td>
+<td>fabrique une <strong>requête brute</strong> pour appeler <strong>une vue directement</strong>, sans middleware ni URL</td>
+</tr>
+<tr>
+<td><code>reverse('catalog:clients')</code></td>
+<td><strong>ne jamais</strong> écrire une URL en dur dans un test</td>
+</tr>
+<tr>
+<td><code>unittest.mock.patch</code></td>
+<td>remplacer temporairement un morceau de code (pour <strong>provoquer</strong> une panne)</td>
+</tr>
+<tr>
+<td><code>override_settings</code>, <code>translation.override</code></td>
+<td>modifier un réglage, la langue, le temps d'un test</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Les assertions du jour</strong> :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Assertion</th>
+<th>Vérifie</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>assertEqual</code>, <code>assertTrue</code>, <code>assertRaises</code></td>
+<td><code>unittest</code> — valeurs, booléens, exceptions</td>
+</tr>
+<tr>
+<td><code>assertContains(rep, texte)</code> / <code>assertNotContains</code></td>
+<td>statut 200 <strong>et</strong> texte présent / absent dans le HTML</td>
+</tr>
+<tr>
+<td><code>assertRedirects(rep, url)</code></td>
+<td>statut 302 <strong>et</strong> destination (puis suit la redirection)</td>
+</tr>
+<tr>
+<td><code>assertTemplateUsed(rep, 'catalog/403.html')</code></td>
+<td>le gabarit utilisé</td>
+</tr>
+<tr>
+<td><code>assertQuerySetEqual(qs, [objets], ordered=False)</code></td>
+<td>contenu d'un QuerySet</td>
+</tr>
+<tr>
+<td><code>assertRaisesMessage(Exc, 'texte')</code></td>
+<td>exception <strong>et</strong> message</td>
+</tr>
+<tr>
+<td><code>form.has_error('champ', code='…')</code></td>
+<td>erreur de formulaire, par <strong>code</strong></td>
+</tr>
+<tr>
+<td><code>self.subTest(page=nom)</code></td>
+<td>une boucle dont chaque tour est <strong>un cas distinct</strong> dans le rapport</td>
+</tr>
+</tbody>
+</table></div>
+<h3>11.3. Lancer les tests</h3>
+<div class="code-block"><pre><code class="language-bash">python manage.py test                           # tout : découverte automatique
+python manage.py test catalog.tests.test_services                 # un module
+python manage.py test catalog.tests.test_services.InscrireTests   # une classe
+python manage.py test -k derniere_place         # tout ce dont le nom contient « derniere_place »
+python manage.py test --shuffle                 # ordre aléatoire : traque les dépendances cachées
+python manage.py test --failfast --keepdb       # s'arrêter au 1er échec ; conserver la base de test
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><strong>La découverte</strong> : fichiers <code>test*.py</code>, classes dérivées de <code>unittest.TestCase</code>, méthodes <code>test_*</code>. On remplace le fichier unique <code>catalog/tests.py</code> par un <strong>paquet</strong> :</p>
+<div class="code-block"><pre><code>catalog/tests/
+├── __init__.py            ← fichier vide
+├── factories.py           ← fabriques de données (pas de tests)
+├── test_services.py
+├── test_forms.py
+├── test_views.py
+├── test_permissions.py
+└── test_i18n.py
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>⚠️ <strong>Piège n°41 — <code>tests.py</code> <strong>et</strong> <code>tests/</code></strong> : Python ne sait pas lequel importer ; le lanceur s'arrête sur une erreur d'import. On <strong>supprime</strong> <code>catalog/tests.py</code> quand on crée le paquet.</p>
+</blockquote>
+<p><img alt="Cycle d'un test" src="assets/cycle-test.svg" /></p>
+<p>Trois conséquences à retenir du schéma :</p>
+<ol>
+<li>la base de test est <strong>vide</strong> : ni le <code>seed.py</code>, ni <code>db.sqlite3</code> ne sont chargés — chaque test crée ce dont il a besoin ;</li>
+<li>chaque test est <strong>isolé</strong> par une transaction annulée — un test qui échoue ne pollue pas les autres, l'ordre est indifférent ;</li>
+<li>le client de test exécute le <strong>vrai</strong> trajet (middlewares, URL, décorateurs, ORM, gabarits) — mais pas de serveur, pas de réseau.</li>
+</ol>
+<blockquote>
+<p>⚠️ <strong>Piège n°42 — la configuration d'environnement</strong> : <code>settings.py</code> lit <code>SECRET_KEY</code> dans l'environnement (<code>.env</code>, ignoré par git). Sur une machine neuve ou en CI, <code>manage.py test</code> s'arrête sur <em>« The SECRET_KEY setting must not be empty »</em>. Les tests ne devraient pas dépendre d'un secret : en CI, on exporte une clé factice. Même constat pour <code>requirements.txt</code>, qui <strong>ne liste pas</strong> <code>python-dotenv</code> ni <code>django-debug-toolbar</code> (importés par <code>settings.py</code> et <code>urls.py</code>) : une installation propre échouerait avant le premier test. On complète le fichier (et <code>coverage</code>, §11.10) dans l'atelier.</p>
+</blockquote>
+<h3>11.4. Les données de test : des fabriques, pas des fixtures</h3>
+<p>Les tests n'utilisent <strong>pas</strong> <code>seed.py</code> (qui dépend de dates et de noms précis) : ils créent des objets <strong>minimaux et explicites</strong> avec de petites fonctions.</p>
+<div class="code-block"><pre><code class="language-python"># catalog/tests/factories.py
+from datetime import timedelta
+from decimal import Decimal
+from itertools import count
+
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
+from django.utils import timezone
+
+from catalog.models import Client, Formation, Intervention
+
+_sequence = count(1)
+
+
+def creer_formation(**champs):
+    n = next(_sequence)
+    defauts = {'code': f'T-{n:03d}', 'nom': f'Formation {n}', 'duree': 2, 'prix': Decimal('1000.00')}
+    return Formation.objects.create(**{**defauts, **champs})
+
+
+def creer_intervention(formation=None, **champs):
+    n = next(_sequence)
+    debut = timezone.localdate() + timedelta(days=30)
+    defauts = {
+        'numero': f'T-{n:03d}-INT',
+        'formation': formation or creer_formation(),
+        'date_debut': debut,
+        'date_fin': debut + timedelta(days=2),
+        'capacite': 10,
+        'statut': 'A',
+    }
+    return Intervention.objects.create(**{**defauts, **champs})
+
+
+def creer_client(**champs):
+    n = next(_sequence)
+    defauts = {'prenom': 'Test', 'nom': f'Client{n}', 'email': f'client{n}@example.org'}
+    return Client.objects.create(**{**defauts, **champs})
+
+
+def creer_utilisateur(username, permissions=(), staff=False):
+    &quot;&quot;&quot;Compte sans mot de passe (pas de hachage coûteux) ; se connecte via force_login().&quot;&quot;&quot;
+    user = get_user_model().objects.create_user(username, f'{username}@example.org', is_staff=staff)
+    trouvees = Permission.objects.filter(content_type__app_label='catalog', codename__in=permissions)
+    if trouvees.count() != len(set(permissions)):
+        raise ValueError(f'Permission inconnue dans {permissions}')
+    user.user_permissions.add(*trouvees)
+    return user
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Choix à justifier :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Choix</th>
+<th>Pourquoi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>valeurs par défaut + <code>**champs</code></strong></td>
+<td>un test ne nomme que <strong>ce qui compte pour lui</strong> : <code>creer_intervention(capacite=1)</code></td>
+</tr>
+<tr>
+<td>compteur <code>_sequence</code></td>
+<td>les champs <code>unique</code> (<code>code</code>, <code>numero</code>, <code>email</code>) ne se télescopent jamais</td>
+</tr>
+<tr>
+<td>dates <strong>relatives</strong> à aujourd'hui</td>
+<td>un test écrit en 2026 ne casse pas en 2027</td>
+</tr>
+<tr>
+<td><code>Decimal('1000.00')</code>, pas <code>1000.0</code></td>
+<td>un <code>float</code> en mémoire n'est pas le <code>Decimal</code> relu depuis la base</td>
+</tr>
+<tr>
+<td><code>create_user</code> <strong>sans</strong> mot de passe</td>
+<td>pas de hachage PBKDF2 (environ 0,3 s par utilisateur) ; on se connecte par <code>force_login</code></td>
+</tr>
+<tr>
+<td><code>ValueError</code> sur permission inconnue</td>
+<td>une faute de frappe sur un <code>codename</code> fabriquerait un test <strong>trivialement vert</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong><code>setUpTestData</code> ou <code>setUp</code> ?</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th><code>setUpTestData</code> (méthode de classe)</th>
+<th><code>setUp</code> (méthode d'instance)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Exécuté</td>
+<td><strong>une fois</strong> par classe</td>
+<td>avant <strong>chaque</strong> test</td>
+</tr>
+<tr>
+<td>Pour</td>
+<td>données <strong>communes, non modifiées</strong> (le client, la formation)</td>
+<td>objets que le test <strong>modifie</strong> (l'intervention dont on lit le compteur)</td>
+</tr>
+<tr>
+<td>Isolation</td>
+<td>chaque test reçoit une <strong>copie</strong> des objets Python ; la base est restaurée</td>
+<td>totale</td>
+</tr>
+</tbody>
+</table></div>
+<h3>11.5. Tester les services — le cœur des règles métier</h3>
+<p>Le code testé (<code>catalog/services.py</code>) concentre les règles du jour 3 : la place se prend <strong>dans l'<code>UPDATE</code></strong>, le doublon est refusé, l'annulation libère la place.</p>
+<div class="code-block"><pre><code class="language-python"># catalog/tests/test_services.py
+from datetime import timedelta
+from decimal import Decimal
+from unittest.mock import patch
+
+from django.db import IntegrityError, transaction
+from django.test import SimpleTestCase, TestCase
+from django.utils import timezone
+
+from catalog.models import Inscription, Intervention
+from catalog.services import DejaInscrit, InterventionComplete, annuler, inscrire
+
+from .factories import creer_client, creer_formation, creer_intervention
+
+
+class InterventionTests(SimpleTestCase):
+    &quot;&quot;&quot;Aucun accès base : SimpleTestCase suffit.&quot;&quot;&quot;
+
+    def test_places_dispo(self):
+        self.assertEqual(Intervention(capacite=10, nb_inscrits=3).places_dispo, 7)
+
+    def test_places_dispo_ne_descend_pas_sous_zero(self):
+        self.assertEqual(Intervention(capacite=5, nb_inscrits=7).places_dispo, 0)
+
+
+class InscrireTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.formation = creer_formation(prix=Decimal('1890.00'))
+        cls.alice = creer_client()
+        cls.bob = creer_client()
+
+    def setUp(self):
+        self.intervention = creer_intervention(self.formation, capacite=2)
+
+    def places_prises(self):
+        self.intervention.refresh_from_db()
+        return self.intervention.nb_inscrits
+
+    def test_cree_la_ligne_et_prend_une_place(self):
+        inscription = inscrire(self.alice, self.intervention)
+        inscription.refresh_from_db()
+        self.assertEqual(inscription.statut, 'P')
+        self.assertEqual(inscription.montant_ht, Decimal('1890.00'))
+        self.assertEqual(self.places_prises(), 1)
+
+    def test_le_montant_est_copie_pas_reference(self):
+        inscription = inscrire(self.alice, self.intervention)
+        self.formation.prix = Decimal('2500.00')
+        self.formation.save()
+        inscription.refresh_from_db()
+        self.assertEqual(inscription.montant_ht, Decimal('1890.00'))
+
+    def test_refuse_le_doublon_sans_toucher_au_compteur(self):
+        inscrire(self.alice, self.intervention)
+        with self.assertRaises(DejaInscrit):
+            inscrire(self.alice, self.intervention)
+        self.assertEqual(self.places_prises(), 1)
+
+    def test_refuse_la_derniere_place_deja_prise(self):
+        inscrire(self.alice, self.intervention)
+        inscrire(self.bob, self.intervention)
+        troisieme = creer_client()
+        with self.assertRaises(InterventionComplete):
+            inscrire(troisieme, self.intervention)
+        self.assertEqual(self.places_prises(), 2)
+        self.assertFalse(Inscription.objects.filter(client=troisieme).exists())
+
+    def test_refuse_une_intervention_non_ouverte(self):
+        for statut in ('E', 'C'):
+            with self.subTest(statut=statut):
+                fermee = creer_intervention(self.formation, statut=statut)
+                with self.assertRaises(InterventionComplete):
+                    inscrire(self.alice, fermee)
+
+    def test_l_echec_de_la_creation_annule_la_place_prise(self):
+        with patch.object(Inscription.objects, 'create', side_effect=IntegrityError):
+            with self.assertRaises(IntegrityError):
+                inscrire(self.alice, self.intervention)
+        self.assertEqual(self.places_prises(), 0)
+
+
+class AnnulerTests(TestCase):
+    def setUp(self):
+        self.intervention = creer_intervention(capacite=2)
+        self.alice = creer_client()
+        self.inscription = inscrire(self.alice, self.intervention)
+
+    def places_prises(self):
+        self.intervention.refresh_from_db()
+        return self.intervention.nb_inscrits
+
+    def test_annuler_libere_la_place(self):
+        self.assertTrue(annuler(self.inscription))
+        self.inscription.refresh_from_db()
+        self.assertEqual(self.inscription.statut, 'X')
+        self.assertEqual(self.places_prises(), 0)
+
+    def test_annuler_deux_fois_ne_libere_qu_une_place(self):
+        annuler(self.inscription)
+        self.assertFalse(annuler(self.inscription))
+        self.assertEqual(self.places_prises(), 0)
+
+    def test_reinscription_possible_apres_annulation(self):
+        annuler(self.inscription)
+        inscrire(self.alice, self.intervention)
+        self.assertEqual(self.places_prises(), 1)
+
+
+class ContrainteEnBaseTests(TestCase):
+    &quot;&quot;&quot;La contrainte protège aussi quand on contourne le service.&quot;&quot;&quot;
+
+    def setUp(self):
+        self.intervention = creer_intervention()
+        self.client_test = creer_client()
+
+    def creer_directement(self, statut='P'):
+        return Inscription.objects.create(
+            client=self.client_test, intervention=self.intervention,
+            montant_ht=Decimal('100.00'), statut=statut,
+        )
+
+    def test_deux_inscriptions_actives_sont_refusees(self):
+        self.creer_directement()
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            self.creer_directement()
+
+    def test_une_inscription_annulee_ne_bloque_pas(self):
+        self.creer_directement(statut='X')
+        self.creer_directement()
+        self.assertEqual(Inscription.objects.count(), 2)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Ce qu'il faut <strong>lire en détail</strong> avec les stagiaires :</p>
+<ol>
+<li><strong>un test = un comportement</strong>, nommé comme une phrase (<code>test_refuse_la_derniere_place_deja_prise</code>) ; le rapport d'échec se lit sans ouvrir le code ;</li>
+<li><strong><code>refresh_from_db()</code></strong> avant de relire un compteur : <code>update(F(...))</code> écrit en base, <strong>pas</strong> dans l'objet Python — sans lui, le test lirait une valeur périmée ;</li>
+<li><strong><code>test_l_echec_de_la_creation_annule_la_place_prise</code></strong> : on <strong>provoque une panne</strong> (<code>patch.object(…, side_effect=IntegrityError)</code>) pour prouver que <code>@transaction.atomic</code> annule l'incrément. Un <code>mock</code> sert à <strong>fabriquer une situation impossible à obtenir autrement</strong> — pas à éviter la base ;</li>
+<li><strong><code>assertRaises(IntegrityError), transaction.atomic()</code></strong> : en <code>TestCase</code>, une erreur SQL <strong>non isolée</strong> casserait la transaction du test ; <code>atomic()</code> crée un <em>savepoint</em> qu'on annule proprement ;</li>
+<li><strong><code>test_refuse_la_derniere_place_deja_prise</code></strong> vérifie la <em>logique</em> de « comparer et incrémenter ». Il ne prouve <strong>pas</strong> la tenue sous de vrais accès simultanés (il faudrait <code>TransactionTestCase</code> et des threads, et SQLite n'est pas le bon terrain) — c'est une limite à dire à voix haute.</li>
+</ol>
+<blockquote>
+<p>⚠️ <strong>Piège n°43 — un test qu'on n'a jamais vu échouer ne prouve rien</strong> : un test sans assertion, un <code>assertRaises(Exception)</code> trop large, un mock qui remplace ce qu'il devrait vérifier — tous passent au vert. La parade est la <strong>mutation à la main</strong> (atelier 11·c) : on casse la règle, le test <strong>doit</strong> devenir rouge.</p>
+</blockquote>
+<p><strong>Le cycle rouge → vert (TDD).</strong> Une nouvelle règle : <em>« on ne s'inscrit pas à une intervention déjà commencée, même si son statut est encore « à venir »</em>. On écrit <strong>d'abord</strong> le test :</p>
+<div class="code-block"><pre><code class="language-python">    def test_refuse_une_intervention_deja_commencee(self):
+        hier = timezone.localdate() - timedelta(days=1)
+        commencee = creer_intervention(self.formation, date_debut=hier, date_fin=hier + timedelta(days=2))
+        with self.assertRaises(InterventionComplete):
+            inscrire(self.alice, commencee)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code class="language-bash">python manage.py test catalog.tests.test_services      # ROUGE : « InterventionComplete not raised »
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Puis la <strong>plus petite modification</strong> qui le fait passer — une ligne dans le filtre de l'<code>UPDATE</code>, donc toujours atomique :</p>
+<div class="code-block"><pre><code class="language-python"># catalog/services.py
+from django.utils import timezone
+
+    places_prises = Intervention.objects.filter(
+        pk=intervention.pk, statut='A', nb_inscrits__lt=F('capacite'),
+        date_debut__gte=timezone.localdate(),                  # ← la nouvelle règle
+    ).update(nb_inscrits=F('nb_inscrits') + 1)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code class="language-bash">python manage.py test catalog.tests.test_services      # VERT
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Le test <strong>précède</strong> le code : on prouve d'abord qu'il sait échouer, ensuite qu'il sait réussir.</p>
+<h3>11.6. Tester les formulaires</h3>
+<div class="code-block"><pre><code class="language-python"># catalog/tests/test_forms.py
+from django.test import TestCase
+
+from catalog.forms import ClientForm, CompteForm, InscriptionForm
+
+from .factories import creer_client, creer_intervention
+
+
+class ClientFormTests(TestCase):
+    donnees = {
+        'prenom': 'Marie', 'nom': 'Dupont', 'societe': 'Acme',
+        'email': 'Marie@Acme.FR', 'telephone': '+33 1 23 45 67 89',
+    }
+
+    def formulaire(self, **changements):
+        return ClientForm({**self.donnees, **changements})
+
+    def test_donnees_valides(self):
+        self.assertTrue(self.formulaire().is_valid())
+
+    def test_email_normalise_en_minuscules(self):
+        form = self.formulaire()
+        form.is_valid()
+        self.assertEqual(form.cleaned_data['email'], 'marie@acme.fr')
+
+    def test_email_deja_pris_meme_avec_une_autre_casse(self):
+        creer_client(email='marie@acme.fr')
+        form = self.formulaire()
+        self.assertFalse(form.is_valid())
+        self.assertTrue(form.has_error('email', code='unique'))
+
+    def test_modifier_son_propre_client_ne_declenche_pas_l_unicite(self):
+        existant = creer_client(email='marie@acme.fr')
+        form = ClientForm({**self.donnees, 'societe': 'Autre'}, instance=existant)
+        self.assertTrue(form.is_valid(), form.errors)
+
+    def test_telephone_invalide(self):
+        form = self.formulaire(telephone='abc')
+        self.assertFalse(form.is_valid())
+        self.assertTrue(form.has_error('telephone', code='telephone_invalide'))
+
+    def test_prenom_et_nom_obligatoires(self):
+        form = self.formulaire(prenom='', nom='')
+        self.assertFalse(form.is_valid())
+        self.assertTrue(form.has_error('prenom', code='required'))
+        self.assertTrue(form.has_error('nom', code='required'))
+
+    def test_seuls_les_champs_prevus_sont_exposes(self):
+        self.assertEqual(list(ClientForm().fields), ['prenom', 'nom', 'societe', 'email', 'telephone'])
+
+
+class InscriptionFormTests(TestCase):
+    def test_ne_propose_que_les_interventions_ouvertes_avec_des_places(self):
+        ouverte = creer_intervention(capacite=5)
+        creer_intervention(capacite=2, nb_inscrits=2)    # complète
+        creer_intervention(statut='C')                   # clôturée
+        queryset = InscriptionForm().fields['intervention'].queryset
+        self.assertQuerySetEqual(queryset, [ouverte], ordered=False)
+
+
+class CompteFormTests(TestCase):
+    donnees = {
+        'username': 'nouveau', 'first_name': 'Nora', 'last_name': 'Vidal',
+        'email': 'nora@example.org',
+        'password1': 'ZephyrQuartz-2026!', 'password2': 'ZephyrQuartz-2026!',
+    }
+
+    def test_valide(self):
+        self.assertTrue(CompteForm(self.donnees).is_valid())
+
+    def test_confirmation_differente(self):
+        form = CompteForm({**self.donnees, 'password2': 'autre-chose-2026!'})
+        self.assertFalse(form.is_valid())
+        self.assertTrue(form.has_error('password2', code='password_mismatch'))
+
+    def test_mot_de_passe_trop_courant(self):
+        form = CompteForm({**self.donnees, 'password1': '12345678', 'password2': '12345678'})
+        self.assertFalse(form.is_valid())
+        self.assertIn('password2', form.errors)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>À remarquer :</p>
+<ul>
+<li>on <strong>instancie le formulaire avec un dictionnaire</strong> — pas de HTTP : un formulaire est un objet Python qu'on teste seul ;</li>
+<li><strong><code>has_error(champ, code=…)</code></strong> plutôt que le texte du message : le code ne change pas avec la langue (§10.4, <code>code='telephone_invalide'</code>). Un test qui compare « Un client existe déjà… » casserait le jour où quelqu'un reformule — ou traduit — le message ;</li>
+<li><strong><code>test_modifier_son_propre_client…</code></strong> protège un comportement subtil du B7 : l'unicité ignore l'instance éditée ;</li>
+<li><strong><code>test_seuls_les_champs_prevus_sont_exposes</code></strong> transforme le piège n°22 (<code>fields = '__all__'</code>) en <strong>régression impossible</strong> : si quelqu'un ajoute <code>utilisateur</code>, le test échoue.</li>
+</ul>
+<blockquote>
+<p>⚠️ <strong>Piège n°44 — tester le texte plutôt que le comportement</strong> : <code>assertContains(rep, 'Un client existe déjà')</code> dépend de la langue, de la ponctuation, d'une virgule. On préfère le <strong>code d'erreur</strong>, le <strong>niveau d'un message</strong> (<code>success</code> / <code>error</code>), le <strong>gabarit utilisé</strong>, le <strong>statut HTTP</strong>, la <strong>présence en base</strong>. Le texte n'est contrôlé que là où il <em>est</em> le comportement (§11.9).</p>
+</blockquote>
+<h3>11.7. Tester les vues avec le client de test</h3>
+<div class="code-block"><pre><code class="language-python"># catalog/tests/test_views.py
+from decimal import Decimal
+
+from django.contrib.auth import get_user_model
+from django.db import connection
+from django.test import Client as ClientHTTP
+from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
+from django.test.utils import CaptureQueriesContext
+from django.urls import reverse
+
+from catalog.models import Client, Contrat, Inscription
+from catalog.services import inscrire
+from catalog.views import interne
+
+from .factories import (creer_client, creer_formation, creer_intervention,
+                        creer_utilisateur)
+
+DONNEES_CLIENT = {
+    'prenom': 'Marie', 'nom': 'Dupont', 'societe': 'Acme',
+    'email': 'marie@acme.fr', 'telephone': '',
+}
+
+
+def niveaux(reponse):
+    &quot;&quot;&quot;Niveaux des messages affichés (« success », « error »…) : indépendants de la langue.&quot;&quot;&quot;
+    return [message.level_tag for message in reponse.context['messages']]
+
+
+class PagesPubliquesTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.formation = creer_formation(nom='Django initiation')
+        cls.ouverte = creer_intervention(cls.formation, statut='A')
+        cls.cloturee = creer_intervention(cls.formation, statut='C')
+
+    def test_accueil(self):
+        self.assertEqual(self.client.get(reverse('catalog:accueil')).status_code, 200)
+
+    def test_catalogue_liste_les_formations(self):
+        reponse = self.client.get(reverse('catalog:liste-formations'))
+        self.assertContains(reponse, self.formation.code)
+        self.assertTemplateUsed(reponse, 'catalog/liste_formations.html')
+
+    def test_detail_n_affiche_que_les_interventions_a_venir(self):
+        reponse = self.client.get(reverse('catalog:detail-formation', args=[self.formation.pk]))
+        self.assertContains(reponse, self.ouverte.numero)
+        self.assertNotContains(reponse, self.cloturee.numero)
+
+    def test_formation_inconnue_utilise_la_page_404_du_projet(self):
+        reponse = self.client.get(reverse('catalog:detail-formation', args=[999999]))
+        self.assertEqual(reponse.status_code, 404)
+        self.assertTemplateUsed(reponse, 'catalog/404.html')
+
+
+class PagesErreurTests(SimpleTestCase):
+    def test_la_page_500_appelee_directement(self):
+        requete = RequestFactory().get('/')          # pas de middleware, pas d'URL : la vue seule
+        reponse = interne(requete)
+        self.assertEqual(reponse.status_code, 500)
+
+
+class CrudClientTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.gestionnaire = creer_utilisateur(
+            'gestionnaire',
+            ['view_client', 'add_client', 'change_client', 'delete_client'],
+            staff=True,
+        )
+
+    def setUp(self):
+        self.client.force_login(self.gestionnaire)
+
+    def test_creation_valide(self):
+        reponse = self.client.post(reverse('catalog:nouveau-client'), DONNEES_CLIENT, follow=True)
+        self.assertRedirects(reponse, reverse('catalog:clients'))
+        self.assertTrue(Client.objects.filter(email='marie@acme.fr').exists())
+        self.assertEqual(niveaux(reponse), ['success'])
+
+    def test_creation_invalide_reaffiche_le_formulaire_sans_rien_ecrire(self):
+        reponse = self.client.post(reverse('catalog:nouveau-client'), {**DONNEES_CLIENT, 'email': ''})
+        self.assertEqual(reponse.status_code, 200)
+        self.assertTrue(reponse.context['form'].has_error('email', code='required'))
+        self.assertEqual(Client.objects.count(), 0)
+
+    def test_modification(self):
+        existant = creer_client(prenom='Ancien', email='marie@acme.fr')
+        self.client.post(reverse('catalog:modifier-client', args=[existant.pk]),
+                         {**DONNEES_CLIENT, 'prenom': 'Nouveau'})
+        existant.refresh_from_db()
+        self.assertEqual(existant.prenom, 'Nouveau')
+
+    def test_la_page_de_suppression_en_get_ne_supprime_rien(self):
+        existant = creer_client()
+        reponse = self.client.get(reverse('catalog:supprimer-client', args=[existant.pk]))
+        self.assertEqual(reponse.status_code, 200)
+        self.assertTrue(Client.objects.filter(pk=existant.pk).exists())
+
+    def test_suppression(self):
+        existant = creer_client()
+        self.client.post(reverse('catalog:supprimer-client', args=[existant.pk]))
+        self.assertFalse(Client.objects.filter(pk=existant.pk).exists())
+
+    def test_suppression_d_un_client_avec_contrat_est_refusee_proprement(self):
+        existant = creer_client()
+        Contrat.objects.create(client=existant, titre='Contrat', numero='CT-T-1',
+                               montant_ht=Decimal('100.00'))
+        reponse = self.client.post(reverse('catalog:supprimer-client', args=[existant.pk]), follow=True)
+        self.assertEqual(reponse.status_code, 200)            # pas de 500
+        self.assertTrue(Client.objects.filter(pk=existant.pk).exists())
+        self.assertEqual(niveaux(reponse), ['error'])
+
+    def test_les_donnees_sont_echappees(self):
+        creer_client(prenom='&lt;b&gt;gras&lt;/b&gt;')
+        reponse = self.client.get(reverse('catalog:clients'))
+        self.assertContains(reponse, '&amp;lt;b&amp;gt;gras&amp;lt;/b&amp;gt;')
+        self.assertNotContains(reponse, '&lt;b&gt;gras&lt;/b&gt;')
+
+    def test_recherche(self):
+        creer_client(nom='Dupont')
+        creer_client(nom='Martin')
+        reponse = self.client.get(reverse('catalog:clients'), {'q': 'dup'})
+        self.assertEqual([c.nom for c in reponse.context['clients']], ['Dupont'])
+
+
+class InscriptionBackOfficeTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.gestionnaire = creer_utilisateur(
+            'gestionnaire', ['view_inscription', 'add_inscription'], staff=True,
+        )
+        cls.intervention = creer_intervention(capacite=50)
+        cls.alice = creer_client()
+
+    def setUp(self):
+        self.client.force_login(self.gestionnaire)
+
+    def test_le_formulaire_inscrit_le_client(self):
+        reponse = self.client.post(reverse('catalog:nouvelle-inscription'),
+                                   {'client': self.alice.pk, 'intervention': self.intervention.pk})
+        self.assertRedirects(reponse, reverse('catalog:inscriptions'))
+        self.intervention.refresh_from_db()
+        self.assertEqual(self.intervention.nb_inscrits, 1)
+
+    def test_un_doublon_devient_une_erreur_de_formulaire(self):
+        donnees = {'client': self.alice.pk, 'intervention': self.intervention.pk}
+        self.client.post(reverse('catalog:nouvelle-inscription'), donnees)
+        reponse = self.client.post(reverse('catalog:nouvelle-inscription'), donnees)
+        self.assertEqual(reponse.status_code, 200)
+        self.assertTrue(reponse.context['form'].non_field_errors())
+        self.assertEqual(Inscription.objects.count(), 1)
+
+    def test_le_nombre_de_requetes_ne_depend_pas_du_nombre_de_lignes(self):
+        def compter():
+            with CaptureQueriesContext(connection) as contexte:
+                self.client.get(reverse('catalog:inscriptions'))
+            return len(contexte)
+
+        inscrire(self.alice, self.intervention)
+        avec_une_ligne = compter()
+        for _ in range(4):
+            inscrire(creer_client(), self.intervention)
+        self.assertEqual(compter(), avec_une_ligne)
+
+
+@override_settings(PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])
+class CreerCompteTests(TestCase):
+    donnees = {
+        'username': 'nora', 'first_name': 'Nora', 'last_name': 'Vidal',
+        'email': 'Nora@Example.org',
+        'password1': 'ZephyrQuartz-2026!', 'password2': 'ZephyrQuartz-2026!',
+    }
+
+    def test_cree_le_compte_connecte_et_rattache_le_client_existant(self):
+        existant = creer_client(email='nora@example.org')
+        reponse = self.client.post(reverse('catalog:creer-compte'), self.donnees)
+        self.assertRedirects(reponse, reverse('catalog:mon-espace'))
+        user = get_user_model().objects.get(username='nora')
+        self.assertEqual(user.email, 'nora@example.org')                   # normalisé
+        self.assertEqual(int(self.client.session['_auth_user_id']), user.pk)
+        existant.refresh_from_db()
+        self.assertEqual(existant.utilisateur, user)
+
+    def test_cree_un_client_quand_l_adresse_est_inconnue(self):
+        self.client.post(reverse('catalog:creer-compte'), self.donnees)
+        self.assertEqual(Client.objects.get(email='nora@example.org').utilisateur.username, 'nora')
+
+    def test_mots_de_passe_differents_ne_creent_rien(self):
+        reponse = self.client.post(reverse('catalog:creer-compte'),
+                                   {**self.donnees, 'password2': 'autre-2026-xyz!'})
+        self.assertEqual(reponse.status_code, 200)
+        self.assertFalse(get_user_model().objects.filter(username='nora').exists())
+
+
+class MonEspaceTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.intervention = creer_intervention(capacite=5)
+        cls.alice = creer_utilisateur('alice')
+        cls.bob = creer_utilisateur('bob')
+        cls.client_alice = creer_client(utilisateur=cls.alice)
+        cls.client_bob = creer_client(utilisateur=cls.bob)
+        cls.inscription_alice = inscrire(cls.client_alice, cls.intervention)
+        cls.inscription_bob = inscrire(cls.client_bob, cls.intervention)
+
+    def setUp(self):
+        self.client.force_login(self.alice)
+
+    def test_ne_liste_que_mes_inscriptions(self):
+        reponse = self.client.get(reverse('catalog:mon-espace'))
+        self.assertEqual(list(reponse.context['inscriptions']), [self.inscription_alice])
+
+    def test_annuler_la_mienne_libere_la_place(self):
+        reponse = self.client.post(reverse('catalog:annuler-ma-inscription', args=[self.inscription_alice.pk]))
+        self.assertRedirects(reponse, reverse('catalog:mon-espace'))
+        self.inscription_alice.refresh_from_db()
+        self.assertEqual(self.inscription_alice.statut, 'X')
+
+    def test_annuler_celle_d_un_autre_renvoie_404(self):
+        reponse = self.client.post(reverse('catalog:annuler-ma-inscription', args=[self.inscription_bob.pk]))
+        self.assertEqual(reponse.status_code, 404)
+        self.inscription_bob.refresh_from_db()
+        self.assertNotEqual(self.inscription_bob.statut, 'X')
+
+    def test_annuler_exige_un_post(self):
+        reponse = self.client.get(reverse('catalog:annuler-ma-inscription', args=[self.inscription_alice.pk]))
+        self.assertEqual(reponse.status_code, 405)
+
+    def test_s_inscrire(self):
+        libre = creer_intervention(capacite=5)
+        reponse = self.client.post(reverse('catalog:sinscrire', args=[libre.pk]), follow=True)
+        self.assertRedirects(reponse, reverse('catalog:detail-formation', args=[libre.formation_id]))
+        self.assertTrue(Inscription.objects.filter(client=self.client_alice, intervention=libre).exists())
+        self.assertEqual(niveaux(reponse), ['success'])
+
+    def test_s_inscrire_a_une_intervention_complete(self):
+        pleine = creer_intervention(capacite=1, nb_inscrits=1)
+        reponse = self.client.post(reverse('catalog:sinscrire', args=[pleine.pk]), follow=True)
+        self.assertEqual(niveaux(reponse), ['error'])
+        self.assertFalse(Inscription.objects.filter(intervention=pleine).exists())
+
+    def test_s_inscrire_sans_profil_client(self):
+        self.client.force_login(creer_utilisateur('sans-profil'))
+        libre = creer_intervention()
+        reponse = self.client.post(reverse('catalog:sinscrire', args=[libre.pk]), follow=True)
+        self.assertEqual(niveaux(reponse), ['error'])
+
+    def test_s_inscrire_exige_un_post(self):
+        libre = creer_intervention()
+        self.assertEqual(self.client.get(reverse('catalog:sinscrire', args=[libre.pk])).status_code, 405)
+
+
+class CsrfTests(TestCase):
+    def test_un_post_sans_jeton_est_refuse(self):
+        navigateur = ClientHTTP(enforce_csrf_checks=True)       # le client de test n'applique pas le CSRF par défaut
+        navigateur.force_login(creer_utilisateur('alice'))
+        reponse = navigateur.post(reverse('catalog:sinscrire', args=[1]))
+        self.assertEqual(reponse.status_code, 403)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Ce qu'il faut retenir de ces 28 tests :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Technique</th>
+<th>Où</th>
+<th>Pourquoi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>reverse(...)</code></td>
+<td>partout</td>
+<td>une URL renommée, ou <strong>préfixée par la langue</strong> (B10), ne casse rien</td>
+</tr>
+<tr>
+<td><code>follow=True</code> + <code>niveaux(reponse)</code></td>
+<td>CRUD, inscription</td>
+<td>on teste <strong>l'issue</strong> (message de succès / d'erreur) sans dépendre du texte</td>
+</tr>
+<tr>
+<td><code>reponse.context['form']</code></td>
+<td>création invalide</td>
+<td>on interroge l'objet réellement transmis au gabarit</td>
+</tr>
+<tr>
+<td><code>assertRedirects</code></td>
+<td>création, annulation</td>
+<td>vérifie le 302 <strong>et</strong> que la destination répond</td>
+</tr>
+<tr>
+<td><strong>404 pour l'inscription d'autrui</strong></td>
+<td><code>MonEspaceTests</code></td>
+<td>prouve le filtre par propriétaire (piège n°33)</td>
+</tr>
+<tr>
+<td><code>CaptureQueriesContext</code></td>
+<td>liste des inscriptions</td>
+<td>« le nombre de requêtes ne dépend pas du nombre de lignes » : <strong>détecte un N+1 sans compter à la main</strong></td>
+</tr>
+<tr>
+<td><code>Client(enforce_csrf_checks=True)</code></td>
+<td><code>CsrfTests</code></td>
+<td>le client de test <strong>désactive</strong> le CSRF par défaut ; ce test prouve que la protection est active</td>
+</tr>
+<tr>
+<td><code>RequestFactory</code></td>
+<td><code>PagesErreurTests</code></td>
+<td>appeler la vue 500 directement : aucun moyen de la déclencher par une URL</td>
+</tr>
+<tr>
+<td><code>@override_settings(PASSWORD_HASHERS=[MD5…])</code></td>
+<td>création de compte</td>
+<td>un vrai hachage PBKDF2 coûterait 0,3 s par test ; <strong>uniquement</strong> là où un mot de passe est réellement haché</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>⚠️ <strong>Piège n°45 — l'homonyme <code>Client</code></strong> : <code>catalog.models.Client</code> (nos clients) et <code>django.test.Client</code> (le navigateur factice) portent le même nom, et <code>self.client</code> n'est ni l'un ni l'autre des deux imports. On importe le second <strong>sous un alias</strong> : <code>from django.test import Client as ClientHTTP</code>.</p>
+</blockquote>
+<h3>11.8. Tester les gardes d'accès et l'admin</h3>
+<p>Les décorateurs du jour 3 sont <strong>invisibles</strong> : un oubli ne fait pas planter la page, il l'ouvre à tout le monde. C'est le cas d'école où un test vaut mieux qu'une relecture. On écrit <strong>une table</strong> — chaque page protégée et la permission qui la protège — et on la fait parcourir par trois tests.</p>
+<div class="code-block"><pre><code class="language-python"># catalog/tests/test_permissions.py
+from django.apps import apps
+from django.contrib import admin
+from django.contrib.auth import get_user_model
+from django.test import TestCase
+from django.urls import reverse
+
+from catalog.services import inscrire
+
+from .factories import creer_client, creer_intervention, creer_utilisateur
+
+
+class GardesDAccesTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.cible = creer_client()
+        cls.stagiaire = creer_utilisateur('stagiaire')
+
+    def pages(self):
+        pk = [self.cible.pk]
+        return [
+            # nom d'URL, arguments, permission minimale
+            ('catalog:clients', [], 'view_client'),
+            ('catalog:nouveau-client', [], 'add_client'),
+            ('catalog:modifier-client', pk, 'change_client'),
+            ('catalog:supprimer-client', pk, 'delete_client'),
+            ('catalog:inscriptions', [], 'view_inscription'),
+            ('catalog:nouvelle-inscription', [], 'add_inscription'),
+        ]
+
+    def test_anonyme_est_redirige_vers_la_connexion(self):
+        for nom, args, _ in self.pages():
+            with self.subTest(page=nom):
+                url = reverse(nom, args=args)
+                self.assertRedirects(self.client.get(url), f&quot;{reverse('login')}?next={url}&quot;)
+
+    def test_connecte_sans_permission_recoit_403(self):
+        self.client.force_login(self.stagiaire)
+        for nom, args, _ in self.pages():
+            with self.subTest(page=nom):
+                reponse = self.client.get(reverse(nom, args=args))
+                self.assertEqual(reponse.status_code, 403)
+                self.assertTemplateUsed(reponse, 'catalog/403.html')
+
+    def test_la_permission_prevue_suffit(self):
+        for nom, args, permission in self.pages():
+            with self.subTest(page=nom):
+                self.client.force_login(creer_utilisateur(f'u-{permission}', [permission]))
+                self.assertEqual(self.client.get(reverse(nom, args=args)).status_code, 200)
+
+    def test_mon_espace_exige_la_connexion(self):
+        url = reverse('catalog:mon-espace')
+        self.assertRedirects(self.client.get(url), f&quot;{reverse('login')}?next={url}&quot;)
+
+    def test_pages_publiques_restent_publiques(self):
+        for nom in ('catalog:accueil', 'catalog:liste-formations', 'catalog:creer-compte', 'login'):
+            with self.subTest(page=nom):
+                self.assertEqual(self.client.get(reverse(nom)).status_code, 200)
+
+
+class AdminTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.root = get_user_model().objects.create_superuser('root', 'root@example.org')
+
+    def setUp(self):
+        self.client.force_login(self.root)
+
+    def test_toutes_les_listes_repondent(self):
+        for modele in apps.get_app_config('catalog').get_models():
+            if not admin.site.is_registered(modele):
+                continue
+            with self.subTest(modele=modele.__name__):
+                url = reverse(f'admin:catalog_{modele._meta.model_name}_changelist')
+                self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_l_action_annuler_passe_par_le_service(self):
+        intervention = creer_intervention()
+        inscription = inscrire(creer_client(), intervention)
+        self.client.post(reverse('admin:catalog_inscription_changelist'), {
+            'action': 'annuler_selection', '_selected_action': [inscription.pk],
+        })
+        inscription.refresh_from_db()
+        intervention.refresh_from_db()
+        self.assertEqual(inscription.statut, 'X')
+        self.assertEqual(intervention.nb_inscrits, 0)
+
+    def test_pas_d_ajout_d_inscription_dans_l_admin(self):
+        self.assertEqual(self.client.get(reverse('admin:catalog_inscription_add')).status_code, 403)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Les trois premiers tests décrivent <strong>les trois états</strong> d'un visiteur : <em>anonyme</em> → 302 vers la connexion, <em>connecté sans droit</em> → 403, <em>connecté avec <strong>la</strong> permission prévue</em> → 200. Le troisième est le plus fin : il prouve que <strong>la permission annoncée suffit</strong> — pas besoin d'être administrateur.</p>
+<blockquote>
+<p>💡 <strong>Quand ces tests échouent, ils ont raison.</strong> Sur le dépôt à l'ouverture du jour 4, <code>supprimer-client</code>, <code>inscriptions</code> et <code>nouvelle-inscription</code> étaient <strong>ouvertes à tous</strong> : le décorateur du B9 n'y avait pas été posé (l'URL de <code>modifier-client</code> était, elle, protégée à son niveau). Le test échoue <strong>par sous-test</strong> — <code>subTest</code> nomme la page fautive. On pose les décorateurs, la suite passe au vert :</p>
+</blockquote>
+<div class="code-block"><pre><code class="language-python">@login_required
+@permission_required('catalog.delete_client', raise_exception=True)
+def supprimer_client(request, pk): …
+
+@login_required
+@permission_required('catalog.view_inscription', raise_exception=True)
+def liste_inscriptions(request): …
+
+@login_required
+@permission_required('catalog.add_inscription', raise_exception=True)
+def nouvelle_inscription(request): …
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><code>AdminTests</code> apporte deux garanties peu coûteuses : <strong>toutes</strong> les listes de l'admin se chargent (une <code>list_display</code> qui référence un champ supprimé est détectée dès le test suivant), et l'action d'annulation <strong>passe par <code>services.annuler</code></strong> (le piège n°26 du jour 3 : l'admin ne doit pas contourner la règle).</p>
+<h3>11.9. Tester les langues</h3>
+<div class="code-block"><pre><code class="language-python"># catalog/tests/test_i18n.py
+from datetime import date
+from decimal import Decimal
+
+from django.conf import settings
+from django.test import TestCase
+from django.urls import reverse
+from django.utils import translation
+from django.utils.formats import date_format, number_format
+from django.utils.translation import ngettext
+
+from catalog.models import Inscription, Intervention
+from catalog.services import DejaInscrit, inscrire
+
+from .factories import creer_client, creer_intervention
+
+
+class NegociationDeLangueTests(TestCase):
+    def test_la_racine_redirige_vers_la_langue_par_defaut(self):
+        self.assertRedirects(self.client.get('/'), '/fr/')
+
+    def test_accept_language_est_respecte_sans_prefixe(self):
+        reponse = self.client.get('/', headers={'accept-language': 'en'})
+        self.assertRedirects(reponse, '/en/')
+
+    def test_le_prefixe_de_l_url_l_emporte_sur_le_navigateur(self):
+        reponse = self.client.get('/fr/formations/', headers={'accept-language': 'en'})
+        self.assertContains(reponse, 'Connexion')
+
+    def test_set_language_pose_le_cookie_et_traduit_le_prefixe(self):
+        reponse = self.client.post(reverse('set_language'), {'language': 'en', 'next': '/fr/formations/'})
+        self.assertRedirects(reponse, '/en/formations/')
+        self.assertEqual(reponse.cookies[settings.LANGUAGE_COOKIE_NAME].value, 'en')
+
+
+class PagesTraduitesTests(TestCase):
+    def test_navigation_en_francais_et_en_anglais(self):
+        fr = self.client.get('/fr/formations/')
+        en = self.client.get('/en/formations/')
+        self.assertContains(fr, 'Connexion')
+        self.assertNotContains(fr, 'Log in')
+        self.assertContains(en, 'Log in')
+        self.assertNotContains(en, 'Connexion')
+
+    def test_l_attribut_lang_suit_la_langue(self):
+        self.assertContains(self.client.get('/en/formations/'), '&lt;html lang=&quot;en&quot;&gt;')
+
+    def test_les_liens_internes_gardent_la_langue(self):
+        with translation.override('en'):
+            connexion = reverse('login')
+        self.assertEqual(connexion, '/en/comptes/login/')
+        self.assertContains(self.client.get('/en/formations/'), f'href=&quot;{connexion}&quot;')
+
+
+class TraductionsDesDonneesTests(TestCase):
+    def test_libelles_du_modele(self):
+        with translation.override('fr'):
+            self.assertEqual(str(Intervention._meta.verbose_name), 'intervention')
+        with translation.override('en'):
+            self.assertEqual(str(Intervention._meta.verbose_name), 'training session')
+
+    def test_choix_d_un_champ(self):
+        inscription = Inscription(statut='X')
+        with translation.override('fr'):
+            self.assertEqual(inscription.get_statut_display(), 'Annulée')
+        with translation.override('en'):
+            self.assertEqual(inscription.get_statut_display(), 'Cancelled')
+
+    def test_message_d_erreur_d_un_service(self):
+        intervention, alice = creer_intervention(), creer_client()
+        inscrire(alice, intervention)
+        with translation.override('en'):
+            with self.assertRaisesMessage(DejaInscrit, 'already registered'):
+                inscrire(alice, intervention)
+
+    def test_pluriel(self):
+        def places(n):
+            return ngettext('%(n)d place', '%(n)d places', n) % {'n': n}
+        with translation.override('fr'):
+            self.assertEqual([places(0), places(1), places(2)], ['0 place', '1 place', '2 places'])
+        with translation.override('en'):
+            self.assertEqual([places(0), places(1), places(2)], ['0 seats', '1 seat', '2 seats'])
+
+
+class FormatsLocauxTests(TestCase):
+    def test_date(self):
+        jour = date(2026, 12, 1)
+        with translation.override('fr'):
+            self.assertEqual(date_format(jour), '1 décembre 2026')
+        with translation.override('en'):
+            self.assertEqual(date_format(jour), 'Dec. 1, 2026')
+
+    def test_nombre(self):
+        prix = Decimal('1890.50')
+        with translation.override('fr'):
+            self.assertEqual(number_format(prix, decimal_pos=2, force_grouping=True), '1\xa0890,50')
+        with translation.override('en'):
+            self.assertEqual(number_format(prix, decimal_pos=2, force_grouping=True), '1,890.50')
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>C'est ici — et <strong>seulement</strong> ici — qu'on compare du <strong>texte</strong> : une traduction <em>est</em> du texte. Remarques :</p>
+<ul>
+<li><strong><code>translation.override('en')</code></strong> active une langue le temps du bloc <code>with</code> ; dans un test, c'est l'équivalent du sélecteur ;</li>
+<li><code>'1\xa0890,50'</code> : le séparateur de milliers français est un <strong>espace insécable</strong> (<code>\xa0</code>), pas une espace ordinaire — l'assertion échoue sur un caractère invisible si on tape une espace au clavier ;</li>
+<li>ces tests <strong>dépendent du <code>.mo</code> compilé</strong> : en CI, <code>compilemessages</code> précède <code>manage.py test</code>. Sans lui, <code>Log in</code> n'apparaît pas — le test échoue, ce qui est le comportement voulu ;</li>
+<li><code>test_pluriel</code> couvre le détail de §10.6 : sans le catalogue <code>fr</code>, le premier cas renverrait <code>'0 places'</code>.</li>
+</ul>
+<h3>11.10. Couverture, aléa, mutation</h3>
+<p><strong>La couverture</strong> mesure <strong>les lignes exécutées</strong> par la suite — pas leur justesse.</p>
+<div class="code-block"><pre><code class="language-bash">pip install coverage
+coverage run --source=catalog --omit=&quot;*/migrations/*,catalog/seed.py,catalog/tests/*&quot; manage.py test --shuffle
+coverage report -m                  # tableau + numéros de lignes non couvertes
+coverage html                       # rapport navigable : htmlcov/index.html
+coverage report -m --fail-under=85  # rapport bloquant en CI/CD
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Un résultat réaliste sur le dépôt, suite complète (74 tests) :</p>
+<div class="code-block"><pre><code>Name                  Stmts   Miss  Cover   Missing
+---------------------------------------------------
+catalog\admin.py         86      9    90%   39, 62, 66-67, 87, 91-92, 136-137
+catalog\forms.py         62     13    79%   25-28, 31-34, 39-44
+catalog\models.py        89      4    96%   17, 102, 151, 203
+catalog\services.py      23      0   100%
+catalog\urls.py           6      0   100%
+catalog\views.py        140      9    94%   95-104
+---------------------------------------------------
+TOTAL                   410     35    91%
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><strong>Lire un rapport, c'est chercher ce qui manque, pas viser 100 %.</strong> (Les numéros de lignes varient selon l'état du dépôt.) Deux constats exploitables sur cet exemple :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Ligne non couverte</th>
+<th>Diagnostic</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>forms.py</code> 25-44</td>
+<td><code>NouveauClientForm</code> : remplacé par <code>ClientForm</code> au B7, plus utilisé</td>
+<td><strong>supprimer</strong> le code mort</td>
+</tr>
+<tr>
+<td><code>views.py</code> 95-104</td>
+<td>la fonction <code>modifier_client</code> : <code>urls.py</code> route vers <code>ClientUpdateView</code>, jamais vers elle. Le message « Client modifié » n'est donc <strong>jamais affiché</strong></td>
+<td>choisir : router vers la fonction, ou supprimer la fonction et ajouter <code>SuccessMessageMixin</code> à la vue générique</td>
+</tr>
+</tbody>
+</table></div>
+<p>Le reste (<code>admin.py</code>, <code>models.py</code>) correspond à des <code>__str__</code> et à des branches d'admin non déclenchées : à juger au cas par cas, sans obligation.</p>
+<blockquote>
+<p>💡 <strong>100 % de couverture n'est pas 100 % de confiance.</strong> Une ligne « couverte » peut ne rien vérifier. La couverture sert à <strong>trouver les trous</strong> ; ce qui mesure la valeur d'un test, c'est qu'il <strong>échoue</strong> quand le comportement change.</p>
+</blockquote>
+<p><strong>L'aléa</strong> — <code>--shuffle</code> exécute les tests dans un ordre différent à chaque fois (la graine est affichée : <code>--shuffle 5890689019</code> rejoue un ordre précis). Un test qui dépend d'un autre échoue tôt ou tard : on l'a rendu visible.</p>
+<p><strong>La mutation à la main</strong> — la contre-épreuve du piège n°43 :</p>
+<div class="code-block"><pre><code class="language-python"># catalog/services.py — on casse volontairement la règle de capacité
+places_prises = Intervention.objects.filter(
+    pk=intervention.pk, statut='A',                      # ← « nb_inscrits__lt=F('capacite') » retiré
+    date_debut__gte=timezone.localdate(),
+).update(nb_inscrits=F('nb_inscrits') + 1)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code>FAIL: test_refuse_la_derniere_place_deja_prise (catalog.tests.test_services.InscrireTests…)
+FAIL: test_s_inscrire_a_une_intervention_complete (catalog.tests.test_views.MonEspaceTests…)
+FAILED (failures=2)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Deux tests, <strong>à deux étages différents</strong> de la pyramide (service, vue), désignent la même faute. On <strong>restaure</strong> la ligne : retour au vert. Si aucun test n'avait échoué, il aurait fallu en écrire un.</p>
+<p><strong>En intégration continue</strong>, la suite complète se résume à :</p>
+<div class="code-block"><pre><code class="language-bash">pip install -r requirements.txt coverage
+python manage.py compilemessages
+SECRET_KEY=cle-factice coverage run --source=catalog manage.py test --shuffle
+coverage report --fail-under=85
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<h3>🛠️ Atelier 11·a — Services et formulaires, en rouge puis en vert (40 min)</h3>
+<ol>
+<li><strong>préparer</strong> : supprimer <code>catalog/tests.py</code>, créer <code>catalog/tests/</code> avec <code>__init__.py</code> et <code>factories.py</code> ; compléter <code>requirements.txt</code> (<code>python-dotenv</code>, <code>django-debug-toolbar</code>, <code>coverage</code>) ; exporter <code>SECRET_KEY</code> si le <code>.env</code> est absent ;</li>
+<li>écrire <code>test_services.py</code> <strong>sans</strong> le test « déjà commencée » ; vérifier <strong>vert</strong> ;</li>
+<li>ajouter <code>test_refuse_une_intervention_deja_commencee</code> : <strong>rouge</strong> ; modifier <code>services.py</code> ; <strong>vert</strong> ;</li>
+<li>écrire <code>test_forms.py</code> ; remarquer que <code>test_telephone_invalide</code> échoue tant que <code>code='telephone_invalide'</code> n'est pas ajouté au <code>ValidationError</code> (§10.4) : <strong>corriger le code, pas le test</strong> ;</li>
+<li><code>python manage.py test catalog.tests.test_services catalog.tests.test_forms</code>.</li>
+</ol>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Vérification</th>
+<th>Attendu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>suite services + formulaires</td>
+<td>25 tests, tous verts</td>
+</tr>
+<tr>
+<td>2</td>
+<td>retirer <code>date_debut__gte=…</code></td>
+<td><strong>1</strong> échec (« déjà commencée »)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>retirer <code>code='telephone_invalide'</code></td>
+<td><strong>1</strong> échec</td>
+</tr>
+<tr>
+<td>4</td>
+<td>ajouter <code>'utilisateur'</code> à <code>ClientForm.Meta.fields</code></td>
+<td><strong>1</strong> échec (<code>champs exposés</code>)</td>
+</tr>
+</tbody>
+</table></div>
+<h3>🛠️ Atelier 11·b — Vues et comptes (40 min)</h3>
+<ol>
+<li>écrire <code>test_views.py</code> section par section (un <code>class</code>, une exécution) ;</li>
+<li>repérer le test qui échoue à cause d'un <strong>comportement réel</strong> (si l'état du dépôt le permet) ; sinon, injecter une panne volontaire : retirer <code>@require_POST</code> de <code>annuler_ma_inscription</code> → quel test échoue ?</li>
+<li>mesurer le N+1 : retirer <code>select_related('client', 'intervention__formation')</code> de <code>liste_inscriptions</code> → <code>test_le_nombre_de_requetes_ne_depend_pas_du_nombre_de_lignes</code> doit échouer ; restaurer ;</li>
+<li>retirer le filtre <code>client__utilisateur=request.user</code> de <code>annuler_ma_inscription</code> → quel test échoue ? (le 404 de l'inscription d'autrui) ; restaurer.</li>
+</ol>
+<p><strong>Checklist</strong> : chaque mutation produit <strong>exactement</strong> les échecs prévus, chaque restauration ramène au vert.</p>
+<h3>🛠️ Atelier 11·c — Accès, admin, langues, couverture (40 min)</h3>
+<ol>
+<li>écrire <code>test_permissions.py</code> ; <strong>lancer</strong> : si des gardes manquent dans le dépôt, la suite échoue <strong>par page</strong> — poser les décorateurs, relancer ;</li>
+<li>écrire <code>test_i18n.py</code> après <code>compilemessages</code> ; essayer sans compiler : quel test échoue en premier ?</li>
+<li><code>coverage run … &amp;&amp; coverage report -m</code> : relever <strong>trois</strong> lignes non couvertes, dire pour chacune « code mort » ou « test manquant » ;</li>
+<li>supprimer <code>NouveauClientForm</code> (code mort) ; décider du sort de <code>modifier_client</code> ; relancer la suite et la couverture ;</li>
+<li><code>python manage.py test --shuffle</code> <strong>trois fois de suite</strong> : toujours vert.</li>
+</ol>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Action</th>
+<th>Résultat attendu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>retirer <code>@login_required</code> de <code>mon_espace</code></td>
+<td><code>test_mon_espace_exige_la_connexion</code> échoue</td>
+</tr>
+<tr>
+<td>2</td>
+<td>passer <code>LANGUAGE_CODE</code> à <code>'en'</code></td>
+<td><code>test_la_racine_redirige_vers_la_langue_par_defaut</code> échoue</td>
+</tr>
+<tr>
+<td>3</td>
+<td>supprimer <code>locale/en/LC_MESSAGES/django.mo</code></td>
+<td>plusieurs tests de §11.9 échouent</td>
+</tr>
+<tr>
+<td>4</td>
+<td>retirer <code>'annuler'</code> de <code>permissions=[…]</code> dans <code>InscriptionAdmin</code></td>
+<td>l'action est visible de tous : discuter pourquoi aucun test ne le détecte, et en écrire un</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Checklist de fin d'atelier</strong></p>
+<ul>
+<li>[ ] 74 tests verts ; la suite s'exécute en moins de 5 secondes ;</li>
+<li>[ ] chaque stagiaire a <strong>vu</strong> au moins un test passer du vert au rouge sur une règle cassée volontairement ;</li>
+<li>[ ] <code>requirements.txt</code> à jour, <code>catalog/tests.py</code> supprimé ;</li>
+<li>[ ] <code>git add -A &amp;&amp; git commit -m "J4 : suite de tests (services, formulaires, vues, accès, admin, langues)"</code> fait.</li>
+</ul>
+<blockquote>
+<p>💡 <strong>Critère de réussite de la journée</strong> (à énoncer devant le binôme) : « Je sais dire, pour la règle <em>'on ne dépasse jamais la capacité'</em>, <strong>dans quels tests</strong> elle est vérifiée (service, vue), <strong>ce qui s'affiche</strong> en <code>/en/</code> quand elle est violée, et <strong>comment je le prouve</strong> en cassant la règle. »</p>
+</blockquote>
+<hr />
+</div>
+
+<div id="tab-synthese-de-fin-de-journee" class="tab-content">
+<h3>Ce qui est en place</h3>
+<div class="code-block"><pre><code>gestiformation/
+├── manage.py
+├── requirements.txt             # + python-dotenv, django-debug-toolbar, coverage
+├── locale/
+│   ├── en/LC_MESSAGES/django.po # ← NOUVEAU : traductions
+│   ├── en/LC_MESSAGES/django.mo # ← compilé (artefact)
+│   └── fr/LC_MESSAGES/…         # ← NOUVEAU : règle de pluriel du français
+├── gesti/
+│   ├── settings.py              # + LANGUAGES, LOCALE_PATHS, LocaleMiddleware, TIME_ZONE
+│   └── urls.py                  # i18n_patterns, set_language
+└── catalog/
+    ├── models.py, forms.py, services.py, views.py, admin.py   # chaînes marquées (gettext / lazy / ngettext)
+    ├── templates/catalog/…      # {% translate %}, {% blocktranslate %}, formats localisés, sélecteur de langue
+    └── tests/                   # ← NOUVEAU (remplace tests.py)
+        ├── factories.py
+        ├── test_services.py     # 14 tests
+        ├── test_forms.py        # 11 tests
+        ├── test_views.py        # 28 tests
+        ├── test_permissions.py  #  8 tests
+        └── test_i18n.py         # 13 tests
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<h3>Les réflexes installés</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Réflexe</th>
+<th>Pourquoi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gettext</code> dans le corps d'une fonction, <strong><code>gettext_lazy</code></strong> dans un attribut de classe</td>
+<td>la langue est celle de la <strong>requête</strong>, pas celle du démarrage</td>
+</tr>
+<tr>
+<td>msgid <strong>constant</strong> + <code>%(nom)s</code>, puis <code>% {…}</code> — jamais d'f-string dans <code>_()</code></td>
+<td>extractible et réordonnable</td>
+</tr>
+<tr>
+<td><code>ngettext</code> pour tout ce qui compte, jamais un « (s) »</td>
+<td>chaque langue a sa règle de pluriel</td>
+</tr>
+<tr>
+<td><code>{% url %}</code> / <code>reverse()</code>, jamais une URL en dur</td>
+<td>l'URL porte la langue</td>
+</tr>
+<tr>
+<td>formats nommés (<code>SHORT_DATE_FORMAT</code>, <code>"2g"</code>) pour l'humain ; <code>unlocalize</code> pour la machine</td>
+<td><code>1 890,50</code> ne se lit pas par <code>float()</code></td>
+</tr>
+<tr>
+<td><code>compilemessages</code> après chaque <code>.po</code> ; relire les <code>fuzzy</code></td>
+<td>Django ne lit que le <code>.mo</code></td>
+</tr>
+<tr>
+<td>un test = un comportement, nommé comme une phrase</td>
+<td>un échec se lit sans ouvrir le code</td>
+</tr>
+<tr>
+<td><strong>fabriques</strong> à valeurs par défaut, jamais le seed</td>
+<td>un test ne nomme que ce qui compte pour lui</td>
+</tr>
+<tr>
+<td>tester le <strong>code</strong>, le <strong>niveau</strong>, le <strong>statut</strong>, la <strong>base</strong> — le texte seulement pour la traduction</td>
+<td>un message reformulé ne casse pas la suite</td>
+</tr>
+<tr>
+<td><strong>rouge d'abord</strong>, puis vert ; casser la règle pour voir échouer</td>
+<td>un test jamais vu rouge ne prouve rien</td>
+</tr>
+<tr>
+<td>la couverture <strong>cherche les trous</strong> (et le code mort)</td>
+<td>elle ne mesure pas la qualité</td>
+</tr>
+</tbody>
+</table></div>
+<h3>Pièges vus aujourd'hui (à récapituler oralement)</h3>
+<ol>
+<li>f-string dans <code>_()</code> : msgid inextricable, non extractible ;</li>
+<li><code>gettext</code> non lazy dans un attribut de classe : langue figée à l'import ;</li>
+<li><code>Can't find msguniq</code> : GNU gettext absent du <code>PATH</code> ;</li>
+<li><code>.po</code> non recompilé, ou entrée <code>fuzzy</code> ignorée ;</li>
+<li>URLs écrites en dur : elles perdent le préfixe de langue ;</li>
+<li>format de date écrit en dur / nombre localisé donné à une machine ;</li>
+<li><code>makemessages</code> ne traduit pas le contenu de la base ;</li>
+<li><code>tests.py</code> et <code>tests/</code> coexistent : erreur d'import ;</li>
+<li><code>SECRET_KEY</code> absente, <code>requirements.txt</code> incomplet : la CI échoue avant le premier test ;</li>
+<li>un test jamais vu échouer ne prouve rien ;</li>
+<li>tester le texte plutôt que le comportement ;</li>
+<li><code>Client</code> du modèle et <code>Client</code> du test : importer l'un sous un alias.</li>
+</ol>
+<h3>Preview du jour 5 — bloc 12</h3>
+<p>Demain, GestiFormation sort de l'atelier : <strong>e-mails</strong> d'inscription (et leur test avec <code>mail.outbox</code>, qui s'écrit comme aujourd'hui), <strong>export CSV</strong> des inscriptions, <strong>connexion sociale</strong> (OAuth), puis la <strong>configuration de production</strong> : <code>DEBUG = False</code>, <code>ALLOWED_HOSTS</code>, secrets hors du code, fichiers statiques, base de données serveur, déploiement. La suite d'aujourd'hui devient le <strong>filet de sécurité</strong> de chaque étape : on ne déploie pas sans que <code>manage.py test</code> soit vert.</p>
+<blockquote>
+<p>💡 <strong>Message de clôture</strong> : « Le site de jeudi parle deux langues et se <strong>prouve</strong> lui-même. Quand un collègue touchera <code>services.py</code>, il n'aura pas besoin de vous : les tests lui diront ce qui casse — dans sa langue. »</p>
+</blockquote>
+<hr />
+</div>
+
+<div id="tab-annexe-commandes-du-jour-cheat-sheet" class="tab-content">
+<div class="code-block"><pre><code class="language-bash"># Internationalisation
+mkdir locale
+python manage.py makemessages -l en -i venv      # extraire (outils gettext requis)
+python manage.py makemessages -l fr -i venv      # catalogue fr : règle de pluriel
+python manage.py makemessages -a                 # ré-extraire tous les catalogues existants
+python manage.py compilemessages                 # .po → .mo (à refaire après chaque édition)
+
+# Migrations liées à la correction « Clotûrée » → « Clôturée »
+python manage.py makemigrations                  # AlterField sur statut : sans SQL
+python manage.py migrate
+
+# Tests
+python manage.py test                            # tout
+python manage.py test catalog.tests.test_views.MonEspaceTests
+python manage.py test -k derniere_place          # sélection par nom
+python manage.py test --shuffle                  # ordre aléatoire (graine affichée)
+python manage.py test --failfast --keepdb        # itérer vite
+
+# Couverture
+pip install coverage
+coverage run --source=catalog --omit=&quot;*/migrations/*,catalog/seed.py,catalog/tests/*&quot; manage.py test
+coverage report -m
+coverage html                                    # ouvrir htmlcov/index.html
+
+# Git
+git add -A &amp;&amp; git commit -m &quot;J4 : marquage des chaînes + catalogue en&quot;
+git add -A &amp;&amp; git commit -m &quot;J4 : site bilingue fr/en&quot;
+git add -A &amp;&amp; git commit -m &quot;J4 : suite de tests (services, formulaires, vues, accès, admin, langues)&quot;
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+</div>
+  </div>
+</div>
+
+<script>
+// ─── THEME ──────────────────────────────────────────────────────────────────
+(function () {
+  const root = document.documentElement;
+  const stored = localStorage.getItem('dawan-theme');
+  if (stored) root.setAttribute('data-theme', stored);
+  updateToggleLabel();
+})();
+
+function updateToggleLabel() {
+  const current = document.documentElement.getAttribute('data-theme') ||
+    (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  document.getElementById('theme-icon').textContent = current === 'dark' ? '🌙' : '☀️';
+  document.getElementById('theme-label').textContent = current === 'dark' ? 'Sombre' : 'Clair';
+}
+
+function toggleTheme() {
+  const root = document.documentElement;
+  const current = root.getAttribute('data-theme') ||
+    (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  const next = current === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('dawan-theme', next);
+  updateToggleLabel();
+}
+
+// ─── TABS ───────────────────────────────────────────────────────────────────
+function showTab(id) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.side-nav button').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+  document.querySelector('.content').scrollTo({ top: 0, behavior: 'instant' });
+}
+
+// ─── COPY CODE ──────────────────────────────────────────────────────────────
+function copyCode(btn) {
+  const pre = btn.previousElementSibling;
+  navigator.clipboard.writeText(pre.textContent).then(() => {
+    btn.textContent = 'Copié !'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copier'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+</body>
+</html>

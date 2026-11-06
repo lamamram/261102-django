@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 640" role="img" aria-label="Structure d'un projet Django">
+  <rect width="920" height="640" fill="#ffffff"/>
+  <text x="460" y="34" text-anchor="middle" font-family="system-ui, sans-serif" font-size="18" font-weight="600" fill="#1f2937">Structure d'un projet Django — GestiFormation</text>
+
+  <!-- racine -->
+  <rect x="30" y="58" width="860" height="528" rx="14" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="56" y="90" font-family="system-ui, sans-serif" font-size="16" font-weight="700" fill="#1f2937">gesti/ — racine du projet</text>
+  <text x="56" y="110" font-family="system-ui, sans-serif" font-size="12.5" fill="#64748b">un site web complet : configuration + applications</text>
+
+  <!-- manage.py + .venv -->
+  <rect x="56" y="128" width="150" height="34" rx="8" fill="#ffffff" stroke="#c7d2fe" stroke-width="1.5"/>
+  <text x="70" y="150" font-family="ui-monospace, monospace" font-size="13.5" fill="#1f2937">manage.py</text>
+  <text x="222" y="150" font-family="system-ui, sans-serif" font-size="12" fill="#64748b">CLI Django : runserver, makemigrations, test, shell…</text>
+  <rect x="620" y="128" width="250" height="34" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="634" y="150" font-family="ui-monospace, monospace" font-size="13.5" fill="#64748b">.venv/</text>
+  <text x="700" y="150" font-family="system-ui, sans-serif" font-size="12" fill="#64748b">à exclure du dépôt git</text>
+
+  <!-- boîte projet -->
+  <rect x="56" y="200" width="384" height="252" rx="12" fill="#ffffff" stroke="#4f46e5" stroke-width="1.5"/>
+  <text x="76" y="230" font-family="system-ui, sans-serif" font-size="14.5" font-weight="700" fill="#1f2937">gesti/ — configuration du projet</text>
+
+  <rect x="76" y="248" width="344" height="40" rx="8" fill="#eef2ff" stroke="#c7d2fe"/>
+  <text x="90" y="266" font-family="ui-monospace, monospace" font-size="13.5" font-weight="600" fill="#1f2937">settings.py</text>
+  <text x="90" y="282" font-family="system-ui, sans-serif" font-size="11.5" fill="#64748b">apps, templates, BDD, static, i18n (J4), e-mail (J5)</text>
+
+  <rect x="76" y="296" width="344" height="40" rx="8" fill="#eef2ff" stroke="#c7d2fe"/>
+  <text x="90" y="314" font-family="ui-monospace, monospace" font-size="13.5" font-weight="600" fill="#1f2937">urls.py</text>
+  <text x="90" y="330" font-family="system-ui, sans-serif" font-size="11.5" fill="#64748b">point d'entrée du routage — include() des apps</text>
+
+  <rect x="76" y="344" width="344" height="40" rx="8" fill="#eef2ff" stroke="#c7d2fe"/>
+  <text x="90" y="362" font-family="ui-monospace, monospace" font-size="13.5" font-weight="600" fill="#1f2937">wsgi.py · asgi.py</text>
+  <text x="90" y="378" font-family="system-ui, sans-serif" font-size="11.5" fill="#64748b">point d'entrée HTTP du serveur (production : J5)</text>
+
+  <rect x="76" y="392" width="344" height="40" rx="8" fill="#eef2ff" stroke="#c7d2fe"/>
+  <text x="90" y="410" font-family="ui-monospace, monospace" font-size="13.5" font-weight="600" fill="#1f2937">__init__.py</text>
+  <text x="90" y="426" font-family="system-ui, sans-serif" font-size="11.5" fill="#64748b">package Python (fichier vide)</text>
+
+  <!-- boîte app -->
+  <rect x="472" y="200" width="396" height="352" rx="12" fill="#ffffff" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="492" y="230" font-family="system-ui, sans-serif" font-size="14.5" font-weight="700" fill="#1f2937">catalog/ — application métier</text>
+
+  <rect x="492" y="248" width="356" height="40" rx="8" fill="#f0fdfa" stroke="#99f6e4"/>
+  <text x="506" y="266" font-family="ui-monospace, monospace" font-size="13.5" font-weight="600" fill="#1f2937">models.py</text>
+  <text x="506" y="282" font-family="system-ui, sans-serif" font-size="11.5" fill="#64748b">données — J2 : ORM, relations, F, héritage</text>
+
+  <rect x="492" y="296" width="356" height="40" rx="8" fill="#f0fdfa" stroke="#99f6e4"/>
+  <text x="506" y="314" font-family="ui-monospace, monospace" font-size="13.5" font-weight="600" fill="#1f2937">views.py</text>
+  <text x="506" y="330" font-family="system-ui, sans-serif" font-size="11.5" fill="#64748b">les vues du catalogue (jour 1)</text>
+
+  <rect x="492" y="344" width="356" height="40" rx="8" fill="#f0fdfa" stroke="#99f6e4"/>
+  <text x="506" y="362" font-family="ui-monospace, monospace" font-size="13.5" font-weight="600" fill="#1f2937">urls.py</text>
+  <text x="506" y="378" font-family="system-ui, sans-serif" font-size="11.5" fill="#64748b">URL patterns de l'app, nommés et éponymés</text>
+
+  <rect x="492" y="392" width="356" height="40" rx="8" fill="#f0fdfa" stroke="#99f6e4"/>
+  <text x="506" y="410" font-family="ui-monospace, monospace" font-size="13.5" font-weight="600" fill="#1f2937">admin.py · apps.py</text>
+  <text x="506" y="426" font-family="system-ui, sans-serif" font-size="11.5" fill="#64748b">interface d'administration (J3) · métadonnées</text>
+
+  <rect x="492" y="440" width="356" height="40" rx="8" fill="#f0fdfa" stroke="#99f6e4"/>
+  <text x="506" y="458" font-family="ui-monospace, monospace" font-size="13.5" font-weight="600" fill="#1f2937">tests.py</text>
+  <text x="506" y="474" font-family="system-ui, sans-serif" font-size="11.5" fill="#64748b">tests automatisés (J4)</text>
+
+  <rect x="492" y="488" width="356" height="40" rx="8" fill="#fff7ed" stroke="#fdba74"/>
+  <text x="506" y="506" font-family="ui-monospace, monospace" font-size="13.5" font-weight="600" fill="#1f2937">templates/catalog/</text>
+  <text x="506" y="522" font-family="system-ui, sans-serif" font-size="11.5" fill="#64748b">base.html · liste_formations.html · detail_formation.html · 404.html</text>
+  <text x="506" y="544" font-family="system-ui, sans-serif" font-size="11.5" fill="#d97706">migrations/ — créée au premier modèle, le jour 2</text>
+
+  <!-- note bas de page -->
+  <text x="460" y="618" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#334155">Une application est un module métier réutilisable ; le projet assemble les applications (et leurs URL patterns) en un site.</text>
+</svg>

@@ -1,0 +1,2303 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Support interactif de formation Django - Initiation et Approfondissement : 03 — Écrire proprement, administrer, protéger - ModelForms, admin, authentification">
+<title>03 — Écrire proprement, administrer, protéger - ModelForms, admin, authentification</title>
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --surface2: #1c2128; --border: #30363d;
+  --primary: #f0883e; --primary2: #ffa657;
+  --success: #3fb950; --warning: #d29922; --danger: #f85149;
+  --text: #e6edf3; --text-muted: #8b949e; --code-bg: #010409; --radius: 10px;
+  --topbar-h: 3.25rem;
+}
+:root[data-theme="light"] {
+  --bg: #ffffff; --surface: #f6f8fa; --surface2: #eaeef2; --border: #d0d7de;
+  --primary: #bc4c00; --primary2: #953800;
+  --success: #1a7f37; --warning: #9a6700; --danger: #cf222e;
+  --text: #1f2328; --text-muted: #656d76; --code-bg: #f6f8fa;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #ffffff; --surface: #f6f8fa; --surface2: #eaeef2; --border: #d0d7de;
+    --primary: #bc4c00; --primary2: #953800;
+    --success: #1a7f37; --warning: #9a6700; --danger: #cf222e;
+    --text: #1f2328; --text-muted: #656d76; --code-bg: #f6f8fa;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.7; transition: background .2s, color .2s; }
+
+/* TOPBAR — fixe, ne bouge jamais au scroll */
+.topbar {
+  position: sticky; top: 0; z-index: 200; height: var(--topbar-h);
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: .9rem; padding: 0 1rem;
+}
+.topbar .badge {
+  flex: 0 0 auto; background: var(--primary); color: #0d1117;
+  font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 20px; white-space: nowrap;
+}
+.topbar a.chapter-title {
+  flex: 1 1 auto; min-width: 0; display: flex; align-items: baseline; gap: .5rem;
+  text-decoration: none; color: var(--text); font-weight: 700; font-size: .92rem;
+  overflow: hidden;
+}
+.topbar a.chapter-title:hover { color: var(--primary); }
+.topbar a.chapter-title .num { color: var(--primary); flex: 0 0 auto; }
+.topbar a.chapter-title .txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar-links { flex: 0 0 auto; display: flex; align-items: center; gap: .5rem; }
+.topbar-link {
+  white-space: nowrap; padding: .4rem .8rem; border: 1px solid var(--border); border-radius: 20px;
+  font-size: .8rem; font-weight: 600; color: var(--text-muted); text-decoration: none; transition: all .2s;
+}
+.topbar-link:hover { color: var(--primary); border-color: var(--primary); }
+.theme-toggle {
+  flex: 0 0 auto; background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  padding: .4rem .7rem; border-radius: 20px; font-size: .8rem; cursor: pointer;
+  display: inline-flex; align-items: center; gap: .35rem;
+}
+.theme-toggle:hover { border-color: var(--primary); }
+
+/* LAYOUT — sidebar gauche + contenu */
+.layout { display: flex; align-items: flex-start; }
+.sidebar {
+  flex: 0 0 280px; width: 280px;
+  position: sticky; top: var(--topbar-h);
+  height: calc(100vh - var(--topbar-h));
+  overflow-y: auto; border-right: 1px solid var(--border); background: var(--surface);
+  padding: 1.25rem 1rem 2rem;
+}
+.objectifs {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: .8rem 1rem; margin-bottom: 1.25rem;
+}
+.objectifs-label { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--primary); }
+.objectifs ul { margin: .4rem 0 0 1.1rem; }
+.objectifs li { font-size: .82rem; color: var(--text-muted); margin-bottom: .3rem; line-height: 1.4; }
+.side-nav { display: flex; flex-direction: column; gap: .1rem; }
+.side-nav button {
+  text-align: left; background: none; border: none; border-left: 3px solid transparent;
+  color: var(--text-muted); padding: .55rem .7rem; font-size: .87rem; font-weight: 500;
+  cursor: pointer; border-radius: 0 6px 6px 0; transition: all .15s;
+}
+.side-nav button:hover { color: var(--text); background: var(--surface2); }
+.side-nav button.active { color: var(--primary); border-left-color: var(--primary); background: var(--surface2); font-weight: 600; }
+.side-nav-sep { height: 1px; background: var(--border); margin: .6rem 0; }
+
+.content { flex: 1 1 auto; min-width: 0; }
+.tab-content { display: none; padding: 2rem 2.5rem 4rem; max-width: 1100px; margin: 0 auto; }
+.tab-content.active { display: block; }
+
+/* SECTIONS */
+h2 { font-size: 1.25rem; color: var(--primary2); margin: 1.8rem 0 .8rem; border-left: 3px solid var(--primary); padding-left: .75rem; }
+h3 { font-size: 1.05rem; color: var(--text); margin: 1.4rem 0 .6rem; }
+p { margin-bottom: .9rem; }
+ul, ol { padding-left: 1.4rem; margin-bottom: .9rem; }
+li { margin-bottom: .35rem; }
+
+/* RESSOURCES — liste sous forme de cartes plutôt que de puces */
+#tab-ressources ul { list-style: none; padding-left: 0; display: flex; flex-direction: column; gap: .5rem; }
+#tab-ressources li {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: .75rem 1rem; margin-bottom: 0;
+}
+#tab-ressources li a { color: var(--primary2); font-weight: 600; text-decoration: none; }
+#tab-ressources li a:hover { text-decoration: underline; }
+
+/* AIDE — divulgation progressive pas-à-pas */
+details.aide { margin-top: 1.5rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+details.aide summary {
+  cursor: pointer; padding: .8rem 1.1rem; font-weight: 600; color: var(--primary);
+  list-style: none; display: flex; align-items: center; gap: .5rem;
+}
+details.aide summary::-webkit-details-marker { display: none; }
+details.aide summary::before { content: "▶"; font-size: .7rem; transition: transform .15s; }
+details.aide[open] summary::before { transform: rotate(90deg); }
+details.aide .aide-body { padding: 0 1.1rem 1.1rem; border-top: 1px solid var(--border); margin-top: .2rem; padding-top: 1rem; }
+img { max-width: 100%; height: auto; display: block; margin: 1rem auto; }
+
+/* EXERCICE — un bloc par atelier, avec son aide pas-à-pas attachée juste en dessous */
+.exercice { padding: 1.3rem 0; border-top: 1px solid var(--border); }
+.exercice:first-of-type { border-top: none; padding-top: 0; }
+.exercice h3 { margin: 0 0 .8rem; color: var(--primary2); }
+
+/* CALLOUTS */
+.callout { border-radius: var(--radius); padding: .9rem 1.1rem; margin: 1.2rem 0; border-left: 4px solid; background: var(--surface2); }
+.callout.note   { border-color: var(--primary); }
+.callout.tip    { border-color: var(--success); }
+.callout.warn   { border-color: var(--warning); }
+.callout.danger { border-color: var(--danger); }
+.callout p:last-child { margin-bottom: 0; }
+.callout-title { font-weight: 700; font-size: .82rem; text-transform: uppercase; letter-spacing: .07em; margin-bottom: .4rem; }
+.callout.note   .callout-title { color: var(--primary); }
+.callout.tip    .callout-title { color: var(--success); }
+.callout.warn   .callout-title { color: var(--warning); }
+.callout.danger .callout-title { color: var(--danger); }
+
+/* TABLES */
+.table-wrap { overflow-x: auto; margin: 1rem 0; }
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th { background: var(--surface2); color: var(--primary2); text-align: left; padding: .6rem .9rem; font-weight: 600; border: 1px solid var(--border); }
+td { padding: .55rem .9rem; border: 1px solid var(--border); vertical-align: top; }
+tr:hover td { background: var(--surface2); }
+
+/* CODE */
+.code-block { position: relative; margin: 1rem 0; }
+pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1rem 1rem 1.2rem; overflow-x: auto; }
+code { font-family: 'Consolas', 'Cascadia Code', monospace; font-size: .88rem; color: var(--primary2); }
+p code, li code, td code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 5px; padding: .05rem .35rem; }
+.copy-btn {
+  position: absolute; top: .5rem; right: .5rem;
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted);
+  padding: .25rem .6rem; font-size: .75rem; border-radius: 5px; cursor: pointer; transition: all .2s;
+}
+.copy-btn:hover { background: var(--primary); color: #0d1117; }
+.copy-btn.copied { background: var(--success); color: #0d1117; }
+
+/* QUIZ */
+.quiz-question { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem; margin-bottom: 1.2rem; }
+.quiz-question h4 { color: var(--primary2); margin-bottom: .9rem; font-size: .98rem; }
+.quiz-options { display: flex; flex-direction: column; gap: .5rem; }
+.quiz-option {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: .6rem .9rem; cursor: pointer;
+  font-size: .9rem; transition: all .2s; text-align: left; color: var(--text);
+}
+.quiz-option:hover:not(:disabled) { border-color: var(--primary); }
+.quiz-option.correct { border-color: var(--success); color: var(--success); }
+.quiz-option.wrong   { border-color: var(--danger);  color: var(--danger);  }
+.quiz-option:disabled { cursor: default; }
+.quiz-feedback { margin-top: .6rem; font-size: .87rem; color: var(--text-muted); font-style: italic; }
+.quiz-score {
+  background: var(--surface2); border: 1px solid var(--primary);
+  border-radius: var(--radius); padding: 1.5rem; text-align: center; margin-top: 1.5rem; display: none;
+}
+.quiz-score .score-num { font-size: 2.5rem; font-weight: 700; color: var(--primary); }
+.quiz-score p { color: var(--text-muted); margin-top: .4rem; }
+.btn-restart { background: var(--primary); color: #0d1117; border: none; padding: .6rem 1.4rem; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 1rem; font-size: .9rem; }
+.btn-restart:hover { background: var(--primary2); }
+
+/* RESPONSIVE — sidebar devient une barre horizontale sous 900px */
+@media (max-width: 900px) {
+  .layout { flex-direction: column; }
+  .sidebar {
+    position: static; width: 100%; height: auto; max-height: 40vh;
+    border-right: none; border-bottom: 1px solid var(--border);
+  }
+  .side-nav { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; gap: .3rem; }
+  .side-nav button { border-left: none; border-bottom: 3px solid transparent; white-space: nowrap; border-radius: 6px 6px 0 0; }
+  .side-nav button.active { border-left-color: transparent; border-bottom-color: var(--primary); }
+  .side-nav-sep { display: none; }
+  .tab-content { padding: 1.5rem 1.2rem 3rem; }
+  .topbar a.chapter-title { font-size: .82rem; }
+}
+</style>
+<link rel="stylesheet" href="assets/course-common.css">
+<script src="assets/course-common.js" defer></script>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="badge">Django - Initiation et Approfondissement</span>
+  <a class="chapter-title" href="index.html" title="Retour à l'accueil de la formation">
+    <span class="num">03</span><span class="txt">Écrire proprement, administrer, protéger - ModelForms, admin, authentification</span>
+  </a>
+  <div class="topbar-links">
+    
+    <a class="topbar-link" href="index.html">Sommaire</a>
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Basculer entre thème clair et sombre">
+      <span id="theme-icon">🌙</span> <span id="theme-label">Sombre</span>
+    </button>
+  </div>
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="objectifs"><span class="objectifs-label">Objectifs</span><ul><li>remplacer un `forms.Form` écrit à la main par un **`ModelForm`** ; `Meta.model`, `Meta.fields`, `instance=`, `save()`, `save(commit=False)` ;</li><li>écrire un **CRUD complet** (créer, modifier, supprimer) avec le pattern POST/redirect/GET et le framework de **messages** ;</li><li>introduire un nouveau modèle métier (`Inscription`) et en protéger les règles (capacité, doublon) dans une **couche de services** transactionnelle ;</li><li>configurer l&#x27;**administration** ; `ModelAdmin`, `list_display`, filtres, recherche, **inlines**, **actions**, champs en lecture seule ;</li><li>expliquer ce que l&#x27;admin **contourne** (vues, formulaires) et comment garder les règles métier à un seul endroit ;</li><li>mettre en place l&#x27;**authentification** ; connexion, déconnexion, création de compte, interventions, mots de passe hachés ;</li><li>protéger les vues (`@login_required`, `@permission_required`) et les gabarits (`user`, `perms`) ;</li><li>distinguer **permission** (portée sur une table) et **propriété** (portée sur une ligne) et empêcher l&#x27;accès aux données d&#x27;autrui ;</li><li>construire des **groupes** (Formateurs, Gestionnaires) et une permission personnalisée.</li></ul></div>
+    <nav class="side-nav" id="main-nav">
+      <button class="active" onclick="showTab('objectifs-pedagogiques')">Objectifs pédagogiques</button>
+  <button class="" onclick="showTab('organisation-de-la-journee')">Organisation de la journée</button>
+  <button class="" onclick="showTab('b7-modelforms-le-formulaire-se-deduit-du-modele-bloc-7-105-min')">B7 — ModelForms : le formulaire se déduit du modèle (bloc 7) · 105 min</button>
+  <button class="" onclick="showTab('b8-l-administration-un-back-office-sans-le-coder-bloc-8-90-min')">B8 — L&#x27;administration : un back-office sans le coder (bloc 8) · 90 min</button>
+  <button class="" onclick="showTab('b9-authentification-groupes-et-permissions-bloc-9-150-min')">B9 — Authentification, groupes et permissions (bloc 9) · 150 min</button>
+  <button class="" onclick="showTab('synthese-de-fin-de-journee')">Synthèse de fin de journée</button>
+  <button class="" onclick="showTab('annexe-commandes-du-jour-cheat-sheet')">Annexe — Commandes du jour (cheat-sheet)</button>
+    </nav>
+  </aside>
+  <div class="content">
+    <div id="tab-objectifs-pedagogiques" class="tab-content active">
+<p>À la fin de la journée, les participants sont capables de :</p>
+<ul>
+<li>remplacer un <code>forms.Form</code> écrit à la main par un <strong><code>ModelForm</code></strong> : <code>Meta.model</code>, <code>Meta.fields</code>, <code>instance=</code>, <code>save()</code>, <code>save(commit=False)</code> ;</li>
+<li>écrire un <strong>CRUD complet</strong> (créer, modifier, supprimer) avec le pattern POST/redirect/GET et le framework de <strong>messages</strong> ;</li>
+<li>introduire un nouveau modèle métier (<code>Inscription</code>) et en protéger les règles (capacité, doublon) dans une <strong>couche de services</strong> transactionnelle ;</li>
+<li>configurer l'<strong>administration</strong> : <code>ModelAdmin</code>, <code>list_display</code>, filtres, recherche, <strong>inlines</strong>, <strong>actions</strong>, champs en lecture seule ;</li>
+<li>expliquer ce que l'admin <strong>contourne</strong> (vues, formulaires) et comment garder les règles métier à un seul endroit ;</li>
+<li>mettre en place l'<strong>authentification</strong> : connexion, déconnexion, création de compte, interventions, mots de passe hachés ;</li>
+<li>protéger les vues (<code>@login_required</code>, <code>@permission_required</code>) et les gabarits (<code>user</code>, <code>perms</code>) ;</li>
+<li>distinguer <strong>permission</strong> (portée sur une table) et <strong>propriété</strong> (portée sur une ligne) et empêcher l'accès aux données d'autrui ;</li>
+<li>construire des <strong>groupes</strong> (Formateurs, Gestionnaires) et une permission personnalisée.</li>
+</ul>
+<h3>Livrable de la journée</h3>
+<ul>
+<li><code>Inscription</code> (modèle + migration + service) et formulaire d'inscription d'un client à une intervention ;</li>
+<li>CRUD des clients par <code>ModelForm</code>, avec messages de confirmation et suppression protégée ;</li>
+<li>administration complète des 6 modèles (inlines, actions, filtres, recherche) ;</li>
+<li>comptes : connexion, déconnexion, création de compte, page <strong>Mon espace</strong> ;</li>
+<li>3 rôles + administrateur : stagiaire, formateur, gestionnaire ; permission <code>annuler_inscription</code> ;</li>
+<li>les pages publiques du jour 1 (accueil, catalogue, détail) toujours accessibles à tous, <strong>mêmes URLs</strong>.</li>
+</ul>
+<blockquote>
+<p>💡 <strong>Fil conducteur</strong> : au jour 2, on a rendu le site <em>persistant</em> ; aujourd'hui on le rend <em>exploitable</em> (on écrit sans recopier), <em>administrable</em> (un back-office sans le coder) et <em>sûr</em> (chaque page sait qui la demande). Chaque bloc <strong>protège</strong> le précédent : le B9 protège ce que le B7 a écrit et ce que le B8 expose.</p>
+</blockquote>
+</div>
+
+<div id="tab-organisation-de-la-journee" class="tab-content">
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Heure</th>
+<th>Séquence</th>
+<th>Blocs programme</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>09h00 – 09h15</td>
+<td>Reprise du J2 : <code>check</code>, <code>migrate</code>, seed, serveur, commit</td>
+<td>—</td>
+</tr>
+<tr>
+<td>09h15 – 11h00</td>
+<td><strong>B7</strong> — ModelForms, CRUD clients, modèle <code>Inscription</code></td>
+<td>Bloc 7</td>
+</tr>
+<tr>
+<td>11h00 – 11h15</td>
+<td>Pause</td>
+<td></td>
+</tr>
+<tr>
+<td>11h15 – 12h45</td>
+<td><strong>B8</strong> — L'administration Django</td>
+<td>Bloc 8</td>
+</tr>
+<tr>
+<td>12h45 – 13h45</td>
+<td>Déjeuner</td>
+<td></td>
+</tr>
+<tr>
+<td>13h45 – 16h15</td>
+<td><strong>B9</strong> — Authentification, groupes, permissions + atelier « Mon espace »</td>
+<td>Bloc 9</td>
+</tr>
+<tr>
+<td>16h15 – 16h30</td>
+<td>Pause</td>
+<td></td>
+</tr>
+<tr>
+<td>16h30 – 17h00</td>
+<td>Démonstrations, synthèse, preview du jour 4</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<h3>Le schéma de la journée</h3>
+<p><img alt="Schéma des données GestiFormation — jour 3" src="assets/schema-donnees-j3.svg" /></p>
+<p>Trois ajouts au schéma du jour 2 : le modèle <strong><code>Inscription</code></strong> (la relation Client ↔ Intervention volontairement laissée en blanc hier), le lien <strong><code>Client.utilisateur</code></strong> (un compte peut être rattaché à un client) et les tables <strong><code>auth</code></strong> fournies par Django (<code>User</code>, <code>Group</code>, <code>Permission</code>).</p>
+<hr />
+</div>
+
+<div id="tab-b7-modelforms-le-formulaire-se-deduit-du-modele-bloc-7-105-min" class="tab-content">
+<h3>7.1. Le problème qu'on a créé hier</h3>
+<p>Le formulaire du jour 2 recopiait le modèle :</p>
+<div class="code-block"><pre><code class="language-python"># J2 — forms.py : 5 champs recopiés de models.Client
+prenom    = forms.CharField(label='Prénom',  max_length=60)
+email     = forms.EmailField(label='E-mail')
+...
+# J2 — views.py : le couplage « formulaire = colonnes »
+Client.objects.create(**form.cleaned_data)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Trois dettes, qui grossissent à chaque nouveau champ :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Dette</th>
+<th>Conséquence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>libellé, <code>max_length</code>, <code>required</code> écrits <strong>deux fois</strong></td>
+<td><code>models.py</code> et <code>forms.py</code> divergent au premier changement</td>
+</tr>
+<tr>
+<td>unicité de l'e-mail recodée à la main (<code>clean_email</code>)</td>
+<td>un oubli = un doublon en base ou un <code>IntegrityError</code></td>
+</tr>
+<tr>
+<td>pas de <strong>modification</strong> : <code>create()</code> ne sait que créer</td>
+<td>il faudrait un second formulaire, ou un <code>update</code> écrit à la main</td>
+</tr>
+</tbody>
+</table></div>
+<p>Le <strong>ModelForm</strong> supprime les trois : il <strong>génère</strong> les champs depuis le modèle, valide l'unicité, et sait <strong>créer ou modifier</strong> selon qu'on lui donne une instance.</p>
+<p><img alt="ModelForm : du modèle au formulaire" src="assets/modelform.svg" /></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th><code>forms.Form</code> (J2)</th>
+<th><code>forms.ModelForm</code> (J3)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Champs</td>
+<td>déclarés un par un</td>
+<td>déduits de <code>Meta.model</code> + <code>Meta.fields</code></td>
+</tr>
+<tr>
+<td>Libellés / <code>max_length</code> / <code>required</code></td>
+<td>à redéclarer</td>
+<td>repris du modèle</td>
+</tr>
+<tr>
+<td>Unicité (<code>unique=True</code>)</td>
+<td><code>clean_&lt;champ&gt;</code> à la main</td>
+<td><strong>automatique</strong> (<code>validate_unique</code>)</td>
+</tr>
+<tr>
+<td>Enregistrement</td>
+<td><code>Client.objects.create(**cleaned_data)</code></td>
+<td><code>form.save()</code></td>
+</tr>
+<tr>
+<td>Modification</td>
+<td>à écrire</td>
+<td><code>instance=client</code> — <code>save()</code> fait un <code>UPDATE</code></td>
+</tr>
+<tr>
+<td>Quand l'utiliser</td>
+<td>formulaire <strong>sans</strong> modèle (recherche, contact)</td>
+<td>formulaire <strong>qui écrit</strong> un modèle</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>💡 <strong>Règle de la semaine</strong> : si le formulaire écrit dans une table, c'est un <code>ModelForm</code>. <code>forms.Form</code> reste pour les saisies qui ne sont pas des lignes de table (recherche, filtre, contact).</p>
+</blockquote>
+<h3>7.2. <code>ClientForm</code> — le formulaire de référence</h3>
+<div class="code-block"><pre><code class="language-python"># catalog/forms.py
+class ClientForm(forms.ModelForm):
+    &quot;&quot;&quot;
+    remplace NouveauClientForm et aussi la MAJ
+    &quot;&quot;&quot;
+
+    class Meta:
+        model = Client
+        # champs à afficher (liste blanche)
+        fields = ['prenom', 'nom', 'societe', 'email', 'telephone']
+        widgets = {
+            'prenom': forms.TextInput(attrs={'placeholder': 'Entrez votre prénom ici...'}) 
+        }
+        error_messages = {
+            'email': {'unique': 'Un client existe déjà avec cet e-mail.'}
+        }
+
+    def clean_email(self):
+        &quot;&quot;&quot;
+        le check a été au niveau du modèle Mais on peut normaliser !
+        &quot;&quot;&quot;
+        return self.cleaned_data.get('email', '').lower()
+
+    def clean_telephone(self):
+        valeur = self.cleaned_data.get('telephone', '')
+        if valeur and not re.fullmatch(r&quot;[\d\s+]{8,20}&quot;, valeur):
+            raise ValidationError(&quot;Format invalide - chiffres, espace et + attendu.&quot;)
+        return valeur
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Ce qui a <strong>disparu</strong> par rapport à J2 : les 5 déclarations de champs, <code>clean_email</code> qui interrogeait la base, le <code>clean()</code> de démonstration. Ce qui <strong>reste</strong> : les règles qui n'existent pas dans le modèle (<code>clean_telephone</code>) — un <code>ModelForm</code> s'enrichit, il ne se limite pas à ce que le modèle sait dire.</p>
+<p>L'ordre de validation d'un <code>ModelForm</code> est à connaître, car il explique <code>clean_email</code> :</p>
+<ol>
+<li>chaque champ : conversion + contraintes issues du modèle (<code>max_length</code>, <code>required</code>, format e-mail) ;</li>
+<li>chaque <code>clean_&lt;champ&gt;()</code> ;</li>
+<li><code>clean()</code> du formulaire ;</li>
+<li><strong><code>validate_unique()</code></strong> du modèle — <strong>après</strong> les <code>clean_*</code>. C'est pourquoi <code>clean_email</code> met l'adresse en minuscules : l'unicité est vérifiée sur la valeur <strong>normalisée</strong>.</li>
+</ol>
+<blockquote>
+<p>⚠️ <strong>Piège n°22 — <code>fields = '__all__'</code> (ou <code>exclude</code>)</strong> : pratique, et dangereux. Le jour où <code>Client</code> gagne un champ sensible — dès B9 : <code>utilisateur</code> — il devient <strong>modifiable par n'importe quel visiteur</strong> qui forge un <code>POST</code> avec ce nom de champ (<em>mass assignment</em>, OWASP A01). On écrit <strong>toujours</strong> la liste blanche explicite <code>fields = [...]</code>.</p>
+</blockquote>
+<h3>7.3. Le CRUD des clients</h3>
+<p>Trois vues, un gabarit. On garde la structure du J2 (<code>GET</code> affiche, <code>POST</code> valide, <code>redirect</code> après succès) ; seul <code>instance=</code> distingue création et modification.</p>
+<div class="code-block"><pre><code class="language-python"># catalog/views.py — extrait J3 (les gardes d'accès arrivent en B9)
+def nouveau_client(request):
+    if request.method == 'POST':
+        form = ClientForm(request.POST)
+        if form.is_valid():
+            # ici forme CONTIENT un objet Modèle !!! qui peut utiliser save() --&gt; create et/ ou  update
+            client = form.save()
+            return redirect('catalog:clients')
+    else:
+        form = ClientForm()
+
+    # à partir de deux vues qui pourraient utiliser le template GENERIQUE form.html 
+    # on a besoin de variabiliser d'autres éléments
+    return render(request, 'catalog/form.html', {
+        'form': form,
+        'titre': 'Nouveau client',
+        'retour': 'catalog:clients'
+    })
+
+def modifier_client(request, pk):
+    client = get_object_or_404(Client, pk=pk)
+    if request.method == 'POST':
+        form = ClientForm(request.POST, instance=client)       # ← la seule différence
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Client « {client} » modifié.')
+            return redirect('catalog:clients')
+    else:
+        form = ClientForm(instance=client)                     # pré-rempli
+    return render(request, 'catalog/form.html', {
+        'form': form, 'titre': f'Modifier {client}', 'retour': 'catalog:clients',
+    })
+
+def supprimer_client(request, pk: int):
+    client = get_object_or_404(Client, pk=pk)
+    if request.method == 'POST':
+        # si le modèle utilise une relation avec contrainte RESTRICT ou PROTECTED en python
+        try:
+            client.delete()
+        except ProtectedError:
+            messages.error(request, 'Suppression impossible : ce client a des contrats ou des inscriptions.')
+        # else adossé à try/except garantit que le try s'est exécuté jusqu'ou bout ==&gt; pas d'erreur
+        else:
+            messages.success(request, f'Client « {client} » supprimé.')
+        return redirect('catalog:clients')
+    return render(request, 'catalog/confirmer_suppression.html', {
+        'objet': client, 'retour': 'catalog:clients',
+    })
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><code>liste_clients</code> (J2) est inchangée. Les URLs, <strong>le plus spécifique d'abord</strong> (rappel piège n°2) :</p>
+<div class="code-block"><pre><code class="language-python"># catalog/urls.py — ajouts J3
+path('clients/', views.liste_clients, name=&quot;clients&quot;),
+path('clients/nouveau/', views.nouveau_client, name=&quot;nouveau-client&quot;),
+path('clients/&lt;int:pk&gt;/modifier/',     views.modifier_client,   name='modifier-client'),
+path('clients/&lt;int:pk&gt;/supprimer', views.supprimer_client, name=&quot;supprimer-client&quot;)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Trois points à faire nommer :</p>
+<ol>
+<li><strong><code>instance=client</code></strong> : sans lui, <code>ClientForm(request.POST)</code> <strong>crée</strong> un second client — ou échoue sur l'unicité de l'e-mail. Avec lui, <code>save()</code> exécute un <code>UPDATE</code> et le contrôle d'unicité <strong>ignore la ligne en cours d'édition</strong> ;</li>
+<li><strong>la suppression passe par un <code>POST</code></strong> (page de confirmation, puis formulaire). Un <code>GET</code> qui supprime serait déclenchable par une simple balise <code>&lt;img src=…&gt;</code> sur un autre site — voir le CSRF du jour 2 ;</li>
+<li><strong><code>ProtectedError</code></strong> : <code>Contrat.client</code> est <code>PROTECT</code> (jour 2, piège n°10). Sans le <code>try/except</code>, le visiteur reçoit une 500 ; avec, un message clair. C'est <strong>la</strong> démonstration que <code>on_delete</code> est une décision métier.</li>
+</ol>
+<blockquote>
+<p>⚠️ <strong>Piège n°23 — oublier <code>instance=</code> côté <code>POST</code></strong> : l'affichage est pré-rempli (<code>ClientForm(instance=client)</code>), l'envoi crée un doublon (<code>ClientForm(request.POST)</code>). Les deux branches du <code>if</code> doivent recevoir l'instance.</p>
+</blockquote>
+<p><strong>Les messages</strong> — le pont entre la vue qui redirige et la page qui s'affiche ensuite. <code>django.contrib.messages</code> est déjà installé (middleware + context processor du <code>settings.py</code> généré au jour 1). Les messages vivent <strong>dans la intervention</strong> jusqu'à leur affichage.</p>
+<div class="code-block"><pre><code class="language-html">{# catalog/base.html — ajout, juste avant {% block contenu %} #}
+{# messages continer des messages flash quand ils ont été déclenchés #}
+{% if messages %}
+&lt;ul class=&quot;messages&quot;&gt;
+    {% for message in messages %}
+        &lt;li class=&quot;{{ message.tags }}&quot;&gt;{{ message }}&lt;/li&gt;
+    {% endfor %}
+&lt;/ul&gt;
+{% endif %}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><strong>Le gabarit de formulaire devient générique.</strong> C'est le troisième formulaire de l'application : on factorise (<code>form_client.html</code> du jour 2 est remplacé).</p>
+<div class="code-block"><pre><code class="language-html">{# catalog/templates/catalog/_champs.html — le rendu des champs, partagé #}
+{% if form.non_field_errors %}
+    &lt;ul class=&quot;erreurs&quot;&gt;{% for e in form.non_field_errors %}&lt;li&gt;{{ e }}&lt;/li&gt;{% endfor %}&lt;/ul&gt;
+{% endif %}
+{% for field in form %}
+    &lt;div class=&quot;champ {{ field.name }}{% if field.errors %} champ-erreur{% endif %}&quot;&gt;
+        {{ field.label_tag }}
+        {{ field }}
+        {% if field.help_text %}&lt;small class=&quot;aide&quot;&gt;{{ field.help_text }}&lt;/small&gt;{% endif %}
+        {% for e in field.errors %}&lt;span class=&quot;erreur&quot;&gt;{{ e }}&lt;/span&gt;{% endfor %}
+    &lt;/div&gt;
+{% endfor %}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code class="language-html">{# catalog/templates/catalog/form.html #}
+{% extends &quot;catalog/base.html&quot; %}
+
+{% block titre %}{{ titre }} — GestiFormation{% endblock %}
+
+{% block contenu %}
+&lt;section class=&quot;formulaire&quot;&gt;
+    &lt;p class=&quot;retour&quot;&gt;&lt;a href=&quot;{% url retour %}&quot;&gt;&amp;larr; Retour&lt;/a&gt;&lt;/p&gt;
+    &lt;h1&gt;{{ titre }}&lt;/h1&gt;
+    &lt;form method=&quot;post&quot; class=&quot;form&quot;&gt;
+        {% csrf_token %}
+        {% include &quot;catalog/_champs.html&quot; %}
+        &lt;button type=&quot;submit&quot; class=&quot;btn&quot;&gt;Enregistrer&lt;/button&gt;
+    &lt;/form&gt;
+&lt;/section&gt;
+{% endblock %}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code class="language-html">{# catalog/templates/catalog/confirmer_suppression.html #}
+{% extends &quot;catalog/base.html&quot; %}
+
+{% block titre %}Confirmer la suppression — GestiFormation{% endblock %}
+
+{% block contenu %}
+&lt;section class=&quot;formulaire&quot;&gt;
+    &lt;h1&gt;Supprimer « {{ objet }} » ?&lt;/h1&gt;
+    &lt;p&gt;Cette action est définitive.&lt;/p&gt;
+    &lt;form method=&quot;post&quot;&gt;
+        {% csrf_token %}
+        &lt;button type=&quot;submit&quot; class=&quot;btn btn-danger&quot;&gt;Oui, supprimer&lt;/button&gt;
+        &lt;a class=&quot;btn&quot; href=&quot;{% url retour %}&quot;&gt;Annuler&lt;/a&gt;
+    &lt;/form&gt;
+&lt;/section&gt;
+{% endblock %}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Dans <code>liste_clients.html</code>, une colonne d'actions par ligne :</p>
+<div class="code-block"><pre><code class="language-html">&lt;td&gt;
+    &lt;a href=&quot;{% url 'catalog:modifier-client' c.pk %}&quot;&gt;Modifier&lt;/a&gt; ·
+    &lt;a href=&quot;{% url 'catalog:supprimer-client' c.pk %}&quot;&gt;Supprimer&lt;/a&gt;
+&lt;/td&gt;
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Quelques lignes de CSS pour les messages, à ajouter à <code>static/css/base.css</code> :</p>
+<div class="code-block"><pre><code class="language-css">.messages { list-style: none; padding: 0; margin: 1rem 0; }
+.messages li { padding: .6rem 1rem; border-radius: 6px; margin-bottom: .5rem; }
+.messages .success { background: #ecfdf5; color: #065f46; }
+.messages .error   { background: #fef2f2; color: #991b1b; }
+.btn-danger { background: #b91c1c; }
+form.inline { display: inline; }
+.lien { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-decoration: underline; cursor: pointer; }
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<h3>7.4. <code>save(commit=False)</code> — compléter avant d'écrire</h3>
+<p><code>form.save()</code> fait deux choses : construire l'objet <strong>et</strong> l'écrire. <code>save(commit=False)</code> ne fait que la première — on récupère l'instance, on la complète avec ce que le formulaire ne porte pas, puis on écrit.</p>
+<div class="code-block"><pre><code class="language-python">objet = form.save(commit=False)        # instance construite, rien en base
+objet.cree_par = request.user          # ce qu'aucun champ du formulaire ne fournit
+objet.save()
+form.save_m2m()                        # ⚠️ obligatoire si le formulaire a des ManyToMany
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>⚠️ <strong>Piège n°24 — <code>commit=False</code> et les <code>ManyToMany</code></strong> : sans <code>form.save_m2m()</code>, les relations M2M saisies sont <strong>perdues silencieusement</strong> (la ligne principale est écrite, pas la table intermédiaire). On le retrouvera avec <code>Formation.competences</code> si on écrit un <code>FormationForm</code>.</p>
+</blockquote>
+<p>On l'utilisera en B9 (création de compte). En B7, pour les inscriptions, la règle métier est plus riche qu'un champ à compléter — elle a besoin d'une couche à part.</p>
+<h3>7.5. Aperçu : les vues génériques</h3>
+<p>Le triptyque « afficher / valider / enregistrer / rediriger » est si courant que Django le fournit sous forme de <strong>vues basées sur des classes</strong> (<code>CreateView</code>, <code>UpdateView</code>, <code>DeleteView</code>). <code>modifier_client</code> s'écrit alors :</p>
+<div class="code-block"><pre><code class="language-python">from django.urls import reverse_lazy
+from django.views.generic import UpdateView
+
+class ClientUpdateView(
+    SuccessMessageMixin, 
+    UpdateView):
+    &quot;&quot;&quot;
+    contrepartie en POO de la fonction &quot;modifier_client&quot;
+    avec comportement génériques
+    - model, form_class, template_name, success_url
+    avec customisation directe
+    - get_context_data
+    avec customisation indirecte avec des Mixins 
+       == classe auxiliaire à ajouter en héritage multiple !
+    - SuccessMessageMixin.get_success_message
+    &quot;&quot;&quot;
+    model = Client
+    form_class = ClientForm
+    template_name = 'catalog/form.html'
+    # -----------&gt; l'url sera redirigée si le formulaire est validé
+    success_url = reverse_lazy('catalog:clients')
+
+    def get_context_data(self, **kwargs):
+        &quot;&quot;&quot;
+        customisation du contexte pour être compatible avec le template !!
+        &quot;&quot;&quot;
+        # super() charge le form dans contexte !
+        context = super().get_context_data(**kwargs)
+        # ----------------------------&gt; l'objet instancié (client) !
+        context[&quot;titre&quot;] = f'Modifier {self.get_object()}'
+        context[&quot;retour&quot;] = 'catalog:clients'
+        return context
+
+    def get_success_message(self, cleaned_data):
+        &quot;&quot;&quot;
+        méthode héritée de la Mixin SuccessMessageMixin
+        pour gérer les messages en succès
+        &quot;&quot;&quot;
+        return f'Client « {self.get_object()} » modifié.'
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code class="language-python">path('clients/&lt;int:pk&gt;/modifier/', ???, name='modifier-client'),
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Vue fonctionnelle (référence du cours)</th>
+<th>Vue générique</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>nouveau_client</code></td>
+<td><code>CreateView</code></td>
+</tr>
+<tr>
+<td><code>modifier_client</code></td>
+<td><code>UpdateView</code></td>
+</tr>
+<tr>
+<td><code>supprimer_client</code></td>
+<td><code>DeleteView</code></td>
+</tr>
+<tr>
+<td><code>liste_clients</code></td>
+<td><code>ListView</code></td>
+</tr>
+<tr>
+<td><code>detail_formation</code></td>
+<td><code>DetailView</code></td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>💡 <strong>Pourquoi on reste en fonctions</strong> : la vue fonctionnelle <strong>montre</strong> chaque étape (méthode HTTP, validation, redirection) ; la générique la <strong>cache</strong>. On apprend avec la première, on gagne du temps avec la seconde — le jour où l'on a compris ce qu'elle cache. Les contraintes d'accès de B9 ont leur équivalent en classes (<code>LoginRequiredMixin</code>, <code>PermissionRequiredMixin</code>).</p>
+</blockquote>
+<h3>🛠️ Atelier 7·a — Le CRUD clients en ModelForm (45 min)</h3>
+<ol>
+<li>remplacer <code>NouveauClientForm</code> par <code>ClientForm</code> dans <code>catalog/forms.py</code> ;</li>
+<li>écrire les 3 vues, les 2 URLs ajoutées, <code>form.html</code>, <code>_champs.html</code>, <code>confirmer_suppression.html</code> ; supprimer <code>form_client.html</code> ;</li>
+<li>brancher le bloc <code>messages</code> dans <code>base.html</code>, la colonne « Actions » dans <code>liste_clients.html</code> ;</li>
+<li>dérouler la table de contrôle :</li>
+</ol>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Action</th>
+<th>Résultat attendu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>créer un client avec l'e-mail <code>M.Dupont@ACME.fr</code></td>
+<td>erreur « Un client existe déjà… » (<strong>normalisé</strong> en minuscules avant l'unicité)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>créer un client valide</td>
+<td>redirection <code>/clients/</code> + message vert</td>
+</tr>
+<tr>
+<td>3</td>
+<td>modifier ce client <strong>sans</strong> changer l'e-mail</td>
+<td>enregistré — l'unicité ignore la ligne éditée</td>
+</tr>
+<tr>
+<td>4</td>
+<td>modifier ce client avec l'e-mail d'un <strong>autre</strong></td>
+<td>erreur d'unicité</td>
+</tr>
+<tr>
+<td>5</td>
+<td>ouvrir <code>/clients/&lt;pk&gt;/modifier/</code></td>
+<td>formulaire <strong>pré-rempli</strong></td>
+</tr>
+<tr>
+<td>6</td>
+<td>supprimer le client créé à l'étape 2</td>
+<td>supprimé, message vert</td>
+</tr>
+<tr>
+<td>7</td>
+<td>supprimer Marie Dupont (seed, a un contrat)</td>
+<td>message rouge, <strong>pas</strong> de 500</td>
+</tr>
+<tr>
+<td>8</td>
+<td>ouvrir <code>/clients/&lt;pk&gt;/supprimer/</code> en <code>GET</code></td>
+<td>page de confirmation, <strong>rien</strong> de supprimé</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Checklist</strong> :</p>
+<ul>
+<li>[ ] les 8 cas passés, le binôme capable d'expliquer le cas 3 (pourquoi pas d'erreur d'unicité) ;</li>
+<li>[ ] <code>forms.py</code> ne contient plus aucune déclaration de champ pour <code>Client</code> ;</li>
+<li>[ ] <code>git add -A &amp;&amp; git commit -m "J3 : CRUD clients en ModelForm + messages"</code> fait.</li>
+</ul>
+<hr />
+<h3>7.6. <code>Inscription</code> — le modèle manquant</h3>
+<p>Le jour 2 avait laissé <strong>Client ↔ Intervention</strong> en blanc, avec un compteur stocké <code>Intervention.nb_inscrits</code>. Voici la relation, enfin modélisée.</p>
+<div class="code-block"><pre><code class="language-python"># catalog/models.py — ajout J3
+from django.db.models import Q
+
+class Inscription(models.Model):
+    &quot;&quot;&quot;Un client inscrit à une intervention — la table de liaison porte ses propres données.&quot;&quot;&quot;
+    STATUTS = [
+        ('P', 'En attente'),
+        ('C', 'Confirmée'),
+        ('X', 'Annulée'),
+    ]
+
+    statut = models.CharField('statut', max_length=1, default=&quot;P&quot;, choices=STATUTS)
+    montant_ht = models.DecimalField('montant HT (€)', max_digits=10, decimal_places=2)
+    date_inscription = models.DateTimeField('inscrit le', auto_now_add=True)
+
+    client = models.ForeignKey(
+        Client, on_delete=models.PROTECT, related_name='inscriptions', verbose_name='client'
+    )
+
+    intervention = models.ForeignKey(
+        Intervention, on_delete=models.PROTECT, related_name='inscriptions', verbose_name='intervention',
+    )
+
+    class Meta:
+        verbose_name = 'inscription'
+        # ---------&gt; - : décroissant
+        ordering = ['-date_inscription']
+        ## contraintes composites impossible d'exprimer dans un champs
+        constraints = [
+            models.UniqueConstraint(
+                fields=[&quot;client&quot;, &quot;intervention&quot;],
+                # la contrainte est assurée si l'inscription n'est pas annulée (non statut X)
+                # métier: un client peut annuler et ensuite se réinscrire !!!!
+                condition=~Q(statut='X'),
+                name='inscription_unique_client_intervention_active',
+            )
+        ]
+
+    def __str__(self):
+        return f&quot;{self.client} --&gt; {self.intervention}&quot;   
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Quatre choix à justifier :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Choix</th>
+<th>Pourquoi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>table de liaison <strong>explicite</strong> plutôt qu'un <code>ManyToManyField</code></td>
+<td>l'inscription a ses propres données (statut, montant, date)</td>
+</tr>
+<tr>
+<td><code>on_delete=PROTECT</code> des deux côtés</td>
+<td>on ne perd pas l'historique ; supprimer une <code>Formation</code> qui a des inscriptions est <strong>bloqué en cascade</strong> (<code>Formation → Intervention → Inscription</code>)</td>
+</tr>
+<tr>
+<td><code>montant_ht</code> <strong>copié</strong> depuis la formation</td>
+<td>le prix d'aujourd'hui ne doit pas réécrire la facture d'hier</td>
+</tr>
+<tr>
+<td><code>UniqueConstraint</code> <strong>conditionnelle</strong></td>
+<td>un client peut se réinscrire après une annulation, jamais deux inscriptions actives</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>Meta.permissions</code> déclare une permission <strong>personnalisée</strong> en plus des quatre créées d'office (<code>add_</code>, <code>change_</code>, <code>delete_</code>, <code>view_</code>) — elle servira en B8 et B9.</p>
+<div class="code-block"><pre><code class="language-bash">python manage.py makemigrations          # → 0002_inscription.py
+python manage.py sqlmigrate catalog 0002 # lire : CREATE UNIQUE INDEX … WHERE NOT (statut = 'X')
+python manage.py migrate
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 <strong>Lire l'index partiel</strong> : <code>sqlmigrate</code> montre un <code>CREATE UNIQUE INDEX … WHERE …</code> : la contrainte vit <strong>dans la base</strong>, pas seulement dans Python. Même un script qui contourne l'application ne créera pas de doublon actif.</p>
+</blockquote>
+<p><strong>La règle métier — <code>catalog/services.py</code>.</strong> L'inscription n'est pas un simple <code>create()</code> : il faut vérifier la place, incrémenter le compteur, refuser le doublon, <strong>de façon atomique</strong>. Cette logique a <strong>deux appelants</strong> (le formulaire du back-office, et en B9 le bouton « S'inscrire » du stagiaire) ; elle vit donc dans un module à part, pas dans une vue.</p>
+<div class="code-block"><pre><code class="language-python"># catalog/services.py
+from django.db import transaction
+from django.db.models import F, Q
+
+from .models import Inscription, Intervention, Client
+
+class DejaInscrit(Exception):
+    def __init__(self, cl, inter):
+        self.cl = cl
+        self.inter = inter
+
+    def __str__(self):
+        return f&quot;client: {self.cl} est déjà été inscrit à l'intervention: {self.inter}&quot;
+
+class InterventionComplete(Exception):
+    def __init__(self, inter):
+        self.inter = inter
+
+    def __str__(self):
+        return f&quot;plus de places sur l'intervention: {self.inter} !!&quot;
+
+@transaction.atomic
+def inscrire(client: Client, intervention: Intervention):
+    &quot;&quot;&quot;
+    on inscrit si
+        - le client n'est pas déjà inscrit !!!
+        - s'il ya des places dispo !!!
+          dans ce cas on met à jour les nb_inscrits de l'intervention
+    dans ce cas on créé une inscription 
+    &quot;&quot;&quot;
+    # if Inscription.objects.filter(
+    #     Q(client=client) &amp; 
+    #     Q(intervention=intervention) &amp;
+    #     ~Q(statut='X')
+    # ).exists():
+    # exclude (NAND) != filter (AND)
+    if Inscription.objects.filter(
+        client=client, intervention=intervention
+    ).exclude(statut='X'):
+        raise DejaInscrit(client, intervention)
+
+    # 1. retourne l'intervention s'il ya des places dispo OU QuerySet vide
+    # 2. s'il ya intervention : on incrémente les places dispo
+    places_prises = Intervention.objects.filter(
+        pk=intervention.pk, statut='A', nb_inscrits__lt=F('capacite')
+    ).update(nb_inscrits=F('nb_inscrits') +  1)
+    if not places_prises:
+        raise InterventionComplete(intervention)
+
+    return Inscription.objects.create(
+        client=client, 
+        intervention=intervention,
+        montant_ht=intervention.formation.prix
+    )
+
+def annuler(inscription: Inscription) -&gt; bool:
+    &quot;&quot;&quot;
+    libère la place et change le statut à X et retourne True si le changement est fait 
+    &quot;&quot;&quot;
+    # si on veut utiliser plusieurs transactions dans la même procédure
+    with transaction.atomic():
+       change = Inscription.object.filter(
+           pk=inscription.pk
+        ).exclude(statut='X').update('X')
+       # change est le nb éléments modifiés: 1 =&gt; True, 0 =&gt; False
+       if change:
+           Intervention.objects.filter(
+               pk=inscription.intervention_id
+            ).update(nb_inscrits=F('nb_inscrits') - 1)
+    return bool(change)
+
+
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>C'est le <strong><code>F</code> du jour 2</strong> (§5.7) dans son rôle final. Le filtre <code>nb_inscrits__lt=F('capacite')</code> <strong>dans l'<code>UPDATE</code></strong> est la clé : deux requêtes simultanées sur la dernière place s'exécutent l'une après l'autre dans la base ; la seconde trouve <code>nb_inscrits == capacite</code>, met à jour <strong>0 ligne</strong>, et lève <code>InterventionComplete</code>. Avec <code>if intervention.places_dispo &gt; 0: …; intervention.save()</code>, les deux passeraient.</p>
+<p><code>@transaction.atomic</code> garantit le <em>tout ou rien</em> : si <code>Inscription.objects.create</code> échoue (la contrainte d'unicité, par exemple), l'incrément du compteur est <strong>annulé</strong> avec lui.</p>
+<blockquote>
+<p>⚠️ <strong>Piège n°25 — le compteur et la ligne doivent bouger ensemble</strong> : sans transaction, un plantage entre l'<code>UPDATE</code> du compteur et le <code>create</code> laisse une place « perdue ». Toute opération qui écrit <strong>deux tables</strong> liées passe sous <code>atomic</code>.</p>
+</blockquote>
+<p><strong>Le formulaire d'inscription du back-office</strong> :</p>
+<div class="code-block"><pre><code class="language-python"># catalog/forms.py — ajout J3
+from django.db.models import F
+
+class InscriptionForm(forms.ModelForm):
+    &quot;&quot;&quot;
+    formulaire d'inscription:
+      - 1 champs et widget complexe multi champs: dropdown qui présente des listes d'inscription liés
+        + le numéro de l'intervention - nom de la formation (ville, dates début -- places dispo calculées à la voléé )
+    &quot;&quot;&quot;
+    # champs de formulaire composite
+    intervention = InterventionChoiceField(
+        # alimenter le dropdown directement à partir d'un queryset
+        queryset=(Intervention.objects.filter(statut='A')
+                    .annotate(places=F('capacite') - F('nb_inscrits'))
+                    .filter(places__gt=0)
+                    .select_related('formation')
+        ),
+        # queryset=Intervention.objects.none(),
+        label=&quot;Intervention&quot;
+    )
+
+    class Meta:
+        model = Inscription
+        fields = ['client', 'intervention']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # alimenter à l'instanciation
+        # self.fields['intervention'].queryset = (
+        #     Intervention.objects.filter(statut='A')
+        #     .annotate(places=F('capacite') - F('nb_inscrits'))
+        #     .filter(places__gt=0)
+        #     .select_related('formation')
+        # )
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Deux idées : le <strong><code>queryset</code> d'un champ de choix se restreint dans <code>__init__</code></strong> (seules les interventions ouvertes et non complètes sont proposées — l'annotation <code>places</code> du jour 2, réutilisée) ; et <strong><code>label_from_instance</code></strong> contrôle le texte de chaque option (sans lui, <code>&lt;select&gt;</code> affiche <code>str(intervention)</code> = le numéro seul).</p>
+<blockquote>
+<p>💡 <strong>Le formulaire filtre, le service garantit.</strong> La liste déroulante a été construite il y a 30 secondes ; entre-temps la intervention a pu se remplir. Le formulaire est un <strong>confort</strong> ; la vraie décision se prend dans <code>inscrire()</code>, au moment de l'écriture.</p>
+</blockquote>
+<div class="code-block"><pre><code class="language-python"># catalog/views.py — ajout J3
+def liste_inscriptions(request):
+    # ------------------------------------------------&gt; 2 joins client et intervention avec leur propre relation formation
+    inscriptions = Inscription.objects.select_related('client', 'intervention__formation')
+    return render(request, 'catalog/liste_inscriptions.html', {'inscriptions': inscriptions})
+
+def nouvelle_inscription(request):
+    if request.method == 'POST':
+        form = InscriptionForm(request.POST)
+        if form.is_valid():
+            try:
+                inscrire(form.cleaned_data['client'], form.cleaned_data['intervention'])
+            except (DejaInscrit, InterventionComplete) as erreur:
+                form.add_error(None, str(erreur))          # erreur « de formulaire »
+            else:
+                messages.success(request, 'Inscription enregistrée.')
+                return redirect('catalog:inscriptions')
+    else:
+        form = InscriptionForm()
+    return render(request, 'catalog/form.html', {
+        'form': form, 'titre': 'Nouvelle inscription', 'retour': 'catalog:inscriptions',
+    })
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code class="language-python"># catalog/urls.py — ajouts
+path('inscriptions/', views.liste_inscriptions, name='inscriptions'),
+path('inscriptions/nouvelle/', views.nouvelle_inscription, name='nouvelle-inscription'),
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code class="language-html">{# catalog/templates/catalog/liste_inscriptions.html #}
+{% extends &quot;catalog/base.html&quot; %}
+
+{% block titre %}Inscriptions — GestiFormation{% endblock %}
+
+{% block contenu %}
+&lt;section class=&quot;inscriptions&quot;&gt;
+    &lt;h1&gt;Inscriptions&lt;/h1&gt;
+    &lt;table class=&quot;tableau&quot;&gt;
+        &lt;thead&gt;&lt;tr&gt;&lt;th&gt;Client&lt;/th&gt;&lt;th&gt;Formation&lt;/th&gt;&lt;th&gt;Intervention&lt;/th&gt;&lt;th&gt;Statut&lt;/th&gt;&lt;th&gt;Montant HT&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+        &lt;tbody&gt;
+        {% for i in inscriptions %}
+            &lt;tr&gt;
+                &lt;td&gt;{{ i.client }}&lt;/td&gt;
+                &lt;td&gt;{{ i.intervention.formation.nom }}&lt;/td&gt;
+                &lt;td&gt;{{ i.intervention.numero }} — {{ i.intervention.date_debut|date:&quot;d/m/Y&quot; }}&lt;/td&gt;
+                &lt;td&gt;{{ i.get_statut_display }}&lt;/td&gt;
+                &lt;td&gt;{{ i.montant_ht|floatformat:2 }} €&lt;/td&gt;
+            &lt;/tr&gt;
+        {% empty %}
+            &lt;tr&gt;&lt;td colspan=&quot;5&quot; class=&quot;vide&quot;&gt;Aucune inscription.&lt;/td&gt;&lt;/tr&gt;
+        {% endfor %}
+        &lt;/tbody&gt;
+    &lt;/table&gt;
+    &lt;p&gt;&lt;a class=&quot;btn&quot; href=&quot;{% url 'catalog:nouvelle-inscription' %}&quot;&gt;+ Nouvelle inscription&lt;/a&gt;&lt;/p&gt;
+&lt;/section&gt;
+{% endblock %}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 <code>select_related('client', 'intervention__formation')</code> : la double-soulignement traverse <strong>deux</strong> FK dans le même <code>JOIN</code> (jour 2, §5.6). Sans lui, la boucle de ce gabarit ferait 3 requêtes par ligne.</p>
+</blockquote>
+<h3>🛠️ Atelier 7·b — Inscrire un client (40 min)</h3>
+<ol>
+<li>ajouter <code>Inscription</code> à <code>models.py</code>, <code>makemigrations</code>, <strong>lire</strong> <code>0002_inscription.py</code> et le SQL, <code>migrate</code> ;</li>
+<li>écrire <code>services.py</code>, <code>InscriptionForm</code>, les 2 vues, les 2 URLs, le gabarit ;</li>
+<li>dérouler :</li>
+</ol>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Action</th>
+<th>Résultat attendu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>/inscriptions/nouvelle/</code></td>
+<td>la liste ne propose <strong>pas</strong> la intervention complète <code>PY-102-2601</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>inscrire Marie Dupont à <code>PY-101-2612</code> (7/12)</td>
+<td>inscription créée, intervention à <strong>8/12</strong> (vérifier en shell)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>recommencer la même inscription</td>
+<td>erreur « déjà inscrit », compteur <strong>inchangé</strong></td>
+</tr>
+<tr>
+<td>4</td>
+<td>en shell_plus : <code>inscrire(client, Intervention.objects.get(numero='PY-102-2601'))</code></td>
+<td><code>InterventionComplete</code> — la intervention est pleine</td>
+</tr>
+<tr>
+<td>5</td>
+<td>en shell_plus : <code>annuler(inscription)</code> puis réinscrire</td>
+<td>compteur 8 → 7 → 8, réinscription <strong>autorisée</strong></td>
+</tr>
+</tbody>
+</table></div>
+<div class="code-block"><pre><code class="language-python"># shell_plus — cas 2 et 4
+&gt;&gt;&gt; from catalog.services import inscrire
+&gt;&gt;&gt; c = Client.objects.get(email='m.dupont@acme.fr')
+&gt;&gt;&gt; i= Intervention.objects.get(numero='PY-101-2612')
+&gt;&gt;&gt; i..nb_inscrits
+7
+&gt;&gt;&gt; inscrire(c, i)
+&lt;Inscription: Marie Dupont → PY-101-2612&gt;
+&gt;&gt;&gt; i.nb_inscrits
+7
+&gt;&gt;&gt; i.refresh_from_db() # resynchronise l'objet python et l'enregistrement en BDD !!!!
+&gt;&gt;&gt; i.nb_inscrits
+8
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><strong>Checklist</strong> :</p>
+<ul>
+<li>[ ] <code>sqlmigrate catalog 0002</code> lu : le binôme sait dire ce que fait le <code>WHERE NOT (statut = 'X')</code> ;</li>
+<li>[ ] le compteur reste cohérent sur les 5 cas ;</li>
+<li>[ ] <strong>le seed ne doit plus écraser un compteur vivant</strong> — appliquer le correctif ci-dessous ;</li>
+<li>[ ] <code>git add -A &amp;&amp; git commit -m "J3 : Inscription + services.inscrire"</code> fait.</li>
+</ul>
+<p><strong>Correctif du seed</strong> : <code>update_or_create</code> réécrivait <code>nb_inscrits</code> à chaque relance, donc effaçait les inscriptions prises depuis. Django 5.0 apporte <code>create_defaults</code> : valeurs utilisées <strong>uniquement à la création</strong>.</p>
+<div class="code-block"><pre><code class="language-python"># catalog/seed.py — seed_interventions() corrigée
+def seed_interventions():
+    for numero, code, d_debut, d_fin, ville, capacite, inscrits, statut in INTERVENTIONS:
+        commun = {
+            'formation': Formation.objects.get(code=code),
+            'date_debut': d_debut, 'date_fin': d_fin, 'ville': ville,
+            'capacite': capacite, 'statut': statut,
+        }
+        Intervention.objects.update_or_create(
+            numero=numero,
+            defaults=commun,                                     # mises à jour à chaque relance
+            create_defaults={**commun, 'nb_inscrits': inscrits}, # le compteur, une seule fois
+        )
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<hr />
+</div>
+
+<div id="tab-b8-l-administration-un-back-office-sans-le-coder-bloc-8-90-min" class="tab-content">
+<h3>8.1. Ce que c'est — et ce que ce n'est pas</h3>
+<p><code>django.contrib.admin</code> <strong>génère un site de gestion à partir des modèles</strong>. Il est dans <code>INSTALLED_APPS</code> et <code>gesti/urls.py</code> le sert sur <code>/admin/</code> depuis le jour 1 ; il n'attendait que des modèles à gérer — et un compte pour s'y connecter.</p>
+<div class="code-block"><pre><code class="language-bash">python manage.py createsuperuser        # nom, e-mail (facultatif), mot de passe
+python manage.py runserver              # → http://127.0.0.1:8000/admin/
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Le premier enregistrement tient en une ligne : <code>admin.site.register(Formation)</code>. L'admin est alors utilisable — liste, création, modification, suppression, historique — avec les libellés <code>verbose_name</code> du jour 2 (c'est leur raison d'être).</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>L'admin est</th>
+<th>L'admin n'est pas</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>un outil <strong>interne</strong> : équipe, support, démos</td>
+<td>l'interface des clients ou des stagiaires</td>
+</tr>
+<tr>
+<td>généré à partir de <code>models.py</code> — <strong>un modèle = une page</strong></td>
+<td>un site à la charte graphique de l'organisme</td>
+</tr>
+<tr>
+<td>doté de permissions par modèle (B9)</td>
+<td>un workflow métier (« inscrire = vérifier la capacité »)</td>
+</tr>
+</tbody>
+</table></div>
+<h3>8.2. <code>ModelAdmin</code> — décrire l'affichage, pas le coder</h3>
+<p>Une classe <code>ModelAdmin</code> associée à un modèle par <code>@admin.register(...)</code>. Les options à connaître :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Effet</th>
+<th>Exemple GestiFormation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>list_display</code></td>
+<td>colonnes de la liste (champs, méthodes, <code>__str__</code>)</td>
+<td>code, nom, prix, nouveauté</td>
+</tr>
+<tr>
+<td><code>list_filter</code></td>
+<td>filtres latéraux</td>
+<td><code>statut</code>, <code>nouveaute</code></td>
+</tr>
+<tr>
+<td><code>search_fields</code></td>
+<td>barre de recherche (<code>icontains</code> sur chaque champ)</td>
+<td><code>code</code>, <code>nom</code>, <code>client__email</code></td>
+</tr>
+<tr>
+<td><code>ordering</code></td>
+<td>tri par défaut</td>
+<td>— (<code>Meta.ordering</code> suffit)</td>
+</tr>
+<tr>
+<td><code>list_editable</code></td>
+<td>édition <strong>directe</strong> dans la liste</td>
+<td><code>nouveaute</code></td>
+</tr>
+<tr>
+<td><code>date_hierarchy</code></td>
+<td>navigation par date</td>
+<td><code>date_debut</code></td>
+</tr>
+<tr>
+<td><code>list_select_related</code></td>
+<td><code>select_related</code> de la liste (anti N+1)</td>
+<td><code>('formation',)</code></td>
+</tr>
+<tr>
+<td><code>readonly_fields</code></td>
+<td>champs affichés, non modifiables</td>
+<td><code>nb_inscrits</code></td>
+</tr>
+<tr>
+<td><code>fieldsets</code></td>
+<td>regroupement des champs du formulaire</td>
+<td>« Offre », « Compétences »</td>
+</tr>
+<tr>
+<td><code>filter_horizontal</code></td>
+<td>widget à deux colonnes pour un M2M</td>
+<td><code>competences</code></td>
+</tr>
+<tr>
+<td><code>autocomplete_fields</code></td>
+<td>liste de choix interrogeable (FK)</td>
+<td><code>client</code>, <code>formation</code></td>
+</tr>
+<tr>
+<td><code>inlines</code></td>
+<td>modèles liés édités <strong>dans la page parent</strong></td>
+<td>interventions d'une formation</td>
+</tr>
+<tr>
+<td><code>actions</code></td>
+<td>traitements sur la sélection de la liste</td>
+<td>« Clôturer », « Confirmer »</td>
+</tr>
+</tbody>
+</table></div>
+<h3>8.3. <code>catalog/admin.py</code> — le code de référence</h3>
+<div class="code-block"><pre><code class="language-python">from django.contrib import admin, messages
+from django.db.models import Count, F
+
+from .models import Client, Competence, Contrat, Formation, Inscription, Intervention
+from .services import annuler
+
+admin.site.site_header = 'GestiFormation — administration'
+admin.site.site_title = 'GestiFormation'
+admin.site.index_title = &quot;Pilotage de l'organisme&quot;
+
+
+# ---------- inlines : les objets liés, dans la page du parent ----------
+
+class InterventionInline(admin.TabularInline):
+    model = Intervention
+    extra = 0
+    fields = ('numero', 'date_debut', 'date_fin', 'ville', 'capacite', 'statut')
+    show_change_link = True
+
+
+class ContratInline(admin.TabularInline):
+    model = Contrat
+    extra = 0
+    fields = ('numero', 'titre', 'montant_ht', 'date_signature')
+    show_change_link = True
+
+
+# ---------- catalogue ----------
+
+@admin.register(Competence)
+class CompetenceAdmin(admin.ModelAdmin):
+    list_display = ('nom', 'nb_formations')
+    search_fields = ('nom',)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(_nb_formations=Count('formations'))
+
+    @admin.display(description='formations', ordering='_nb_formations')
+    def nb_formations(self, obj):
+        return obj._nb_formations
+
+
+@admin.register(Formation)
+class FormationAdmin(admin.ModelAdmin):
+    list_display = ('code', 'nom', 'duree', 'prix', 'nouveaute', 'nb_interventions')
+    list_editable = ('nouveaute',)
+    list_filter = ('nouveaute', 'duree', 'competences')
+    search_fields = ('code', 'nom')            # requis par autocomplete_fields ailleurs
+    filter_horizontal = ('competences',)
+    inlines = [InterventionInline]
+    actions = ['marquer_nouveaute']
+    fieldsets = (
+        (None, {'fields': ('code', 'nom', 'public')}),
+        ('Offre', {'fields': ('duree', 'prix', 'nouveaute')}),
+        ('Compétences visées', {'fields': ('competences',), 'classes': ('collapse',)}),
+    )
+
+    def get_queryset(self, request):
+        # distinct=True : le filtre « competences » ajoute un JOIN qui dupliquerait le comptage
+        return super().get_queryset(request).annotate(_nb_interventions=Count('interventions', distinct=True))
+
+    @admin.display(description='interventions', ordering='_nb_interventions')
+    def nb_interventions(self, obj):
+        return obj._nb_interventions
+
+    @admin.action(description='Marquer comme nouveauté', permissions=['change'])
+    def marquer_nouveaute(self, request, queryset):
+        n = queryset.update(nouveaute=True)
+        self.message_user(request, f'{n} formation(s) marquée(s) comme nouveauté.', messages.SUCCESS)
+
+
+@admin.register(Intervention)
+class InterventionAdmin(admin.ModelAdmin):
+    list_display = ('numero', 'formation', 'date_debut', 'ville', 'statut',
+                    'nb_inscrits', 'capacite', 'places')
+    list_filter = ('statut', 'ville')
+    search_fields = ('numero', 'formation__code', 'formation__nom')
+    date_hierarchy = 'date_debut'
+    list_select_related = ('formation',)
+    autocomplete_fields = ('formation',)
+    readonly_fields = ('nb_inscrits',)         # tenu par services.inscrire / annuler
+    actions = ['cloturer']
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(_places=F('capacite') - F('nb_inscrits'))
+
+    @admin.display(description='places libres', ordering='_places')
+    def places(self, obj):
+        return obj._places
+
+    @admin.action(description='Clôturer les interventions sélectionnées', permissions=['change'])
+    def cloturer(self, request, queryset):
+        n = queryset.update(statut='C')
+        self.message_user(request, f'{n} intervention(s) clôturée(s).', messages.SUCCESS)
+
+
+# ---------- clients, contrats, inscriptions ----------
+
+# @admin.register(Client)
+# class ClientAdmin(admin.ModelAdmin):
+#     list_display = ('nom', 'prenom', 'societe', 'email', 'utilisateur', 'date_creation')
+#     list_select_related = ('utilisateur',)
+#     search_fields = ('nom', 'prenom', 'societe', 'email')
+#     autocomplete_fields = ('utilisateur',)
+#     inlines = [ContratInline]
+
+
+# @admin.register(Contrat)
+# class ContratAdmin(admin.ModelAdmin):
+#     list_display = ('numero', 'titre', 'client', 'montant_ht', 'date_signature')
+#     list_select_related = ('client',)
+#     list_filter = ('date_signature',)
+#     search_fields = ('numero', 'titre', 'client__nom', 'client__email')
+#     autocomplete_fields = ('client',)
+#     date_hierarchy = 'date_signature'
+
+
+@admin.register(Inscription)
+class InscriptionAdmin(admin.ModelAdmin):
+    list_display = ('client', 'intervention', 'statut', 'montant_ht', 'date_inscription')
+    list_filter = ('statut', 'intervention__formation')
+    list_select_related = ('client', 'intervention')
+    search_fields = ('client__nom', 'client__email', 'intervention__numero')
+    # tout est en lecture seule : l'état ne change que par les actions, qui respectent les règles
+    readonly_fields = ('client', 'intervention', 'statut', 'montant_ht', 'date_inscription')
+    actions = ['confirmer', 'annuler_selection']
+
+    def has_add_permission(self, request):
+        return False                            # une inscription se crée par services.inscrire
+
+    def has_delete_permission(self, request, obj=None):
+        return False                            # on annule, on ne supprime pas
+
+    def has_annuler_permission(self, request):  # appelée par permissions=['annuler']
+        return request.user.has_perm('catalog.annuler_inscription')
+
+    @admin.action(description='Confirmer les inscriptions sélectionnées', permissions=['change'])
+    def confirmer(self, request, queryset):
+        n = queryset.filter(statut='P').update(statut='C')
+        self.message_user(request, f'{n} inscription(s) confirmée(s).', messages.SUCCESS)
+
+    @admin.action(description='Annuler les inscriptions sélectionnées', permissions=['annuler'])
+    def annuler_selection(self, request, queryset):
+        n = sum(annuler(inscription) for inscription in queryset)
+        self.message_user(request, f'{n} inscription(s) annulée(s), places libérées.', messages.SUCCESS)
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Ce qu'il faut <strong>lire en détail</strong> avec les stagiaires :</p>
+<ol>
+<li><strong><code>get_queryset</code> + <code>annotate</code></strong> : <code>places</code> et <code>nb_interventions</code> sont calculées <strong>par la base</strong> (F, <code>Count</code> — jour 2), donc triables dans la liste via <code>ordering=</code> ; un appel <code>obj.interventions.count()</code> par ligne ferait un N+1 ;</li>
+<li><strong><code>list_select_related</code></strong> : sans lui, afficher <code>intervention.formation</code> dans la liste coûte une requête par ligne (jour 2, §5.6) ;</li>
+<li><strong><code>Count('interventions', distinct=True)</code></strong> : on filtre la liste sur <code>competences</code> (un <code>JOIN</code> M2M) ; sans <code>distinct</code>, une formation à 3 compétences compterait ses interventions 3 fois ;</li>
+<li><strong>les <code>@admin.action(permissions=[...])</code></strong> : l'action n'apparaît que si l'utilisateur a la permission (<code>change</code> → <code>has_change_permission</code>, <code>annuler</code> → notre <code>has_annuler_permission</code>, branchée sur la permission personnalisée du modèle) ;</li>
+<li><strong><code>autocomplete_fields</code></strong> : exige que le modèle cible ait un <code>ModelAdmin</code> avec <code>search_fields</code> — c'est pourquoi <code>FormationAdmin</code> et <code>ClientAdmin</code> en déclarent.</li>
+</ol>
+<h3>8.4. Pourquoi <code>InscriptionAdmin</code> est presque en lecture seule</h3>
+<p>C'est le point le plus important du bloc.</p>
+<blockquote>
+<p>⚠️ <strong>Piège n°26 — l'admin contourne vos vues, vos formulaires et vos services.</strong> Un <code>ModelAdmin</code> écrit <strong>directement</strong> le modèle. Une <code>Inscription</code> créée dans l'admin n'incrémente pas <code>Intervention.nb_inscrits</code> ; un statut passé à « Annulée » dans le formulaire ne libère pas la place ; une suppression laisse le compteur faux. Toute la discipline de B7·b serait contournée en trois clics.</p>
+</blockquote>
+<p>Trois réponses possibles, de la plus simple à la plus lourde :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Réponse</th>
+<th>Mise en œuvre</th>
+<th>Choix ici</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>fermer l'écriture directe</strong></td>
+<td><code>has_add_permission</code>, <code>has_delete_permission</code>, champs en <code>readonly_fields</code> ; les transitions passent par des <strong>actions</strong> qui appellent <code>services.annuler</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td>faire appeler le service par l'admin</td>
+<td>surcharger <code>save_model</code> pour router vers <code>inscrire</code></td>
+<td>possible, plus fragile</td>
+</tr>
+<tr>
+<td>faire respecter la règle par le modèle</td>
+<td><code>save()</code> surchargé ou signaux</td>
+<td>à discuter en réunion d'architecture</td>
+</tr>
+</tbody>
+</table></div>
+<p>L'admin sert au <strong>suivi</strong> (filtrer, rechercher, confirmer, annuler) ; la <strong>création</strong> d'une inscription reste l'affaire de <code>/inscriptions/nouvelle/</code> (et, en B9, du bouton « S'inscrire »). Même logique pour <code>Intervention.nb_inscrits</code> : <code>readonly_fields</code>, car il appartient aux services.</p>
+<blockquote>
+<p>💡 <strong>Principe à retenir</strong> : les règles métier vivent <strong>à un seul endroit</strong> (<code>services.py</code>) ; vues, admin, scripts et tests (jour 4) <strong>l'appellent</strong>. Une règle écrite dans une vue n'existe pas pour l'admin.</p>
+<p>⚠️ <strong>Piège n°27 — les <code>@property</code> et méthodes dans <code>list_display</code></strong> : <code>list_display = ('nom', 'places_dispo')</code> « marche » mais exécute le calcul <strong>par ligne</strong>, sans tri possible. Dès qu'une colonne dérive d'une relation ou d'un calcul, on <strong>annote</strong> dans <code>get_queryset</code> (comme <code>places</code>).</p>
+</blockquote>
+<p>L'<strong>intégrité</strong> se voit aussi dans l'admin : supprimer une <code>Formation</code> qui a des interventions avec inscriptions affiche la page « <em>suppression impossible : objets protégés</em> » — le <code>PROTECT</code> du jour 2, sans une ligne de code.</p>
+<h3>🛠️ Atelier 8 — Administrer GestiFormation (60 min)</h3>
+<p><strong>Consignes</strong> : écrire <code>admin.py</code> section par section (un <code>@admin.register</code>, un rechargement de <code>/admin/</code>) puis dérouler :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Action</th>
+<th>Résultat attendu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>createsuperuser</code>, ouvrir <code>/admin/</code></td>
+<td>le tableau de bord liste les modèles du catalogue (6 + comptes/groupes), libellés en français</td>
+</tr>
+<tr>
+<td>2</td>
+<td>ouvrir une <code>Formation</code></td>
+<td>ses <strong>interventions</strong> sont éditables dans la même page (inline)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>liste des <code>Intervention</code> : filtrer <code>statut = À venir</code>, trier par « places libres »</td>
+<td>tri géré <strong>par la base</strong></td>
+</tr>
+<tr>
+<td>4</td>
+<td>sélectionner 2 formations → action « Marquer comme nouveauté »</td>
+<td>message vert, case <code>nouveaute</code> cochée</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>Client</code> Marie Dupont → inline <code>Contrat</code></td>
+<td>le contrat du seed est visible</td>
+</tr>
+<tr>
+<td>6</td>
+<td>tenter de supprimer Marie Dupont</td>
+<td>page « objets protégés »</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>Inscription</code> : bouton « Ajouter »</td>
+<td><strong>absent</strong></td>
+</tr>
+<tr>
+<td>8</td>
+<td>sélectionner l'inscription créée en 7·b → « Annuler »</td>
+<td>statut <code>X</code>, <code>nb_inscrits</code> décrémenté (vérifier dans <code>Intervention</code>)</td>
+</tr>
+<tr>
+<td>9</td>
+<td>relancer l'action sur la même ligne</td>
+<td>« 0 inscription(s) annulée(s) » — pas de double décrément</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Checklist</strong> :</p>
+<ul>
+<li>[ ] les 9 cas passés ; le binôme sait expliquer pourquoi <code>readonly_fields</code> ne suffit pas à protéger le compteur (réponse : il ne protège que ce formulaire — l'ORM, un script ou un autre <code>ModelAdmin</code> peuvent toujours écrire, d'où les services) ;</li>
+<li>[ ] aucun <code>@property</code> dans un <code>list_display</code> ;</li>
+<li>[ ] <code>git add -A &amp;&amp; git commit -m "J3 : administration complète"</code> fait.</li>
+</ul>
+<hr />
+</div>
+
+<div id="tab-b9-authentification-groupes-et-permissions-bloc-9-150-min" class="tab-content">
+<h3>9.1. Qui es-tu ? Qu'as-tu le droit de faire ?</h3>
+<p>Deux questions distinctes, deux mécanismes distincts :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th><strong>Authentification</strong></th>
+<th><strong>Autorisation</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Question</td>
+<td><em>« Qui est-ce ? »</em></td>
+<td><em>« A-t-il le droit de faire ça ? »</em></td>
+</tr>
+<tr>
+<td>Mécanisme Django</td>
+<td><code>authenticate()</code>, <code>login()</code>, sessions, <code>request.user</code></td>
+<td>permissions, groupes, <code>has_perm</code>, décorateurs</td>
+</tr>
+<tr>
+<td>Échec</td>
+<td>redirection vers la page de connexion (302)</td>
+<td><strong>403 Forbidden</strong></td>
+</tr>
+<tr>
+<td>Dans GestiFormation</td>
+<td>se connecter, créer son compte</td>
+<td>qui voit les clients, qui annule une inscription</td>
+</tr>
+</tbody>
+</table></div>
+<p>Aujourd'hui, <strong>toutes les pages d'écriture sont publiques</strong> : n'importe quel visiteur peut créer, modifier ou supprimer un client. C'est la faille de conception que ce bloc corrige.</p>
+<h3>9.2. Comment Django reconnaît un utilisateur</h3>
+<p><img alt="Flux d'authentification" src="assets/flux-authentification.svg" /></p>
+<p>À retenir de ce schéma, dans l'ordre :</p>
+<ol>
+<li><strong><code>SessionMiddleware</code></strong> + <strong><code>AuthenticationMiddleware</code></strong> (déjà dans <code>MIDDLEWARE</code>, jour 1) lisent le cookie <code>sessionid</code> et placent <strong><code>request.user</code></strong> sur <strong>chaque</strong> requête — un objet <code>User</code> réel, ou <code>AnonymousUser</code> ;</li>
+<li>le <strong>cookie</strong> ne contient qu'une <strong>clé aléatoire</strong> ; l'identité est dans la table <code>django_session</code> (lisible depuis <code>python manage.py shell</code> avec <code>Session</code> de <code>django.contrib.sessions.models</code>) ;</li>
+<li><strong><code>authenticate()</code></strong> vérifie identifiant + mot de passe, <strong><code>login()</code></strong> crée la session ;</li>
+<li>le mot de passe n'est <strong>jamais stocké</strong> : seulement son <em>hash</em> salé (PBKDF2 par défaut).</li>
+</ol>
+<div class="code-block"><pre><code class="language-python">&gt;&gt;&gt; from django.contrib.auth import get_user_model
+&gt;&gt;&gt; User = get_user_model()
+&gt;&gt;&gt; u = User.objects.create_user('test', 'test@example.org', 'secret-123')
+&gt;&gt;&gt; u.password
+'pbkdf2_sha256$1000000$gH7…$Zr0…'        # algorithme $ itérations $ sel $ hash
+&gt;&gt;&gt; u.check_password('secret-123')
+True
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>⚠️ <strong>Piège n°28 — créer un utilisateur avec <code>User.objects.create(password='…')</code></strong> : le mot de passe est enregistré <strong>en clair</strong> et la connexion échoue (Django attend un hash). On passe <strong>toujours</strong> par <code>create_user(...)</code> ou <code>set_password(...)</code>.</p>
+</blockquote>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Attribut de <code>User</code></th>
+<th>Sens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>is_active</code></td>
+<td><code>False</code> = compte désactivé, connexion refusée</td>
+</tr>
+<tr>
+<td><code>is_staff</code></td>
+<td>autorise l'accès à <code>/admin/</code> — <strong>rien d'autre</strong></td>
+</tr>
+<tr>
+<td><code>is_superuser</code></td>
+<td><strong>toutes</strong> les permissions, sans exception</td>
+</tr>
+<tr>
+<td><code>groups</code>, <code>user_permissions</code></td>
+<td>autorisations (§9.6)</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>💡 <strong>Modèle d'utilisateur personnalisé</strong> : si le projet doit ajouter des champs à l'utilisateur (téléphone, société…), Django recommande de déclarer <code>AUTH_USER_MODEL</code> <strong>avant la toute première migration</strong>. Le changer après est un chantier. Ici on n'en a pas besoin : les données propres au client vivent dans <code>Client</code>, rattaché au <code>User</code> par une relation <code>1-1</code>.</p>
+</blockquote>
+<h3>9.3. Connexion et déconnexion — les vues fournies</h3>
+<p>Django fournit les vues d'authentification (<code>LoginView</code>, <code>LogoutView</code>, changement et réinitialisation de mot de passe). On les branche en une ligne et on ne fournit que le gabarit.</p>
+<div class="code-block"><pre><code class="language-python"># gesti/urls.py — ajouts J3
+from django.contrib.auth.views import LoginView
+
+urlpatterns = [
+    path('admin/',   admin.site.urls),
+    path('comptes/', include('django.contrib.auth.urls')),   # login, logout, password_change…
+    path('',         include('catalog.urls')),
+]
+
+handler403 = 'catalog.views.acces_refuse'
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Les URLs obtenues portent des noms <strong>sans espace de noms</strong> : <code>login</code>, <code>logout</code>, <code>password_change</code>, <code>password_reset</code>…</p>
+<div class="code-block"><pre><code class="language-python"># gesti/settings.py — ajouts J3
+LOGIN_URL = 'login'                          # où renvoyer un anonyme (nom d'URL)
+LOGIN_REDIRECT_URL = 'catalog:mon-espace'    # après connexion, sans ?next=
+LOGOUT_REDIRECT_URL = 'catalog:accueil'
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 le template login.html doit être placée dans l'espace <strong>registration</strong> !!!</p>
+</blockquote>
+<div class="code-block"><pre><code class="language-html">{# catalog/templates/registration/login.html — Django cherche ce chemin exact #}
+{% extends &quot;catalog/base.html&quot; %}
+
+{% block titre %}Connexion — GestiFormation{% endblock %}
+
+{% block contenu %}
+&lt;section class=&quot;formulaire&quot;&gt;
+    &lt;h1&gt;Connexion&lt;/h1&gt;
+    &lt;form method=&quot;post&quot; class=&quot;form&quot;&gt;
+        {% csrf_token %}
+        {% include &quot;catalog/_champs.html&quot; %}
+        &lt;input type=&quot;hidden&quot; name=&quot;next&quot; value=&quot;{{ next }}&quot;&gt;
+        &lt;button type=&quot;submit&quot; class=&quot;btn&quot;&gt;Se connecter&lt;/button&gt;
+    &lt;/form&gt;
+    &lt;p&gt;Pas encore de compte ? &lt;a href=&quot;{% url 'catalog:creer-compte' %}&quot;&gt;Créer un compte&lt;/a&gt;&lt;/p&gt;
+&lt;/section&gt;
+{% endblock %}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Le paramètre <strong><code>next</code></strong> fait revenir l'utilisateur sur la page qu'il demandait avant d'être redirigé vers le login (étapes 2 et 6 du schéma). <code>LoginView</code> vérifie que l'adresse reste <strong>sur le site</strong> (protection contre la <em>redirection ouverte</em>) : ne jamais recoder cette redirection à la main avec un paramètre non contrôlé.</p>
+<p><strong>La barre de navigation</strong> devient sensible à l'utilisateur et à ses permissions :</p>
+<div class="code-block"><pre><code class="language-html">{# catalog/base.html — le &lt;ul&gt; de la navigation #}
+&lt;ul&gt;
+    &lt;li&gt;&lt;a href=&quot;{% url 'catalog:liste-formations' %}&quot;&gt;Catalogue&lt;/a&gt;&lt;/li&gt;
+
+    {# filtre d'authentification #}
+    {% if user.is_authenticated %}
+        &lt;li&gt;&lt;a href=&quot;{% url 'catalog:mon-espace' %}&quot;&gt;Mon espace&lt;/a&gt;&lt;/li&gt;
+
+        {# filtre de permissions #}
+        {% if perms.catalog.view_client %}&lt;li&gt;&lt;a href=&quot;{% url 'catalog:clients' %}&quot;&gt;Clients&lt;/a&gt;&lt;/li&gt;{% endif %}
+        {% if perms.catalog.view_inscription %}&lt;li&gt;&lt;a href=&quot;{% url 'catalog:inscriptions' %}&quot;&gt;Inscriptions&lt;/a&gt;&lt;/li&gt;{% endif %}
+
+        {# flag autorisant l'admin #}
+        {% if user.is_staff %}&lt;li&gt;&lt;a href=&quot;{% url 'admin:index' %}&quot;&gt;Admin&lt;/a&gt;&lt;/li&gt;{% endif %}
+
+        {% comment &quot;comptes/logout ne peut être appelé qu'en POST !!!&quot; %}
+            &lt;li&gt;???? — &lt;a href=&quot;{% url &quot;logout&quot; %}&quot;&gt;Déconnexion&lt;/a&gt;&lt;/li&gt;
+        {% endcomment %}
+
+        &lt;li&gt;
+            {# username #}
+            {{ user.get_username }}
+            &lt;form method=&quot;post&quot; action=&quot;{% url 'logout' %}&quot; class=&quot;inline&quot;&gt;
+                {% csrf_token %}&lt;button type=&quot;submit&quot; class=&quot;lien&quot;&gt;Déconnexion&lt;/button&gt;
+            &lt;/form&gt;
+        &lt;/li&gt;
+    {% else %}
+        &lt;li&gt;&lt;a href=&quot;{% url &quot;login&quot; %}&quot;&gt;Connexion&lt;/a&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;a href=&quot;{% url &quot;catalog:creer-compte&quot; %}&quot;&gt;Créer un compte&lt;/a&gt;&lt;/li&gt;
+    {% endif %}
+&lt;/ul&gt;
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><code>user</code> et <code>perms</code> sont fournis par <code>django.contrib.auth.context_processors.auth</code> (déjà dans <code>TEMPLATES</code>, jour 1) : <strong>aucune vue n'a à les passer</strong>.</p>
+<blockquote>
+<p>⚠️ <strong>Piège n°29 — la déconnexion en <code>GET</code></strong> : depuis Django 5.0, <code>LogoutView</code> n'accepte que le <strong><code>POST</code></strong>. Un lien <code>&lt;a href="/comptes/logout/"&gt;</code> répond <code>405 Method Not Allowed</code>. C'est voulu : un <code>GET</code> qui déconnecte pourrait être déclenché depuis un autre site. D'où le petit formulaire avec <code>{% csrf_token %}</code> ci-dessus.</p>
+<p>💡 Les gabarits masquent des liens ; ils <strong>ne protègent rien</strong>. Un lien caché reste accessible en tapant l'URL : la sécurité est dans la <strong>vue</strong> (§9.5), le gabarit n'est que de l'ergonomie.</p>
+</blockquote>
+<h3>9.4. Créer un compte — un <code>ModelForm</code> fourni</h3>
+<div class="code-block"><pre><code class="language-python"># catalog.urls.py
+path('creer-compte/', views.creer_compte, name='creer-compte'),
+path('mon-espace/', views.mon_espace, name='mon-espace'),
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><code>UserCreationForm</code> est un <strong>ModelForm</strong> sur <code>User</code> : il valide la politique de mot de passe (<code>AUTH_PASSWORD_VALIDATORS</code>), demande la confirmation et <strong>hache</strong> le mot de passe. On l'étend avec l'e-mail et le nom.</p>
+<div class="code-block"><pre><code class="language-python"># catalog/forms.py — ajout J3
+from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import UserCreationForm
+
+class CompteForm(UserCreationForm):
+    email = forms.EmailField(label='E-mail')
+
+    class Meta(UserCreationForm.Meta):
+        model = get_user_model()
+        fields = ['username', 'first_name', 'last_name', 'email']
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><strong>Le lien compte ↔ client</strong> : un <code>Client</code> peut être rattaché à un compte.
+<strong>ajout d'une permission</strong>: une <code>Inscription</code> peut être annulée</p>
+<div class="code-block"><pre><code class="language-python"># catalog/models.py — ajout dans Client (J3)
+from django.conf import settings
+
+class Client(models.Model):
+    ....
+    utilisateur = models.OneToOneField(
+        # settings principaux du projet:
+        # certains visibles dans gesti/settings.py et pas d'autres
+        # comme AUTH_USER_MODEL qui contient la classe d'utilisateur comme ger_user_model()
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='client',
+        verbose_name='compte utilisateur'
+    )
+
+class Inscription(models.Model):
+    ...
+    class Meta:
+        ...
+        permissions = [('annuler_inscription', &quot;Peut annuler l'inscription d'un client&quot;)]
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code class="language-bash">python manage.py makemigrations   # → 0003_client_utilisateur.py (dépend de AUTH_USER_MODEL)
+python manage.py migrate
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 <strong>Ajouter une colonne à une table qui contient déjà des lignes</strong> : <code>null=True</code> rend l'ajout trivial (les clients existants reçoivent <code>NULL</code>). Une colonne <strong>obligatoire</strong> sans <code>default</code> fait demander à <code>makemigrations</code> quelle valeur donner aux lignes existantes. C'est la suite du piège n°12 (le schéma a un historique).</p>
+</blockquote>
+<div class="code-block"><pre><code class="language-python"># catalog/views.py — ajout J3
+from django.contrib.auth import login
+from .forms import CompteForm
+
+def creer_compte(request):
+    if request.method == 'POST':
+        form = CompteForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)           # §7.4 : compléter avant d'écrire
+            user.email = user.email.lower()
+            user.save()
+            client, _ = Client.objects.get_or_create(
+                email=user.email,
+                defaults={'prenom': user.first_name, 'nom': user.last_name},
+            )
+            if client.utilisateur_id is None:
+                client.utilisateur = user
+                client.save(update_fields=['utilisateur'])
+            login(request, user)                     # connecté dès la création
+            messages.success(request, 'Compte créé. Bienvenue !')
+            return redirect('catalog:mon-espace')
+    else:
+        form = CompteForm()
+    return render(request, 'catalog/form.html', {
+        'form': form, 'titre': 'Créer un compte', 'retour': 'catalog:accueil',
+    })
+
+def mon_espace(request):
+    # -----------------------------------------&gt; utilisateur loggé
+    client = Client.objects.filter(utilisateur=request.user).first()
+    inscriptions = (
+        Inscription.objects
+        .filter(client__utilisateur=request.user)        # ← la propriété est dans la requête
+        .select_related('intervention__formation')
+    )
+    return render(request, 'catalog/mon_espace.html', {
+        'client': client, 'inscriptions': inscriptions,
+    })
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>⚠️ <strong>Piège n°30 — rattacher un compte à un client par e-mail non vérifié</strong> : ici, saisir l'adresse d'un client existant suffit à <strong>hériter de son profil et de ses inscriptions</strong>. C'est acceptable pour une démonstration ; en production, on <strong>envoie un lien de confirmation</strong> avant de rattacher (jour 5, e-mails). À dire à voix haute : une fonctionnalité pratique peut être une faille.</p>
+</blockquote>
+<div class="code-block"><pre><code class="language-html">{# catalog/templates/catalog/mon_espace.html #}
+{% extends &quot;catalog/base.html&quot; %}
+
+{% block titre %}Mon espace — GestiFormation{% endblock %}
+
+{% block contenu %}
+&lt;section class=&quot;espace&quot;&gt;
+    &lt;h1&gt;Bonjour {{ user.first_name|default:user.get_username }}&lt;/h1&gt;
+    {% if not client %}
+        &lt;p class=&quot;vide&quot;&gt;Aucun profil client n'est associé à ce compte.&lt;/p&gt;
+    {% endif %}
+
+    &lt;h2&gt;Mes inscriptions&lt;/h2&gt;
+    &lt;table class=&quot;tableau&quot;&gt;
+        &lt;thead&gt;&lt;tr&gt;&lt;th&gt;Formation&lt;/th&gt;&lt;th&gt;Intervention&lt;/th&gt;&lt;th&gt;Début&lt;/th&gt;&lt;th&gt;Statut&lt;/th&gt;&lt;th&gt;&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+        &lt;tbody&gt;
+        {% for i in inscriptions %}
+            &lt;tr&gt;
+                &lt;td&gt;{{ i.intervention.formation.nom }}&lt;/td&gt;
+                &lt;td&gt;{{ i.intervention.numero }}&lt;/td&gt;
+                &lt;td&gt;{{ i.intervention.date_debut|date:&quot;d/m/Y&quot; }}&lt;/td&gt;
+                &lt;td&gt;{{ i.get_statut_display }}&lt;/td&gt;
+                &lt;td&gt;
+                    {% if i.statut != 'X' %}
+                    &lt;form method=&quot;post&quot; action=&quot;{% url 'catalog:annuler-ma-inscription' i.pk %}&quot; class=&quot;inline&quot;&gt;
+                        {% csrf_token %}&lt;button type=&quot;submit&quot; class=&quot;lien&quot;&gt;Annuler&lt;/button&gt;
+                    &lt;/form&gt;
+                    {% endif %}
+                &lt;/td&gt;
+            &lt;/tr&gt;
+        {% empty %}
+            &lt;tr&gt;&lt;td colspan=&quot;5&quot; class=&quot;vide&quot;&gt;Aucune inscription.&lt;/td&gt;&lt;/tr&gt;
+        {% endfor %}
+        &lt;/tbody&gt;
+    &lt;/table&gt;
+&lt;/section&gt;
+{% endblock %}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<h3>9.5. Protéger les vues</h3>
+<p><strong>Décorateurs</strong> pour les vues fonctionnelles :</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Outil</th>
+<th>Rôle</th>
+<th>Si la condition n'est pas remplie</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>@login_required</code></td>
+<td>l'utilisateur est connecté</td>
+<td><strong>302</strong> vers <code>LOGIN_URL?next=…</code></td>
+</tr>
+<tr>
+<td><code>@permission_required('catalog.add_client', raise_exception=True)</code></td>
+<td>il possède la permission <code>&lt;app&gt;.&lt;codename&gt;</code></td>
+<td><strong>403</strong></td>
+</tr>
+<tr>
+<td><code>@require_POST</code></td>
+<td>la méthode HTTP est <code>POST</code></td>
+<td><strong>405</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Mixins</strong> pour les CBVs (UpdateView ...)
+|---|---|---|
+| LoginRequiredMixin | l'utilisateur est connecté | idem @login_required |
+| PermissionRequiredMixin | l'utilisateur a des droits | idem @permission_required |</p>
+<p>Les permissions de modèle sont créées <strong>automatiquement</strong> pour chaque modèle (<code>add_</code>, <code>change_</code>, <code>delete_</code>, <code>view_</code>). Leur nom complet : <code>catalog.view_client</code>.</p>
+<div class="code-block"><pre><code class="language-python"># catalog/views.py — les gardes d'accès (J3)
+from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+
+
+@login_required
+# ------------------&gt; permission ou [permissions] --------&gt; 403
+@permission_required('catalog.view_client', raise_exception=True)
+def liste_clients(request: HttpRequest):
+    ...
+
+@login_required
+@permission_required('catalog.add_client', raise_exception=True)
+def nouveau_client(request):
+    ...
+
+class ClientUpdateView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    SuccessMessageMixin, 
+    UpdateView):
+    permission_required = 'catalog.change_client'
+    ...
+
+@login_required
+def mon_espace(request):
+    ...
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><strong>L'ordre des décorateurs compte.</strong> <code>@login_required</code> est <strong>au-dessus</strong> : il tranche d'abord <em>connecté ou non</em> (redirection), puis <code>@permission_required</code> tranche <em>autorisé ou non</em> (403).</p>
+<blockquote>
+<p>⚠️ <strong>Piège n°31 — <code>@permission_required</code> seul</strong> : sans <code>raise_exception=True</code>, un utilisateur <strong>connecté</strong> mais sans la permission est renvoyé… vers la page de <strong>connexion</strong> — il se reconnecte, revient, est renvoyé : une boucle déroutante. Avec <code>raise_exception=True</code>, il reçoit un <strong>403</strong> explicite ; et on empile <code>@login_required</code> au-dessus pour que l'anonyme, lui, soit invité à se connecter.</p>
+</blockquote>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Vue</th>
+<th>Gardes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>liste_clients</code></td>
+<td><code>login_required</code> + <code>catalog.view_client</code></td>
+</tr>
+<tr>
+<td><code>nouveau_client</code></td>
+<td><code>login_required</code> + <code>catalog.add_client</code></td>
+</tr>
+<tr>
+<td><code>modifier_client</code></td>
+<td><code>login_required</code> + <code>catalog.change_client</code></td>
+</tr>
+<tr>
+<td><code>supprimer_client</code></td>
+<td><code>login_required</code> + <code>catalog.delete_client</code></td>
+</tr>
+<tr>
+<td><code>liste_inscriptions</code></td>
+<td><code>login_required</code> + <code>catalog.view_inscription</code></td>
+</tr>
+<tr>
+<td><code>nouvelle_inscription</code></td>
+<td><code>login_required</code> + <code>catalog.add_inscription</code></td>
+</tr>
+<tr>
+<td><code>mon_espace</code>, <code>sinscrire</code>, <code>annuler_ma_inscription</code></td>
+<td><code>login_required</code> (+ propriété, §9.7)</td>
+</tr>
+<tr>
+<td><code>accueil</code>, <code>liste_formations</code>, <code>detail_formation</code>, <code>creer_compte</code></td>
+<td><strong>publiques</strong></td>
+</tr>
+</tbody>
+</table></div>
+<div class="code-block"><pre><code class="language-html">{# catalog/templates/catalog/403.html #}
+{% extends &quot;catalog/base.html&quot; %}
+{% block titre %}Accès refusé — GestiFormation{% endblock %}
+{% block contenu %}
+&lt;section class=&quot;erreur-page&quot;&gt;
+    &lt;h1&gt;403 — Accès refusé&lt;/h1&gt;
+    &lt;p&gt;Votre compte n'a pas les droits nécessaires pour cette page.&lt;/p&gt;
+    &lt;p&gt;&lt;a class=&quot;btn&quot; href=&quot;{% url 'catalog:accueil' %}&quot;&gt;Retour à l'accueil&lt;/a&gt;&lt;/p&gt;
+&lt;/section&gt;
+{% endblock %}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p>Dans les gabarits, les colonnes d'action de <code>liste_clients.html</code> se conditionnent aux mêmes permissions :</p>
+<div class="code-block"><pre><code class="language-html">&lt;td&gt;
+    {% if perms.catalog.change_client %}&lt;a href=&quot;{% url 'catalog:modifier-client' c.pk %}&quot;&gt;Modifier&lt;/a&gt;{% endif %}
+    {% if perms.catalog.delete_client %}&lt;a href=&quot;{% url 'catalog:supprimer-client' c.pk %}&quot;&gt;Supprimer&lt;/a&gt;{% endif %}
+&lt;/td&gt;
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<p><strong>Équivalent pour les vues en classes</strong> : <code>LoginRequiredMixin</code> et <code>PermissionRequiredMixin</code> (<code>permission_required = 'catalog.change_client'</code>), placés <strong>avant</strong> la vue générique dans les bases : <code>class ClientUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)</code>.</p>
+<h3>9.6. Groupes et rôles</h3>
+<p>Attribuer des permissions <strong>une à une</strong> à chaque utilisateur est ingérable. Un <strong>groupe</strong> est un ensemble nommé de permissions ; on place les utilisateurs dans des groupes.</p>
+<p><img alt="Rôles et permissions" src="assets/roles-permissions.svg" /></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Rôle</th>
+<th>Mécanisme</th>
+<th>Ce qu'il fait</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Anonyme</td>
+<td>aucun</td>
+<td>consulte le catalogue</td>
+</tr>
+<tr>
+<td>Stagiaire</td>
+<td>compte simple + <code>Client.utilisateur</code></td>
+<td>s'inscrit, voit <strong>ses</strong> inscriptions</td>
+</tr>
+<tr>
+<td>Formateur</td>
+<td><code>is_staff</code> + groupe <strong>Formateurs</strong></td>
+<td>consulte (admin et pages), ne modifie rien</td>
+</tr>
+<tr>
+<td>Gestionnaire</td>
+<td><code>is_staff</code> + groupe <strong>Gestionnaires</strong></td>
+<td>crée, modifie, inscrit, <strong>annule</strong></td>
+</tr>
+<tr>
+<td>Administrateur</td>
+<td><code>is_superuser</code></td>
+<td>tout, dont suppression et gestion des comptes</td>
+</tr>
+</tbody>
+</table></div>
+<p>Deux choses à noter. Le <strong>stagiaire n'a aucune permission de modèle</strong> : il n'a pas besoin de <code>view_inscription</code> pour voir <em>ses</em> inscriptions — c'est la <strong>propriété</strong> (§9.7), pas une permission. Et le <code>is_staff</code> seul <strong>n'ouvre aucune page dans l'admin</strong> : il donne le droit d'y entrer, les permissions disent ce qu'on y voit.</p>
+<blockquote>
+<p>⚠️ <strong>Piège n°32 — confondre <code>is_staff</code>, permissions et <code>is_superuser</code></strong> : un compte <code>is_staff</code> sans groupe se connecte à <code>/admin/</code> et ne voit <strong>rien</strong> ; un compte <code>is_superuser</code> <strong>ignore toutes les vérifications</strong> (<code>has_perm</code> renvoie toujours <code>True</code>) — on n'en distribue pas « pour que ça marche ».</p>
+</blockquote>
+<p><strong>Le seed des rôles</strong> — à ajouter à <code>catalog/seed.py</code> (les groupes sont des <strong>données de configuration</strong>, comme le catalogue). Les permissions de modèle sont créées par <code>migrate</code> : le seed doit donc passer <strong>après</strong> <code>migrate</code>.</p>
+<div class="code-block"><pre><code class="language-python"># catalog/seed.py — ajouts J3
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group, Permission
+
+GROUPES = {
+    'Formateurs': [
+        'view_formation', 'view_intervention', 'view_client', 'view_inscription',
+    ],
+    'Gestionnaires': [
+        'view_formation', 'add_formation', 'change_formation',
+        'view_intervention', 'add_intervention', 'change_intervention',
+        'view_client', 'add_client', 'change_client',
+        'view_contrat', 'add_contrat', 'change_contrat',
+        'view_inscription', 'add_inscription', 'change_inscription',
+        'annuler_inscription',
+    ],
+}
+
+MOT_DE_PASSE_DEMO = 'demo-2026'      # ⚠️ démonstration uniquement
+
+# identifiant, prénom, nom, e-mail, groupe, is_staff
+COMPTES = [
+    ('alice',    'Alice',    'Martin',  'alice@example.org',    None,            False),
+    ('francois', 'François', 'Lemaire', 'francois@example.org', 'Formateurs',    True),
+    ('gaelle',   'Gaëlle',   'Roux',    'gaelle@example.org',   'Gestionnaires', True),
+]
+
+
+def seed_groupes():
+    for nom, codenames in GROUPES.items():
+        groupe, _ = Group.objects.get_or_create(name=nom)
+        groupe.permissions.set(
+            Permission.objects.filter(content_type__app_label='catalog', codename__in=codenames)
+        )
+
+def seed_comptes():
+    # get_user_model(): factory qui retourne le modèle d'utilisateur lié au type d'authenfication
+    # par défaut auth: username/pass
+    User = get_user_model()
+    for username, prenom, nom, email, groupe, staff in COMPTES:
+        user, cree = User.objects.get_or_create(
+            username=username,
+            defaults={'first_name': prenom, 'last_name': nom, 'email': email, 'is_staff': staff},
+        )
+        if cree:
+            # génère un hash &quot;salé&quot; en base de donnée
+            user.set_password(MOT_DE_PASSE_DEMO)
+            user.save()
+        if groupe:
+            user.groups.add(Group.objects.get(name=groupe))
+
+    # le compte « alice » est aussi un client
+    alice = User.objects.get(username='alice')
+    Client.objects.update_or_create(
+        email='alice@example.org',
+        defaults={'prenom': 'Alice', 'nom': 'Martin', 'utilisateur': alice},
+    )
+
+...
+
+# dans run() :  seed_groupes(); seed_comptes()   (après seed_clients_contrats())
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 <strong><code>groupe.permissions.set(...)</code> est idempotent</strong> : relancer le seed remet les permissions <strong>exactement</strong> à la liste du code. C'est le comportement voulu pour une configuration — la source de vérité des droits est ce dictionnaire, versionné, pas les clics dans l'admin.</p>
+</blockquote>
+<div class="code-block"><pre><code class="language-bash">python manage.py migrate        # crée les permissions (post_migrate)
+python -m catalog.seed          # groupes + comptes de démonstration
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<h3>9.7. Permission ≠ propriété — « Mon espace »</h3>
+<p>Une permission de modèle répond à <em>« peut-il lire <strong>les</strong> inscriptions ? »</em>, pas à <em>« peut-il lire <strong>cette</strong> inscription ? »</em>. Pour les données d'un stagiaire, la vérification se fait <strong>ligne par ligne</strong>, dans la vue, avec la requête.</p>
+<div class="code-block"><pre><code class="language-python"># catalog/views.py — ajouts J3
+from django.views.decorators.http import require_POST
+from .services import annuler
+
+@login_required
+@require_POST
+def sinscrire(request, pk):
+    intervention = get_object_or_404(Intervention.objects.select_related('formation'), pk=pk, statut='A')
+    client = Client.objects.filter(utilisateur=request.user).first()
+    if client is None:
+        messages.error(request, &quot;Aucun profil client n'est associé à votre compte.&quot;)
+    else:
+        try:
+            inscrire(client, intervention)
+        except (DejaInscrit, InterventionComplete) as erreur:
+            messages.error(request, str(erreur))
+        else:
+            messages.success(request, f'Inscription à {intervention.formation.nom} enregistrée.')
+    return redirect('catalog:detail-formation', pk=intervention.formation_id)
+
+
+@login_required
+@require_POST
+def annuler_ma_inscription(request, pk):
+    # filtrer par propriétaire : l'inscription d'un autre → 404, pas 403
+    inscription = get_object_or_404(Inscription, pk=pk, client__utilisateur=request.user)
+    if annuler(inscription):
+        messages.success(request, 'Inscription annulée.')
+    return redirect('catalog:mon-espace')
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<div class="code-block"><pre><code class="language-python"># catalog/urls.py — ajouts
+path('interventions/&lt;int:pk&gt;/s-inscrire/', views.sinscrire, name='sinscrire'),
+path('mon-espace/inscriptions/&lt;int:pk&gt;/annuler/', views.annuler_ma_inscription, name='annuler-ma-inscription'),
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>⚠️ <strong>Piège n°33 — l'accès aux objets d'autrui par simple changement d'identifiant (IDOR)</strong> : <code>get_object_or_404(Inscription, pk=pk)</code> + <code>@login_required</code> laisse <strong>n'importe quel connecté</strong> annuler l'inscription n° 7 en changeant le nombre dans l'URL. La permission existe, la propriété n'est pas vérifiée. On filtre <strong>toujours</strong> par propriétaire (<code>client__utilisateur=request.user</code>) : l'objet d'autrui <strong>n'existe pas</strong> (404) — et l'on ne révèle même pas qu'il existe.</p>
+</blockquote>
+<p>Le bouton « S'inscrire » s'ajoute à la fiche détail, dans la boucle des interventions (J2, §5.6) :</p>
+<div class="code-block"><pre><code class="language-html">{# catalog/templates/catalog/detail_formation.html — dans {% for intervention in interventions %} #}
+{% if user.is_authenticated %}
+    &lt;form method=&quot;post&quot; action=&quot;{% url 'catalog:sinscrire' intervention.pk %}&quot; class=&quot;inline&quot;&gt;
+        {% csrf_token %}
+        &lt;button type=&quot;submit&quot; class=&quot;btn&quot; {% if intervention.places_dispo == 0 %}disabled{% endif %}&gt;S'inscrire&lt;/button&gt;
+    &lt;/form&gt;
+{% else %}
+    &lt;a href=&quot;{% url 'login' %}?next={{ request.path|urlencode }}&quot;&gt;Se connecter pour s'inscrire&lt;/a&gt;
+{% endif %}
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<blockquote>
+<p>💡 <strong><code>disabled</code> est du confort, pas de la sécurité</strong> : un <code>POST</code> forgé sur une intervention complète est refusé par <code>inscrire()</code> (<code>InterventionComplete</code>). L'interface masque, <strong>le service décide</strong> — le même principe qu'en B7·b.</p>
+</blockquote>
+<h3>🛠️ Atelier 9 — Qui a le droit de quoi ? (90 min)</h3>
+<p><strong>Consignes</strong> : ajouter les réglages, les URLs, les vues, les gabarits, <code>Client.utilisateur</code> (migration 0003), le seed des rôles ; poser les gardes de §9.5 ; <strong>tester chaque rôle dans son propre navigateur</strong> (ou une fenêtre privée) — jamais en changeant de compte dans la même intervention.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Rôle / action</th>
+<th>Résultat attendu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>anonyme : <code>/clients/</code></td>
+<td><strong>302</strong> vers <code>/comptes/login/?next=/clients/</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>se connecter</td>
+<td>retour sur <code>/clients/</code> (le <code>next</code>) — puis 403 si le compte n'a pas <code>view_client</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>alice</code> : <code>/clients/</code></td>
+<td><strong>403</strong> avec la page personnalisée</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>alice</code> : fiche d'une formation</td>
+<td>bouton « S'inscrire » visible ; inscription à <code>PY-101-2612</code> : message vert, <strong>Mon espace</strong> la liste</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>alice</code> : se réinscrire à la même intervention</td>
+<td>message rouge « déjà inscrit », compteur <strong>inchangé</strong></td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>alice</code> : intervention <code>PY-102-2601</code> (complète)</td>
+<td>bouton <code>disabled</code> ; <code>POST</code> forgé (<code>curl</code>, devtools) → message « complète »</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>alice</code> : annuler son inscription</td>
+<td>statut « Annulée », compteur décrémenté</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>alice</code> : <code>POST</code> sur l'annulation d'une inscription <strong>d'un autre</strong></td>
+<td><strong>404</strong></td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>alice</code> : déconnexion par un lien (<code>GET /comptes/logout/</code>)</td>
+<td><strong>405</strong> — le bouton POST fonctionne</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>francois</code> (formateur) : <code>/admin/</code></td>
+<td>voit Formations, Interventions, Clients, Inscriptions ; <strong>aucun</strong> bouton Ajouter / Supprimer</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>francois</code> : <code>/clients/nouveau/</code></td>
+<td><strong>403</strong></td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>gaelle</code> (gestionnaire) : <code>/clients/nouveau/</code> puis l'action « Annuler » de l'admin</td>
+<td>autorisés ; <strong>pas</strong> de suppression de client</td>
+</tr>
+<tr>
+<td>13</td>
+<td>superutilisateur</td>
+<td>tout, dont la suppression et la gestion des groupes</td>
+</tr>
+<tr>
+<td>14</td>
+<td>créer un compte <code>bob</code> avec un mot de passe <code>12345678</code></td>
+<td>refusé par <code>AUTH_PASSWORD_VALIDATORS</code></td>
+</tr>
+<tr>
+<td>15</td>
+<td><code>python manage.py shell</code> : <code>User.objects.get(username='alice').password</code></td>
+<td>un <strong>hash</strong> <code>pbkdf2_sha256$…</code>, jamais <code>demo-2026</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Checklist de fin d'atelier</strong></p>
+<ul>
+<li>[ ] les 15 cas passés, chaque rôle testé séparément ;</li>
+<li>[ ] le binôme sait dire pourquoi le cas 8 renvoie <strong>404</strong> et non 403 ;</li>
+<li>[ ] aucune vue d'écriture n'est restée publique : <code>grep -n "^def " catalog/views.py</code> puis relire chaque garde ;</li>
+<li>[ ] <code>python manage.py check</code> passe ;</li>
+<li>[ ] <code>git add -A &amp;&amp; git commit -m "J3 : authentification, rôles, mon espace"</code> fait.</li>
+</ul>
+<blockquote>
+<p>💡 <strong>Critère de réussite de la journée</strong> (à énoncer devant le binôme) : « Je sais dire, pour une requête <code>POST /interventions/3/s-inscrire/</code>, <strong>qui</strong> est l'utilisateur (middleware), <strong>ce qui est vérifié</strong> (connexion, méthode, propriété, capacité), <strong>où</strong> (décorateur, requête, service) et <strong>ce qui se passe en base</strong> si la intervention est pleine — rien. »</p>
+</blockquote>
+<hr />
+</div>
+
+<div id="tab-synthese-de-fin-de-journee" class="tab-content">
+<h3>Ce qui est en place</h3>
+<div class="code-block"><pre><code>gestiformation/
+├── db.sqlite3
+├── manage.py
+├── gesti/
+│   ├── settings.py              # + LOGIN_URL, LOGIN_REDIRECT_URL, LOGOUT_REDIRECT_URL
+│   └── urls.py                  # + comptes/ (auth.urls), handler403
+└── catalog/
+    ├── models.py                # + Inscription ; Client.utilisateur (1-1)
+    ├── forms.py                 # ClientForm, InscriptionForm, CompteForm (3 ModelForms)
+    ├── services.py              # ← NOUVEAU : inscrire(), annuler()
+    ├── admin.py                 # ← NOUVEAU : 6 ModelAdmin, inlines, actions
+    ├── seed.py                  # + groupes, comptes de démonstration, create_defaults
+    ├── migrations/
+    │   ├── 0001_initial.py
+    │   ├── 0002_inscription.py          # ← NOUVEAU
+    │   └── 0003_client_utilisateur.py   # ← NOUVEAU
+    ├── views.py                 # + CRUD clients, inscriptions, comptes, mon espace, 403
+    ├── urls.py
+    ├── static/css/base.css      # + .messages, .btn-danger, form.inline, .lien
+    └── templates/
+        ├── registration/
+        │   └── login.html       # ← NOUVEAU
+        └── catalog/
+            ├── base.html        # navigation selon user / perms, messages
+            ├── form.html        # ← NOUVEAU : remplace form_client.html
+            ├── _champs.html     # ← NOUVEAU
+            ├── confirmer_suppression.html    # ← NOUVEAU
+            ├── liste_inscriptions.html       # ← NOUVEAU
+            ├── mon_espace.html               # ← NOUVEAU
+            ├── 403.html                      # ← NOUVEAU
+            └── …                # liste_formations, detail_formation (+ S'inscrire), liste_clients
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+<h3>Les réflexes installés</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Réflexe</th>
+<th>Pourquoi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>un formulaire qui écrit une table est un <strong><code>ModelForm</code></strong> à <code>fields</code> <strong>explicites</strong></td>
+<td>zéro recopie, jamais de champ exposé par accident</td>
+</tr>
+<tr>
+<td><code>instance=</code> sur <strong>les deux</strong> branches (GET et POST) d'une modification</td>
+<td>sinon un doublon, ou une erreur d'unicité</td>
+</tr>
+<tr>
+<td>une règle métier = <strong>une fonction de service</strong>, appelée par la vue, l'admin, les tests</td>
+<td>l'admin et les scripts contournent les formulaires</td>
+</tr>
+<tr>
+<td>écrire deux tables liées → <strong><code>transaction.atomic</code></strong> ; décider dans l'<code>UPDATE</code> (<code>F</code> + filtre)</td>
+<td>pas d'état intermédiaire, pas de course sur la dernière place</td>
+</tr>
+<tr>
+<td>admin : <strong>annoter</strong> dans <code>get_queryset</code>, <code>list_select_related</code>, <code>readonly_fields</code></td>
+<td>pas de N+1, pas de compteur modifié à la main</td>
+</tr>
+<tr>
+<td><code>create_user</code> / <code>set_password</code>, jamais <code>create(password=…)</code></td>
+<td>le mot de passe est un hash</td>
+</tr>
+<tr>
+<td><code>@login_required</code> <strong>puis</strong> <code>@permission_required(..., raise_exception=True)</code></td>
+<td>302 pour l'anonyme, 403 pour le connecté non autorisé</td>
+</tr>
+<tr>
+<td>déconnexion et suppression en <strong><code>POST</code></strong></td>
+<td>un <code>GET</code> ne doit rien changer</td>
+</tr>
+<tr>
+<td>toute donnée d'un utilisateur se filtre <strong>par propriétaire</strong></td>
+<td>permission ≠ propriété</td>
+</tr>
+<tr>
+<td>l'interface masque, <strong>le serveur décide</strong></td>
+<td><code>disabled</code>, liens cachés : confort, pas sécurité</td>
+</tr>
+</tbody>
+</table></div>
+<h3>Pièges vus aujourd'hui (à récapituler oralement)</h3>
+<ol>
+<li><code>fields = '__all__'</code> / <code>exclude</code> : un futur champ sensible devient modifiable ;</li>
+<li><code>instance=</code> oublié côté <code>POST</code> : doublon ou erreur d'unicité ;</li>
+<li><code>save(commit=False)</code> sans <code>save_m2m()</code> : relations M2M perdues ;</li>
+<li>compteur et ligne écrits hors transaction : place « perdue » ;</li>
+<li>l'admin contourne vues, formulaires et services ;</li>
+<li><code>@property</code> dans <code>list_display</code> : un calcul par ligne — annoter ;</li>
+<li><code>User.objects.create(password=…)</code> : mot de passe en clair ;</li>
+<li>déconnexion en <code>GET</code> : <code>405</code> depuis Django 5.0 ;</li>
+<li>rattachement compte ↔ client par e-mail non vérifié ;</li>
+<li><code>@permission_required</code> sans <code>raise_exception</code> : boucle de connexion ;</li>
+<li><code>is_staff</code>, permissions et <code>is_superuser</code> ne sont pas la même chose ;</li>
+<li>IDOR : <code>get_object_or_404(..., pk=pk)</code> sans filtrer par propriétaire.</li>
+</ol>
+<h3>Preview du jour 4 — blocs 10 &amp; 11</h3>
+<p>Demain, on <strong>traduit</strong> le catalogue (<code>gettext</code>, fichiers <code>.po</code>, <code>LocaleMiddleware</code>, <code>/fr/</code> et <code>/en/</code>) — c'est le moment de transformer les messages écrits en français ce matin en chaînes traduisibles — puis on <strong>teste</strong> : la logique de capacité de <code>inscrire()</code> (y compris le scénario « dernière place »), les gardes d'accès de chaque rôle, la validation de <code>ClientForm</code>. Tout ce qu'on a protégé aujourd'hui se verra enfin <strong>démontré par un test qui échoue quand on casse la règle</strong>.</p>
+<blockquote>
+<p>💡 <strong>Message de clôture</strong> : « Le site du jour 2 écrivait dans une base ; celui d'aujourd'hui écrit <strong>sans recopier</strong>, s'administre <strong>sans coder</strong> et sait <strong>à qui il parle</strong>. La règle d'or de la journée : l'interface n'est jamais la barrière — la barrière est dans le serveur. »</p>
+</blockquote>
+<hr />
+</div>
+
+<div id="tab-annexe-commandes-du-jour-cheat-sheet" class="tab-content">
+<div class="code-block"><pre><code class="language-bash"># Migrations (B7 puis B9)
+python manage.py makemigrations                 # → 0002_inscription.py
+python manage.py sqlmigrate catalog 0002        # lire l'index partiel
+python manage.py migrate
+python manage.py makemigrations                 # → 0003_client_utilisateur.py
+python manage.py migrate
+
+# Comptes et rôles
+python manage.py createsuperuser
+python -m catalog.seed                          # groupes + alice / francois / gaelle (mdp : demo-2026)
+
+# Vérifier
+python manage.py check
+python manage.py showmigrations catalog
+
+# Shell : permissions d'un utilisateur
+python manage.py shell
+&gt;&gt;&gt; from django.contrib.auth import get_user_model
+&gt;&gt;&gt; u = get_user_model().objects.get(username='gaelle')
+&gt;&gt;&gt; u.has_perm('catalog.annuler_inscription')   # True
+&gt;&gt;&gt; sorted(u.get_all_permissions())             # toutes les permissions effectives
+
+# Git
+git add -A &amp;&amp; git commit -m &quot;J3 : CRUD clients en ModelForm + messages&quot;
+git add -A &amp;&amp; git commit -m &quot;J3 : Inscription + services.inscrire&quot;
+git add -A &amp;&amp; git commit -m &quot;J3 : administration complète&quot;
+git add -A &amp;&amp; git commit -m &quot;J3 : authentification, rôles, mon espace&quot;
+</code></pre><button class="copy-btn" onclick="copyCode(this)">Copier</button></div>
+</div>
+  </div>
+</div>
+
+<script>
+// ─── THEME ──────────────────────────────────────────────────────────────────
+(function () {
+  const root = document.documentElement;
+  const stored = localStorage.getItem('dawan-theme');
+  if (stored) root.setAttribute('data-theme', stored);
+  updateToggleLabel();
+})();
+
+function updateToggleLabel() {
+  const current = document.documentElement.getAttribute('data-theme') ||
+    (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  document.getElementById('theme-icon').textContent = current === 'dark' ? '🌙' : '☀️';
+  document.getElementById('theme-label').textContent = current === 'dark' ? 'Sombre' : 'Clair';
+}
+
+function toggleTheme() {
+  const root = document.documentElement;
+  const current = root.getAttribute('data-theme') ||
+    (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  const next = current === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('dawan-theme', next);
+  updateToggleLabel();
+}
+
+// ─── TABS ───────────────────────────────────────────────────────────────────
+function showTab(id) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.side-nav button').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+  document.querySelector('.content').scrollTo({ top: 0, behavior: 'instant' });
+}
+
+// ─── COPY CODE ──────────────────────────────────────────────────────────────
+function copyCode(btn) {
+  const pre = btn.previousElementSibling;
+  navigator.clipboard.writeText(pre.textContent).then(() => {
+    btn.textContent = 'Copié !'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copier'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+</body>
+</html>

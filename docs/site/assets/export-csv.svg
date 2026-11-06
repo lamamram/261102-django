@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 460" role="img" aria-label="Export CSV : requête GET, gardes d'accès, requête ORM, écriture avec csv.writer dans la réponse HTTP, et aperçu du fichier avec ses trois pièges">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#475569"/>
+    </marker>
+    <marker id="arr-ok" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#0f766e"/>
+    </marker>
+  </defs>
+  <rect width="1080" height="460" fill="#ffffff"/>
+  <text x="540" y="30" text-anchor="middle" font-family="system-ui, sans-serif" font-size="18" font-weight="600" fill="#1f2937">Un export CSV est une réponse HTTP : mêmes gardes que la liste, autre type de contenu</text>
+
+  <!-- colonne gauche : le trajet -->
+  <text x="40" y="62" font-family="system-ui, sans-serif" font-size="13" font-weight="600" fill="#475569">Le trajet de la requête</text>
+  <g font-family="system-ui, sans-serif">
+    <rect x="40" y="75" width="470" height="56" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="56" y="98" font-size="13" font-weight="600" fill="#1f2937">1 · GET /fr/inscriptions/export.csv?statut=P</text>
+    <text x="56" y="118" font-size="11" fill="#475569">un lien « Exporter en CSV » dans la liste ; le filtre est un paramètre d'URL</text>
+
+    <rect x="40" y="152" width="470" height="72" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text x="56" y="175" font-size="13" font-weight="600" fill="#1f2937">2 · Gardes d'accès — les mêmes que la liste</text>
+    <text x="56" y="195" font-size="11" fill="#475569">@login_required → 302 vers la connexion (anonyme)</text>
+    <text x="56" y="212" font-size="11" fill="#475569">@permission_required('catalog.view_inscription', raise_exception=True) → 403</text>
+
+    <rect x="40" y="245" width="470" height="72" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text x="56" y="268" font-size="13" font-weight="600" fill="#1f2937">3 · ORM — une seule requête, jamais de N+1</text>
+    <text x="56" y="288" font-size="11" fill="#475569">select_related('client', 'intervention__formation') · .iterator(chunk_size=500)</text>
+    <text x="56" y="305" font-size="11" fill="#475569">statut : liste blanche dict(Inscription.STATUTS) — une valeur inconnue est ignorée</text>
+
+    <rect x="40" y="338" width="470" height="84" rx="8" fill="#f0fdfa" stroke="#0f766e" stroke-width="1.5"/>
+    <text x="56" y="361" font-size="13" font-weight="600" fill="#1f2937">4 · csv.writer(response, delimiter=';')</text>
+    <text x="56" y="381" font-size="11" fill="#475569">la réponse HttpResponse EST le fichier : elle possède .write()</text>
+    <text x="56" y="398" font-size="11" fill="#475569">BOM écrit en premier · en-têtes traduits · une ligne par inscription</text>
+    <text x="56" y="414" font-size="11" fill="#0f766e" font-weight="600">_texte_sur() neutralise les cellules libres (société, nom…)</text>
+  </g>
+  <g stroke="#475569" stroke-width="2">
+    <line x1="275" y1="132" x2="275" y2="150" marker-end="url(#arr)"/>
+    <line x1="275" y1="225" x2="275" y2="243" marker-end="url(#arr)"/>
+    <line x1="275" y1="318" x2="275" y2="336" marker-end="url(#arr-ok)" stroke="#0f766e"/>
+  </g>
+
+  <!-- colonne droite : le résultat -->
+  <text x="560" y="62" font-family="system-ui, sans-serif" font-size="13" font-weight="600" fill="#475569">Ce que reçoit le navigateur</text>
+  <g font-family="system-ui, sans-serif">
+    <rect x="560" y="75" width="480" height="82" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+    <text x="576" y="98" font-size="13" font-weight="600" fill="#1f2937">En-têtes de la réponse</text>
+    <g font-family="ui-monospace, Consolas, monospace" font-size="10.5" fill="#475569">
+      <text x="576" y="117">Content-Type: text/csv; charset=utf-8</text>
+      <text x="576" y="133">Content-Disposition: attachment; filename="inscriptions-20261105.csv"</text>
+      <text x="576" y="149">corps : EF BB BF (BOM UTF-8 : Excel affiche les accents)</text>
+    </g>
+
+    <rect x="560" y="172" width="480" height="108" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+    <text x="576" y="195" font-size="13" font-weight="600" fill="#1f2937">Le fichier (UTF-8, séparateur « ; »)</text>
+    <g font-family="ui-monospace, Consolas, monospace" font-size="10" fill="#475569">
+      <text x="576" y="214">Client;E-mail;Société;Formation;…;Montant HT (€);Inscrit le</text>
+      <text x="576" y="231">Alice Martin;alice@…;Acme;Django : initiation;…;1890,50;2026-11-05 14:32</text>
+      <text x="576" y="248" fill="#b45309">Mallory Dupont;mallory@…;'=HYPERLINK("http://x");…;1890,50;…</text>
+      <text x="576" y="268" fill="#6b7280">… une ligne par inscription, triée du plus récent au plus ancien</text>
+    </g>
+  </g>
+  <g stroke="#475569" stroke-width="2">
+    <line x1="510" y1="380" x2="535" y2="380"/>
+    <path d="M535,380 L535,115 L558,115" fill="none" marker-end="url(#arr-ok)" stroke="#0f766e"/>
+  </g>
+
+  <g font-family="system-ui, sans-serif">
+    <rect x="560" y="298" width="480" height="124" rx="8" fill="#fff7ed" stroke="#b45309" stroke-width="1.5"/>
+    <text x="576" y="321" font-size="13" font-weight="600" fill="#1f2937">Trois pièges</text>
+    <g font-size="11" fill="#475569">
+      <text x="576" y="342"><tspan font-weight="600" fill="#b45309">Formules.</tspan> Une cellule qui commence par = + - @ s'exécute dans Excel :</text>
+      <text x="576" y="358">on la préfixe d'une apostrophe, sur toute donnée saisie par un tiers.</text>
+      <text x="576" y="378"><tspan font-weight="600" fill="#b45309">Locale.</tspan> « ; » comme séparateur et virgule décimale : c'est ce qu'attend</text>
+      <text x="576" y="394">Excel en français. Les milliers (1 890) cassent la lecture numérique.</text>
+      <text x="576" y="414"><tspan font-weight="600" fill="#b45309">Volume.</tspan> Très gros fichiers : StreamingHttpResponse (flux).</text>
+    </g>
+  </g>
+</svg>

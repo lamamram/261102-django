@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Support de formation Django - Initiation et Approfondissement — sommaire">
+<title>Django - Initiation et Approfondissement — Sommaire</title>
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --surface2: #1c2128; --border: #30363d;
+  --primary: #f0883e; --primary2: #ffa657;
+  --success: #3fb950; --warning: #d29922; --danger: #f85149;
+  --text: #e6edf3; --text-muted: #8b949e; --radius: 10px; --topbar-h: 3.25rem;
+}
+:root[data-theme="light"] {
+  --bg: #ffffff; --surface: #f6f8fa; --surface2: #eaeef2; --border: #d0d7de;
+  --primary: #bc4c00; --primary2: #953800;
+  --success: #1a7f37; --warning: #9a6700; --danger: #cf222e;
+  --text: #1f2328; --text-muted: #656d76;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #ffffff; --surface: #f6f8fa; --surface2: #eaeef2; --border: #d0d7de;
+    --primary: #bc4c00; --primary2: #953800;
+    --success: #1a7f37; --warning: #9a6700; --danger: #cf222e;
+    --text: #1f2328; --text-muted: #656d76;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.6; transition: background .2s, color .2s; }
+
+/* TOPBAR — fixe, ne bouge jamais au scroll */
+.topbar {
+  position: sticky; top: 0; z-index: 200; height: var(--topbar-h);
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: .9rem; padding: 0 1rem;
+}
+.topbar .badge {
+  flex: 0 0 auto; background: var(--primary); color: #0d1117;
+  font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 20px; white-space: nowrap;
+}
+.topbar .formation-name { flex: 1 1 auto; min-width: 0; font-weight: 700; font-size: .92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.theme-toggle {
+  flex: 0 0 auto; background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  padding: .4rem .7rem; border-radius: 20px; font-size: .8rem; cursor: pointer;
+  display: inline-flex; align-items: center; gap: .35rem;
+}
+.theme-toggle:hover { border-color: var(--primary); }
+
+/* LAYOUT — sidebar gauche fixe + contenu centré */
+.layout { display: flex; align-items: flex-start; }
+.sidebar {
+  flex: 0 0 280px; width: 280px;
+  position: sticky; top: var(--topbar-h);
+  height: calc(100vh - var(--topbar-h));
+  overflow-y: auto; border-right: 1px solid var(--border); background: var(--surface);
+  padding: 1.25rem 1rem 2rem;
+}
+.side-label { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); margin: 1rem 0 .4rem; padding: 0 .7rem; }
+.side-label:first-child { margin-top: 0; }
+.side-nav { display: flex; flex-direction: column; gap: .1rem; }
+.side-nav a {
+  display: block; text-decoration: none; border-left: 3px solid transparent;
+  color: var(--text-muted); padding: .55rem .7rem; font-size: .87rem; font-weight: 500;
+  border-radius: 0 6px 6px 0; transition: all .15s;
+}
+.side-nav a .n { color: var(--primary); font-weight: 700; margin-right: .35rem; }
+.side-nav a:hover { color: var(--text); background: var(--surface2); border-left-color: var(--border); }
+
+.content { flex: 1 1 auto; min-width: 0; }
+.content-inner { max-width: 1000px; margin: 0 auto; padding: 2.5rem 2.5rem 4rem; }
+.content-inner h1 { font-size: 1.9rem; margin-bottom: .3rem; }
+.content-inner .tagline { color: var(--text-muted); margin-bottom: 2rem; }
+
+.intro h2 { font-size: 1.15rem; color: var(--primary2); margin: 1.6rem 0 .7rem; border-left: 3px solid var(--primary); padding-left: .7rem; }
+.intro h3 { font-size: 1rem; margin: 1.2rem 0 .5rem; }
+.intro p { margin-bottom: .8rem; color: var(--text); }
+.intro ul, .intro ol { padding-left: 1.3rem; margin-bottom: .8rem; }
+.intro li { margin-bottom: .3rem; color: var(--text); }
+.intro .table-wrap { overflow-x: auto; margin: 1rem 0; }
+.intro table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.intro th { background: var(--surface2); color: var(--primary2); text-align: left; padding: .55rem .8rem; border: 1px solid var(--border); }
+.intro td { padding: .5rem .8rem; border: 1px solid var(--border); }
+
+footer { text-align: center; padding: 2rem; color: var(--text-muted); font-size: .85rem; }
+
+@media (max-width: 900px) {
+  .layout { flex-direction: column; }
+  .sidebar { position: static; width: 100%; height: auto; max-height: 40vh; border-right: none; border-bottom: 1px solid var(--border); }
+  .content-inner { padding: 1.5rem 1.2rem 3rem; }
+}
+</style>
+<link rel="stylesheet" href="assets/course-common.css">
+<script src="assets/course-common.js" defer></script>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="badge">Django - Initiation et Approfondissement</span>
+  <span class="formation-name">Django - Initiation et Approfondissement</span>
+  <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Basculer entre thème clair et sombre">
+    <span id="theme-icon">🌙</span> <span id="theme-label">Sombre</span>
+  </button>
+</div>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="side-label">Chapitres</div>
+    <nav class="side-nav">
+      <a href="chapitre-01-decouvrir-django-et-construire-les-premieres-pages-de-gestiformation.html"><span class="n">01</span>Découvrir Django et construire les premières pages de GestiFormation</a>
+    <a href="chapitre-02-de-la-donnee-en-memoire-a-la-donnee-en-base-orm-migrations-formulaires.html"><span class="n">02</span>De la donnée en mémoire à la donnée en base - ORM, migrations, formulaires</a>
+    <a href="chapitre-03-ecrire-proprement-administrer-proteger-modelforms-admin-authentification.html"><span class="n">03</span>Écrire proprement, administrer, protéger - ModelForms, admin, authentification</a>
+    <a href="chapitre-04-parler-plusieurs-langues-prouver-que-ca-marche-internationalisation-et-tests.html"><span class="n">04</span>Parler plusieurs langues, prouver que ça marche - internationalisation et tests</a>
+    <a href="chapitre-05-sortir-de-l-atelier-e-mails-exports-connexion-sociale-et-mise-en-production.html"><span class="n">05</span>Sortir de l&#x27;atelier - e-mails, exports, connexion sociale et mise en production</a>
+    </nav>
+    <div class="side-label">Ressources</div>
+    <nav class="side-nav">
+      <p style="color:var(--text-muted); padding:0 .7rem;">Aucune annexe pour le moment.</p>
+    </nav>
+  </aside>
+  <div class="content">
+    <div class="content-inner">
+      <h1>Django - Initiation et Approfondissement</h1>
+      <p class="tagline">Support interactif de la formation Django - Initiation et Approfondissement — 5 chapitre(s).</p>
+      
+    </div>
+  </div>
+</div>
+
+<footer>Formateur Dawan — formation@dawan.fr</footer>
+
+<script>
+(function () {
+  const root = document.documentElement;
+  const stored = localStorage.getItem('dawan-theme');
+  if (stored) root.setAttribute('data-theme', stored);
+  updateToggleLabel();
+})();
+function updateToggleLabel() {
+  const current = document.documentElement.getAttribute('data-theme') ||
+    (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  document.getElementById('theme-icon').textContent = current === 'dark' ? '🌙' : '☀️';
+  document.getElementById('theme-label').textContent = current === 'dark' ? 'Sombre' : 'Clair';
+}
+function toggleTheme() {
+  const root = document.documentElement;
+  const current = root.getAttribute('data-theme') ||
+    (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  const next = current === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('dawan-theme', next);
+  updateToggleLabel();
+}
+</script>
+</body>
+</html>
