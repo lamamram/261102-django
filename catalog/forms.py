@@ -65,7 +65,7 @@ class ClientForm(forms.ModelForm):
             'prenom': forms.TextInput(attrs={'placeholder': _('Entrez votre prénom ici...')}) 
         }
         error_messages = {
-            'email': {'unique': _('Un client existe déjà avec cet e-mail.')}
+            'email': {'unique': _('Un client existe déjà avec cet e-mail.')},
         }
 
     def clean_email(self):
@@ -77,7 +77,7 @@ class ClientForm(forms.ModelForm):
     def clean_telephone(self):
         valeur = self.cleaned_data.get('telephone', '')
         if valeur and not re.fullmatch(r"[\d\s+]{8,20}", valeur):
-            raise ValidationError(_("Format invalide - chiffres, espace et + attendu."))
+            raise ValidationError(_("Format invalide - chiffres, espace et + attendu."), code='telephone_invalide')
         return valeur
 
 ########################## CHAMPS CUSTOM ####################
